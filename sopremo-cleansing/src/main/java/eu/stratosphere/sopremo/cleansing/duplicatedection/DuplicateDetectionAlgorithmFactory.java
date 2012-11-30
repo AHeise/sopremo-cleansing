@@ -12,39 +12,15 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.scrubbing;
-
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.PathExpression;
+package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 /**
  * @author Arvid Heise
  */
-public class RewriteContext extends EvaluationContext {
+public class DuplicateDetectionAlgorithmFactory {
+	public final static DuplicateDetectionAlgorithmFactory INSTANCE = new DuplicateDetectionAlgorithmFactory();
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3751142957269653244L;
-	
-	private RuleFactory.RuleContext ruleContext;
-
-	public PathExpression getRewritePath() {
-		return this.ruleContext.getContextPath().clone();
+	public CompositeDuplicateDetectionAlgorithm<?> getAlgorithm(CandidateSelection candidateSelection) {
+		return new NaiveDuplicateDetection();
 	}
-	
-	public void setRuleContext(RuleFactory.RuleContext ruleContext) {
-		if (ruleContext == null)
-			throw new NullPointerException("ruleContext must not be null");
-
-		this.ruleContext = ruleContext;
-
-		pushOperator(ruleContext.getOperator());
-	}
-
-	public void parse(EvaluationExpression expression) {
-		this.ruleContext.getManager().parse(expression, this.ruleContext);
-	}
-
 }

@@ -31,7 +31,7 @@ public class FilterRecord extends AbstractJsonNode {
 	private static final long serialVersionUID = 2584161416150519211L;
 
 	public final static FilterRecord Instance = new FilterRecord();
-	
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#getType()
@@ -41,43 +41,40 @@ public class FilterRecord extends AbstractJsonNode {
 		return Type.CustomNode;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.IJsonNode#clear()
 	 */
 	@Override
 	public void clear() {
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.IJsonNode#copyValueFrom(eu.stratosphere.sopremo.type.IJsonNode)
 	 */
 	@Override
 	public void copyValueFrom(IJsonNode otherNode) {
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#read(java.io.DataInput)
 	 */
 	@Override
 	public void read(DataInput in) throws IOException {
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#write(java.io.DataOutput)
 	 */
 	@Override
 	public void write(DataOutput out) throws IOException {
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#getJavaValue()
-	 */
-	@Override
-	public Object getJavaValue() {
-		return "Filter";
-	}
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#compareToSameType(eu.stratosphere.sopremo.type.IJsonNode)
 	 */
 	@Override
@@ -85,13 +82,21 @@ public class FilterRecord extends AbstractJsonNode {
 		return 0;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		return 0;
 	}
-	
-	
+
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("<filter>");
+	}
+
 }

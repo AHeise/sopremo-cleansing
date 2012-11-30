@@ -14,11 +14,14 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * @author Arvid Heise
@@ -48,13 +51,32 @@ public class CandidateSelection extends AbstractSopremoType {
 		this.passes = passes;
 	}
 
-	public CompositeDuplicateDetectionAlgorithm<?> createMatchingAlgorithm() {
-		return new NaiveDuplicateDetection();
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new CandidateSelection();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
+	 */
 	@Override
-	public void toString(StringBuilder builder) {
-		builder.append("CandidateSelection [passes=").append(this.passes).append("]");
+	public void copyPropertiesFrom(ISopremoType original) {
+		super.copyPropertiesFrom(original);
+		this.passes.addAll(SopremoUtil.deepClone(((CandidateSelection) original).getPasses()));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		SopremoUtil.append(appendable, "CandidateSelection [passes=", this.passes, "]");
 	}
 
 	public static class Pass extends AbstractSopremoType {
@@ -74,6 +96,15 @@ public class CandidateSelection extends AbstractSopremoType {
 		 * Initializes Pass.
 		 */
 		public Pass() {
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+		 */
+		@Override
+		protected AbstractSopremoType createCopy() {
+			return new Pass(SopremoUtil.deepClone(this.blockingKey));
 		}
 
 		/**
@@ -98,13 +129,13 @@ public class CandidateSelection extends AbstractSopremoType {
 			this.blockingKey = blockingKey;
 		}
 
-		/* (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.ISopremoType#toString(java.lang.StringBuilder)
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
 		 */
 		@Override
-		public void toString(StringBuilder builder) {
-			builder.append(blockingKey);
+		public void appendAsString(Appendable appendable) throws IOException {
+			SopremoUtil.append(appendable, this.blockingKey);
 		}
-
 	}
 }

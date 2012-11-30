@@ -14,7 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity.text;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity;
 import eu.stratosphere.sopremo.type.TextNode;
 
@@ -43,13 +42,15 @@ public abstract class TextSimilarity extends AbstractSimilarity<TextNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(TextNode node1, TextNode node2, EvaluationContext context) {
+	public double getSimilarity(TextNode node1, TextNode node2) {
 		if (node1.equals(node2))
 			return 1;
 		if (node1.length() == 0 || node2.length() == 0)
 			return 0;
-		return this.getSimilarity((CharSequence) node1, node2, context);
+		return this.getSimilarity((CharSequence) node1, node2);
 	}
 
-	public abstract double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context);
+	public abstract double getSimilarity(CharSequence text1, CharSequence text2);
+	
+	
 }

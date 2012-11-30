@@ -17,7 +17,7 @@ package eu.stratosphere.sopremo.cleansing.similarity;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.text.TextSimilarity;
 import eu.stratosphere.sopremo.tokenizer.DelimiterTokenizer;
 import eu.stratosphere.sopremo.tokenizer.Tokenizer;
@@ -58,6 +58,14 @@ public class TokenizingSimilarity extends TextSimilarity {
 		return this.tokenizer;
 	}
 
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new TokenizingSimilarity(innerSimilarity.clone());
+	}
+	
 	/**
 	 * Sets the tokenizer to the specified value.
 	 * 
@@ -77,9 +85,9 @@ public class TokenizingSimilarity extends TextSimilarity {
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context) {
+	public double getSimilarity(CharSequence text1, CharSequence text2) {
 		this.tokenizer.tokenizeInto(text1, this.tokens1);
 		this.tokenizer.tokenizeInto(text2, this.tokens2);
-		return this.innerSimilarity.getSimilarity(this.tokens1, this.tokens2, context);
+		return this.innerSimilarity.getSimilarity(this.tokens1, this.tokens2);
 	}
 }

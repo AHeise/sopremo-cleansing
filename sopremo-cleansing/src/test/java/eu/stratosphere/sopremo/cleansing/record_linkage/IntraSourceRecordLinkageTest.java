@@ -1,9 +1,5 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import static eu.stratosphere.sopremo.JsonUtil.createIArrayNode;
-import static eu.stratosphere.sopremo.JsonUtil.createObjectNode;
-import static eu.stratosphere.sopremo.JsonUtil.createPath;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,19 +11,15 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
 import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
-import eu.stratosphere.sopremo.DefaultFunctions;
 import eu.stratosphere.sopremo.base.Projection;
-import eu.stratosphere.sopremo.cleansing.similarity_condition.NumericDifference;
-import eu.stratosphere.sopremo.cleansing.similarity_condition.SimmetricFunction;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.PathExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 

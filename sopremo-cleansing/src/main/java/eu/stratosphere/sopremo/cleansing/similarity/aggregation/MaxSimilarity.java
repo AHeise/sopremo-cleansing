@@ -25,8 +25,9 @@ package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import java.util.Collection;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * <code>MaxSimilarity</code> calculates the similarities of each collected Similarity and returns the maximum value.
@@ -66,13 +67,21 @@ public class MaxSimilarity extends AggregationSimilarity {
 		super(similarities);
 	}
 
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new MaxSimilarity(SopremoUtil.deepClone(getSubsimilarities()));
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.aggregation.AggregationSimilarity#aggregateSimilarity(double[],
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities, EvaluationContext context) {
+	protected double aggregateSimilarity(double[] individualSimilarities) {
 		double max = 0;
 		for (double sim : individualSimilarities)
 			max = Math.max(sim, max);

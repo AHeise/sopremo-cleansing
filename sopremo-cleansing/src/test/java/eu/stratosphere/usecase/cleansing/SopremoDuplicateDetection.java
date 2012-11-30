@@ -1,13 +1,8 @@
 package eu.stratosphere.usecase.cleansing;
 
-import static eu.stratosphere.sopremo.JsonUtil.createPath;
-
 import java.io.File;
 
 import eu.stratosphere.pact.testing.TestPlan;
-import eu.stratosphere.sopremo.Sink;
-import eu.stratosphere.sopremo.SopremoPlan;
-import eu.stratosphere.sopremo.Source;
 import eu.stratosphere.sopremo.base.Join;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
@@ -17,11 +12,11 @@ import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.MethodCall;
+import eu.stratosphere.sopremo.io.Sink;
+import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.pact.CsvInputFormat;
-import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.NumericNode;
+import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
 public class SopremoDuplicateDetection {

@@ -18,6 +18,7 @@ import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionAlgorithmFactory;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -89,8 +90,9 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 */
 	@Override
 	public void addImplementation(SopremoModule module, EvaluationContext context) {
-		final CompositeDuplicateDetectionAlgorithm<?> algorithm = this.candidateSelection.createMatchingAlgorithm();
-		algorithm.setComparison(comparison);
+		final CompositeDuplicateDetectionAlgorithm<?> algorithm =
+			DuplicateDetectionAlgorithmFactory.INSTANCE.getAlgorithm(this.candidateSelection);
+		algorithm.setComparison(this.comparison);
 		module.embed(algorithm);
 	}
 }

@@ -25,8 +25,9 @@ package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import java.util.Collection;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * <code>MinSimilarity</code> calculates the similarities of each collected Similarity and returns the minimum value.
@@ -67,11 +68,20 @@ public class MinSimilarity extends AggregationSimilarity {
 
 	/*
 	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new MinSimilarity(SopremoUtil.deepClone(getSubsimilarities()));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.aggregation.AggregationSimilarity#aggregateSimilarity(double[],
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities, EvaluationContext context) {
+	protected double aggregateSimilarity(double[] individualSimilarities) {
 		double min = 1;
 		for (double sim : individualSimilarities)
 			min = Math.min(sim, min);

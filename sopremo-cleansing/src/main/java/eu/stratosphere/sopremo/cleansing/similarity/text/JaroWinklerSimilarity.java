@@ -23,7 +23,6 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.text;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 
 /**
  * <code>JaroWinklerSimilarity</code> compares two {@link IJsonNode}s based on the extended Jaro Distance attribute.
@@ -66,8 +65,8 @@ public class JaroWinklerSimilarity extends JaroSimilarity {
 	 * java.lang.CharSequence, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context) {
-		final double jaroSimilarity = super.getSimilarity(text1, text2, context);
+	public double getSimilarity(CharSequence text1, CharSequence text2) {
+		final double jaroSimilarity = super.getSimilarity(text1, text2);
 
 		if (jaroSimilarity < this.minSimilarityForBoost)
 			return jaroSimilarity;

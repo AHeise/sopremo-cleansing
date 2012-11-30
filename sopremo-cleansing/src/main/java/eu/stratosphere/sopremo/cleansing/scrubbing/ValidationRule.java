@@ -2,7 +2,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public abstract class ValidationRule extends CleansingRule<ValidationContext> {
+public abstract class ValidationRule extends CleansingRule {
 	public static final UnresolvableCorrection DEFAULT_CORRECTION = UnresolvableCorrection.INSTANCE;
 
 	/**
@@ -13,7 +13,7 @@ public abstract class ValidationRule extends CleansingRule<ValidationContext> {
 	private ValueCorrection valueCorrection = DEFAULT_CORRECTION;
 
 	@Override
-	public IJsonNode evaluateRule(IJsonNode value, IJsonNode target, ValidationContext context) {
+	public IJsonNode evaluateRule(IJsonNode value) {
 		if (!this.validate(value, context)) {
 			context.setViolatedRule(this);
 			return this.fix(value, target, context);

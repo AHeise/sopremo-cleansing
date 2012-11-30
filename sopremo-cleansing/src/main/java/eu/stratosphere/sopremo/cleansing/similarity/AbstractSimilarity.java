@@ -23,6 +23,9 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity;
 
+import java.io.IOException;
+
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.util.reflect.ReflectUtil;
 
@@ -33,7 +36,8 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  * @author Matthias Pohl
  * @author Arvid Heise
  */
-public abstract class AbstractSimilarity<NodeType extends IJsonNode> implements Similarity<NodeType> {
+public abstract class AbstractSimilarity<NodeType extends IJsonNode> extends AbstractSopremoType implements
+		Similarity<NodeType> {
 
 	/**
 	 * 
@@ -50,13 +54,24 @@ public abstract class AbstractSimilarity<NodeType extends IJsonNode> implements 
 			return false;
 		return true;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.Similarity#isSymmetric()
 	 */
 	@Override
 	public boolean isSymmetric() {
 		return ReflectUtil.getAnnotation(getClass(), Asymmetric.class) == null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#clone()
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public AbstractSimilarity<NodeType> clone() {
+		return (AbstractSimilarity<NodeType>) super.clone();
 	}
 
 	// /*
@@ -80,21 +95,10 @@ public abstract class AbstractSimilarity<NodeType extends IJsonNode> implements 
 
 	/*
 	 * (non-Javadoc)
-	 * @see java.lang.Object#toString()
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		this.toString(builder);
-		return builder.toString();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.ISopremoType#toString(java.lang.StringBuilder)
-	 */
-	@Override
-	public void toString(StringBuilder builder) {
-		builder.append(this.getClass().getSimpleName());
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append(this.getClass().getSimpleName());
 	}
 }

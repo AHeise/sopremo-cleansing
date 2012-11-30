@@ -14,7 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -52,6 +52,14 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 			throw new IllegalArgumentException();
 	}
 
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new ConstantSimilarity(similarity);
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.Similarity#getExpectedType()
@@ -68,7 +76,7 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2, EvaluationContext context) {
-		return similarity;
+	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+		return this.similarity;
 	}
 }

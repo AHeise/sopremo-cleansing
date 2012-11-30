@@ -1,23 +1,20 @@
 package eu.stratosphere.sopremo.cleansing.similarity;
-import static eu.stratosphere.sopremo.JsonUtil.createObjectNode;
 import junit.framework.Assert;
 
 import org.junit.Test;
 
 import uk.ac.shef.wit.simmetrics.similaritymetrics.JaroWinkler;
+import eu.stratosphere.sopremo.EqualCloneTest;
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.JsonUtil;
-import eu.stratosphere.sopremo.SopremoTest;
 import eu.stratosphere.sopremo.cleansing.similarity.set.MongeElkanSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity_condition.SimmetricFunction;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.PathExpression;
 import eu.stratosphere.sopremo.type.DoubleNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 import eu.stratosphere.sopremo.type.ObjectNode;
 
-public class MongeElkanSimilarityTest extends SopremoTest<MongeElkanSimilarity> {
+public class MongeElkanSimilarityTest extends EqualCloneTest<MongeElkanSimilarity> {
 	@Override
 	protected MongeElkanSimilarity createDefaultInstance(int index) {
 		return new MongeElkanSimilarity(new ConstantExpression(index), new InputSelection(0), new InputSelection(1));

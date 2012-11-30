@@ -12,34 +12,49 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.fusion;
+package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import java.io.IOException;
+
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * <tt>[{attr1: "val1_1", attr2: "val2_1"}, {attr1: "val1_2", attr2: "val2_2"}]</tt> <br />
- * <tt>-&gt; {attr1: ["val1_1", "val1_2"], attr2: ["val2_1", "val2_2"]}</tt>
- * 
- * @author Arvid Heise
+ * @author arv
+ *
  */
-public class UnionObjects extends EvaluationExpression {
-
+public final class NoPreselection extends Preselection {
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -4998967360875190779L;
+	private static final long serialVersionUID = -8632780096174691250L;
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode,
-	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public IJsonNode evaluate(IJsonNode node, IJsonNode target, EvaluationContext context) {
-		IArrayNode
-		return null;
+	public void appendAsString(Appendable appendable) throws IOException {
 	}
 
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#clone()
+	 */
+	@Override
+	public NoPreselection clone() {
+		return (NoPreselection) super.clone();
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return this;
+	}
+	
+	@Override
+	public boolean shouldProcess(IJsonNode left, IJsonNode right) {
+		return true;
+	}
 }

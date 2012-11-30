@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import de.hpi.fgis.dude.junit.comparator.SimilarityBaseTest;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.cleansing.similarity.SimilarityBaseTest;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 
 /**

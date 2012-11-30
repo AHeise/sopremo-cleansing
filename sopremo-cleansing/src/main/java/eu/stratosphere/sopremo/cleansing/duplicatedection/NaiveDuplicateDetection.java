@@ -2,8 +2,8 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 import java.util.List;
 
-import eu.stratosphere.nephele.configuration.Configuration;
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -22,13 +22,13 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 	/*
 	 * (non-Javadoc)
 	 * @see
-	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#addDuplicateImplementation
-	 * (java.util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#getImplementation(java
+	 * .util.List, java.util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison,
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateComparison comparison,
-			EvaluationContext context) {
+	protected Operator<?> getImplementation(List<Operator<?>> inputs, List<EvaluationExpression> list,
+			CandidateComparison comparison, EvaluationContext context) {
 		return new DirectNaiveDuplicateDetection().withComparison(comparison).withInputs(inputs);
 	}
 
@@ -42,18 +42,6 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 
 		public static class Implementation extends SopremoCross {
 			private CandidateComparison comparison;
-
-			/*
-			 * (non-Javadoc)
-			 * @see
-			 * eu.stratosphere.sopremo.pact.SopremoCross#open(eu.stratosphere
-			 * .nephele.configuration.Configuration)
-			 */
-			@Override
-			public void open(Configuration parameters) throws Exception {
-				super.open(parameters);
-				this.comparison.setContext(getContext());
-			}
 
 			@Override
 			protected void cross(IJsonNode left, IJsonNode right, JsonCollector collector) {

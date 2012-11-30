@@ -18,9 +18,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.CachingExpression;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -33,15 +33,15 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	 */
 	private static final long serialVersionUID = 3168384409276920868L;
 
-	private final CachingExpression<NodeType> leftExpression, rightExpression;
+	private final PathSegmentExpression leftExpression, rightExpression;
 
 	private final Similarity<NodeType> actualSimilarity;
 
-	public PathSimilarity(EvaluationExpression leftExpression, Similarity<NodeType> actualSimilarity,
-			EvaluationExpression rightExpression) {
-		this.leftExpression = CachingExpression.of(leftExpression, actualSimilarity.getExpectedType());
+	public PathSimilarity(PathSegmentExpression leftExpression, Similarity<NodeType> actualSimilarity,
+			PathSegmentExpression rightExpression) {
+		this.leftExpression = leftExpression;
 		this.actualSimilarity = actualSimilarity;
-		this.rightExpression = CachingExpression.of(rightExpression, actualSimilarity.getExpectedType());
+		this.rightExpression = rightExpression;
 	}
 
 	/*
@@ -71,12 +71,21 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 		return Collections.singletonList(this.actualSimilarity);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new PathSimilarity<NodeType>(leftExpression.clone(), actualSimilarity.clone(), rightExpression.clone());
+	}
+
 	/**
 	 * Returns the leftExpression.
 	 * 
 	 * @return the leftExpression
 	 */
-	public CachingExpression<NodeType> getLeftExpression() {
+	public PathSegmentExpression getLeftExpression() {
 		return this.leftExpression;
 	}
 
@@ -85,7 +94,7 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	 * 
 	 * @return the rightExpression
 	 */
-	public CachingExpression<NodeType> getRightExpression() {
+	public PathSegmentExpression getRightExpression() {
 		return this.rightExpression;
 	}
 
@@ -105,14 +114,14 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	 * eu.stratosphere.sopremo.type.IJsonNode)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2, EvaluationContext context) {
-		final NodeType left = this.leftExpression.evaluate(node1, context);
+	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+		final NodeType left = (NodeType) this.leftExpression.evaluate(node1);
 		if (left.isMissing())
 			return 0;
 		// two missing nodes are still not similar in contrast to two null nodes
-		final NodeType right = this.rightExpression.evaluate(node2, context);
+		final NodeType right = (NodeType) this.rightExpression.evaluate(node2);
 		if (right.isMissing())
 			return 0;
-		return this.actualSimilarity.getSimilarity(left, right, context);
+		return this.actualSimilarity.getSimilarity(left, right);
 	}
 }

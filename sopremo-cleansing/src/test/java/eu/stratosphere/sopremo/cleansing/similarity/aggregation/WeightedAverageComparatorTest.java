@@ -27,12 +27,6 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-import de.hpi.fgis.dude.util.data.IJsonNode;
-import de.hpi.fgis.dude.util.data.IJsonNodePair;
-import de.hpi.fgis.dude.util.data.json.JsonRecord;
-import eu.stratosphere.sopremo.cleansing.similarity.aggregation.WeightedAverageComparator;
-import eu.stratosphere.sopremo.cleansing.similarity.text.ConstantComparator;
-
 /**
  * Tests the {@link WeightedAverageComparator} class.
  * 

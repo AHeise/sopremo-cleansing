@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.fusion;
 
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
@@ -16,8 +17,16 @@ public class DefaultValueResolution extends ConflictResolution {
 	}
 
 	@Override
-	public void fuse(final IArrayNode values, final double[] weights, final FusionContext context) {
+	public void fuse(final IArrayNode values) {
 		values.clear();
 		values.add(this.defaultValue);
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
+	 */
+	@Override
+	protected EvaluationExpression createCopy() {
+		return new DefaultValueResolution(this.defaultValue.clone());
 	}
 }

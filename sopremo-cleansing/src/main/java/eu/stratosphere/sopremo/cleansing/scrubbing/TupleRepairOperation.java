@@ -15,33 +15,20 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * @author Arvid Heise
  */
-public abstract class AbstractRuleFactory implements RuleFactory {
-	private Class<?> ruleType;
+public abstract class TupleRepairOperation extends EvaluationExpression {
 
-	/**
-	 * Initializes AbstractRuleFactory.
+	public abstract IJsonNode fix(IJsonNode value, IJsonNode target, ValidationContext context);
+
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode)
 	 */
-	public AbstractRuleFactory(Class<?> ruleType) {
-		this.ruleType = ruleType;
-	}
-
-	/**
-	 * Initializes AbstractRuleFactory.
-	 */
-	public AbstractRuleFactory() {
-		this(null);
-	}
-
 	@Override
-	public EvaluationExpression createRule(EvaluationExpression expression, RuleContext context) {
-		if (this.ruleType != null && this.ruleType.isInstance(expression))
-			return expression;
-		return this.transform(expression, context);
+	public IJsonNode evaluate(IJsonNode node) {
+		return null;
 	}
-
-	protected abstract EvaluationExpression transform(EvaluationExpression expression, RuleContext context );
 }

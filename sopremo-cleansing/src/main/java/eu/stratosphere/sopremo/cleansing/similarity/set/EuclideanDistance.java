@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
@@ -47,7 +47,7 @@ public class EuclideanDistance extends SetSimilarity {
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2, EvaluationContext context) {
+	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2) {
 		final Object2IntMap<IJsonNode> termFrequencies1 = getTermFrequencies(node1);
 		final Object2IntMap<IJsonNode> termFrequencies2 = getTermFrequencies(node2);
 
@@ -62,5 +62,13 @@ public class EuclideanDistance extends SetSimilarity {
 		final double maxSq = node1.size() * node1.size() + node2.size() * node2.size();
 
 		return Math.pow(distanceSq / maxSq, 0.5);
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new EuclideanDistance();
 	}
 }

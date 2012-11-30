@@ -16,8 +16,8 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 
 import java.util.Map.Entry;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IObjectNode;
@@ -44,8 +44,16 @@ public class ValueTreeContains extends BooleanExpression {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public IJsonNode evaluate(IJsonNode node, IJsonNode target, EvaluationContext context) {
+	public BooleanNode evaluate(IJsonNode node) {
 		return BooleanNode.valueOf(isContainedIn(node));
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
+	 */
+	@Override
+	protected EvaluationExpression createCopy() {
+		return new ValueTreeContains(this.valueToFind);
 	}
 
 	/**

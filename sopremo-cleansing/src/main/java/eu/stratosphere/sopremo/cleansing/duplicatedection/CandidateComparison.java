@@ -19,12 +19,12 @@ import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javolution.text.TypeFormat;
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.ISerializableSopremoType;
+import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
-import eu.stratosphere.sopremo.expressions.CachingExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.pact.JsonCollector;
@@ -43,37 +43,6 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 */
 	private static final long serialVersionUID = -5051852872132228936L;
 
-	/**
-	 * @author Arvid Heise
-	 */
-	private final class OrderedPairsFilter extends AbstractSopremoType implements Preselection {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = -3698801486437497443L;
-
-		private final CachingExpression<IJsonNode> leftExp = CachingExpression.ofAny(getLeftIdProjection()),
-				rightExp = CachingExpression.ofAny(getRightIdProjection());
-
-		@Override
-		public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-			return this.leftExp.evaluate(left, CandidateComparison.this.context).compareTo(
-					this.rightExp.evaluate(right, CandidateComparison.this.context)) < 0;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * eu.stratosphere.sopremo.ISopremoType#toString(java.lang.StringBuilder
-		 * )
-		 */
-		@Override
-		public void toString(StringBuilder builder) {
-			builder.append("Ordered pairs filter");
-		}
-	}
-
 	private Similarity<IJsonNode> similarityMeasure;
 
 	private double threshold;
@@ -88,8 +57,6 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 
 	private transient IArrayNode result = new ArrayNode(NullNode.getInstance(), NullNode.getInstance());
 
-	private EvaluationContext context;
-
 	/**
 	 * Returns the value of innerSource.
 	 * 
@@ -103,7 +70,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of innerSource to the given value.
 	 * 
 	 * @param innerSource
-	 *            the innerSource to set
+	 *        the innerSource to set
 	 */
 	public void setInnerSource(boolean innerSource) {
 		this.innerSource = innerSource;
@@ -122,7 +89,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of outputSimilarity to the given value.
 	 * 
 	 * @param outputSimilarity
-	 *            the outputSimilarity to set
+	 *        the outputSimilarity to set
 	 */
 	public void setOutputSimilarity(boolean outputSimilarity) {
 		if (this.outputSimilarity != outputSimilarity) {
@@ -134,11 +101,11 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 				this.result.remove(2);
 		}
 	}
-	
+
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 		ois.defaultReadObject();
 		this.result = new ArrayNode(NullNode.getInstance(), NullNode.getInstance());
-		if(this.outputSimilarity)
+		if (this.outputSimilarity)
 			this.result.add(new DoubleNode());
 	}
 
@@ -146,7 +113,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of outputSimilarity to the given value.
 	 * 
 	 * @param outputSimilarity
-	 *            the outputSimilarity to set
+	 *        the outputSimilarity to set
 	 * @return this
 	 */
 	public CandidateComparison withOutputSimilarity(boolean outputSimilarity) {
@@ -167,7 +134,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of similarityMeasure to the given value.
 	 * 
 	 * @param similarityMeasure
-	 *            the similarityMeasure to set
+	 *        the similarityMeasure to set
 	 */
 	@SuppressWarnings("unchecked")
 	public void setSimilarityMeasure(Similarity<?> similarityMeasure) {
@@ -181,7 +148,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of similarityMeasure to the given value.
 	 * 
 	 * @param similarityMeasure
-	 *            the similarityMeasure to set
+	 *        the similarityMeasure to set
 	 * @return this
 	 */
 	public CandidateComparison withSimilarityMeasure(Similarity<?> similarityMeasure) {
@@ -202,7 +169,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of threshold to the given value.
 	 * 
 	 * @param threshold
-	 *            the threshold to set
+	 *        the threshold to set
 	 */
 	public void setThreshold(double threshold) {
 		if (threshold < 0 || threshold > 1)
@@ -215,7 +182,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of threshold to the given value.
 	 * 
 	 * @param threshold
-	 *            the threshold to set
+	 *        the threshold to set
 	 * @return this
 	 */
 	public CandidateComparison withThreshold(double threshold) {
@@ -236,7 +203,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of resultProjection to the given value.
 	 * 
 	 * @param resultProjection
-	 *            the resultProjection to set
+	 *        the resultProjection to set
 	 */
 	public void setResultProjection(EvaluationExpression resultProjection) {
 		if (resultProjection == null)
@@ -249,7 +216,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of resultProjection to the given value.
 	 * 
 	 * @param resultProjection
-	 *            the resultProjection to set
+	 *        the resultProjection to set
 	 * @return
 	 */
 	public CandidateComparison withResultProjection(EvaluationExpression resultProjection) {
@@ -272,7 +239,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of idProjection to the given value.
 	 * 
 	 * @param idProjection
-	 *            the idProjection to set
+	 *        the idProjection to set
 	 */
 	public void setIdProjection(EvaluationExpression idProjection) {
 		if (idProjection == null)
@@ -280,39 +247,17 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 
 		this.leftIdProjection = this.rightIdProjection = idProjection;
 	}
-	
+
 	/**
 	 * Sets the value of idProjection to the given value.
 	 * 
 	 * @param idProjection
-	 *            the idProjection to set
+	 *        the idProjection to set
 	 * @return this
 	 */
 	public CandidateComparison withIdProjection(EvaluationExpression idProjection) {
 		setIdProjection(idProjection);
 		return this;
-	}
-
-	/**
-	 * Returns the value of context.
-	 * 
-	 * @return the context
-	 */
-	public EvaluationContext getContext() {
-		return this.context;
-	}
-
-	/**
-	 * Sets the value of context to the given value.
-	 * 
-	 * @param context
-	 *            the context to set
-	 */
-	public void setContext(EvaluationContext context) {
-		if (context == null)
-			throw new NullPointerException("context must not be null");
-
-		this.context = context;
 	}
 
 	/**
@@ -328,7 +273,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of leftIdProjection to the given value.
 	 * 
 	 * @param leftIdProjection
-	 *            the leftIdProjection to set
+	 *        the leftIdProjection to set
 	 */
 	public void setLeftIdProjection(EvaluationExpression leftIdProjection) {
 		if (leftIdProjection == null)
@@ -350,7 +295,7 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	 * Sets the value of rightIdProjection to the given value.
 	 * 
 	 * @param rightIdProjection
-	 *            the rightIdProjection to set
+	 *        the rightIdProjection to set
 	 */
 	public void setRightIdProjection(EvaluationExpression rightIdProjection) {
 		if (rightIdProjection == null)
@@ -365,16 +310,29 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 
 	/*
 	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#clone()
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
 	 */
 	@Override
-	public CandidateComparison clone() {
-		try {
-			return (CandidateComparison) super.clone();
-		} catch (CloneNotSupportedException e) {
-			return null;
-		}
+	protected AbstractSopremoType createCopy() {
+		return new CandidateComparison();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
+	 */
+	@Override
+	public void copyPropertiesFrom(ISopremoType original) {
+		super.copyPropertiesFrom(original);
+		CandidateComparison comparison = (CandidateComparison) original;
+		this.innerSource = comparison.innerSource;
+		this.leftIdProjection = comparison.leftIdProjection.clone();
+		this.outputSimilarity = comparison.outputSimilarity;
+		this.preselect = (Preselection) comparison.preselect.clone();
+		this.resultProjection = comparison.resultProjection.clone();
+		this.rightIdProjection = comparison.rightIdProjection.clone();
+		this.similarityMeasure = comparison.similarityMeasure.clone();
+		this.threshold = comparison.threshold;
 	}
 
 	@Override
@@ -383,29 +341,15 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 			if (getLeftIdProjection() == null || getRightIdProjection() == null)
 				throw new IllegalStateException("Requires id projection");
 
-			this.preselect = new OrderedPairsFilter();
+			this.preselect = new OrderedPairsFilter(this);
 		} else
-			this.preselect = new Preselection() {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = -8632780096174691250L;
-
-				@Override
-				public void toString(StringBuilder builder) {
-				}
-
-				@Override
-				public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-					return true;
-				}
-			};
+			this.preselect = new NoPreselection();
 	}
 
 	public void process(IJsonNode left, IJsonNode right, JsonCollector collector) {
 		if (!this.preselect.shouldProcess(left, right))
 			return;
-		double similarity = this.similarityMeasure.getSimilarity(left, right, this.context);
+		double similarity = this.similarityMeasure.getSimilarity(left, right);
 		if (similarity >= this.threshold) {
 			fillResult(this.result, left, right, similarity);
 			collector.collect(this.result);
@@ -413,8 +357,8 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 	}
 
 	protected void fillResult(IArrayNode result, IJsonNode left, IJsonNode right, double similarity) {
-		result.set(0, this.resultProjection.evaluate(left, result.get(0), this.context));
-		result.set(1, this.resultProjection.evaluate(right, result.get(1), this.context));
+		result.set(0, this.resultProjection.evaluate(left));
+		result.set(1, this.resultProjection.evaluate(right));
 		if (this.outputSimilarity)
 			((DoubleNode) result.get(2)).setValue(similarity);
 	}
@@ -426,25 +370,33 @@ public class CandidateComparison extends AbstractSopremoType implements ISeriali
 
 	/*
 	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void toString(StringBuilder builder) {
-		builder.
-				append("CandidateComparison [similarityMeasure=").append(this.similarityMeasure).
-				append(", threshold=").append(this.threshold).
-				append(", resultProjection=").append(this.resultProjection).
-				append(", idProjection=").append(this.leftIdProjection).append("|").append(this.rightIdProjection).
-				append(", outputSimilarity=").append(this.outputSimilarity).append("]");
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("CandidateComparison [similarityMeasure=");
+		this.similarityMeasure.appendAsString(appendable);
+
+		appendable.append(", threshold=");
+		TypeFormat.format(this.threshold, appendable);
+
+		appendable.append(", resultProjection=");
+		this.resultProjection.appendAsString(appendable);
+		appendable.append(", idProjection=");
+		this.leftIdProjection.appendAsString(appendable);
+		appendable.append("|");
+		this.rightIdProjection.appendAsString(appendable);
+		appendable.append(", outputSimilarity=");
+		TypeFormat.format(this.outputSimilarity, appendable);
+		appendable.append("]");
 	}
 
 	public List<Operator<?>> addEnumeration(List<? extends Operator<?>> inputs) {
 		List<Operator<?>> outputs = new ArrayList<Operator<?>>();
 		for (int index = 0; index < inputs.size(); index++) {
 			final GlobalEnumeration globalEnumeration = new GlobalEnumeration().
-					withIdGeneration(GlobalEnumeration.LONG_COMBINATION).
-					withInputs(inputs.get(index));
+				withIdGeneration(GlobalEnumeration.LONG_COMBINATION).
+				withInputs(inputs.get(index));
 			outputs.add(globalEnumeration);
 
 			if (index == 0)

@@ -24,13 +24,16 @@
 package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleIterator;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.doubles.DoubleListIterator;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * <code>HarmonicMeanSimilarity</code> calculates the similarities of each collected Similarity and returns the weighted
@@ -72,11 +75,19 @@ public class WeightedMeanSimilarity extends AggregationSimilarity {
 		this.weightSum = similarities.length;
 	}
 
-	public WeightedMeanSimilarity(Object2DoubleMap<Similarity<?>> similarities) {
+	public WeightedMeanSimilarity(Collection<? extends Similarity<?>> similarities, Collection<Double> weights) {
+		super(similarities);
+		if (similarities.size() != weights.size())
+			throw new IllegalArgumentException();
+		this.weights.addAll(weights);
+		final DoubleListIterator iterator = this.weights.iterator();
+		while (iterator.hasNext())
+			this.weightSum += iterator.nextDouble();
+	}
+
+	public WeightedMeanSimilarity(Map<Similarity<?>, Double> similarities) {
 		super(similarities.keySet());
-		final DoubleIterator weightIter = similarities.values().iterator();
-		while (weightIter.hasNext()) {
-			final double weight = weightIter.nextDouble();
+		for (Double weight : similarities.values()) {
 			this.weights.add(weight);
 			this.weightSum += weight;
 		}
@@ -109,11 +120,30 @@ public class WeightedMeanSimilarity extends AggregationSimilarity {
 
 	/*
 	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new WeightedMeanSimilarity(SopremoUtil.deepClone(getSubsimilarities()), weights);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
+	 */
+	@Override
+	public void copyPropertiesFrom(ISopremoType original) {
+		super.copyPropertiesFrom(original);
+		this.m = ((WeightedMeanSimilarity) original).getM();
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.aggregation.AggregationSimilarity#aggregateSimilarity(double[],
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities, EvaluationContext context) {
+	protected double aggregateSimilarity(double[] individualSimilarities) {
 		double mean = 0;
 		for (int index = 0; index < individualSimilarities.length; index++)
 			mean += Math.pow(individualSimilarities[index] * this.weights.get(index), this.m);

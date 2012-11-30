@@ -5,13 +5,19 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<artifactId>sopremo-package</artifactId>
 		<groupId>eu.stratosphere</groupId>
-		<version>0.2</version>
+		<artifactId>stratosphere</artifactId>
+		<version>0.2.1</version>
 	</parent>
+	
+	<properties>
+		<sopremo.version>0.2.1</sopremo.version>
+		<meteor.version>0.2.1</meteor.version>
+	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>
 	<name>sopremo-cleansing</name>
+	<version>0.1</version>
 
 	<packaging>jar</packaging>
 
@@ -25,13 +31,13 @@
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-base</artifactId>
-			<version>${project.version}</version>
+			<version>${sopremo.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-common</artifactId>
-			<version>${project.version}</version>
+			<version>${sopremo.version}</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
@@ -39,7 +45,15 @@
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
-			<version>${project.version}</version>
+			<version>${meteor.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>nl.jqno.equalsverifier</groupId>
+			<artifactId>equalsverifier</artifactId>
+			<version>1.0.1</version>
+			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

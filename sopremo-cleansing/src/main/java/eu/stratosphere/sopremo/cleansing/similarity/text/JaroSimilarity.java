@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 
 /**
  * <code>JaroSimilarity</code> compares two {@link IJsonNode}s based on the Jaro Distance attribute.
@@ -56,7 +56,7 @@ public class JaroSimilarity extends TextSimilarity {
 	 * java.lang.CharSequence, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context) {
+	public double getSimilarity(CharSequence text1, CharSequence text2) {
 		this.leftMatched.clear();
 		this.rightMatched.clear();
 
@@ -103,5 +103,13 @@ public class JaroSimilarity extends TextSimilarity {
 				}
 			}
 		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new JaroWinklerSimilarity();
 	}
 }

@@ -21,7 +21,7 @@
  * 
  */
 
-package de.hpi.fgis.dude.junit.comparator;
+package eu.stratosphere.sopremo.cleansing.similarity;
 
 import junit.framework.Assert;
 
@@ -32,8 +32,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -41,6 +39,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  * <code>SimilarityBaseTest</code> provides {@link IJsonNode} test instances that can be used by all comparator tests.
  * 
  * @author Matthias Pohl
+ * @author Arvid Heise
  */
 @Ignore
 @RunWith(Parameterized.class)
@@ -79,14 +78,14 @@ public abstract class SimilarityBaseTest {
 			this.expected = -this.expected - 1;
 		}
 		try {
-			Assert.assertEquals(this.expected, similarity.getSimilarity(this.node1, this.node2, this.context), 0.0001);
+			Assert.assertEquals(this.expected, similarity.getSimilarity(this.node1, this.node2), 0.0001);
 		} catch (Exception e) {
 			if (!Double.isNaN(this.expected))
 				throw e;
 		}
 
 		if (similarity.isSymmetric() && !Double.isNaN(this.expected))
-			Assert.assertEquals("Not symmetric", this.expected, similarity.getSimilarity(this.node2, this.node1,
-				this.context), 0.0001);
+			Assert.assertEquals("Not symmetric", this.expected, similarity.getSimilarity(this.node2, this.node1),
+				0.0001);
 	}
 }

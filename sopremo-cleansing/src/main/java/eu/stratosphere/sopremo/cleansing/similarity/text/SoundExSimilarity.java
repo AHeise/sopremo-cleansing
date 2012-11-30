@@ -26,7 +26,7 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.blocking.SoundEx;
 
 /**
@@ -56,7 +56,7 @@ public class SoundExSimilarity extends TextSimilarity {
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context) {
+	public double getSimilarity(CharSequence text1, CharSequence text2) {
 		if (text1.length() == 0 && text2.length() == 0)
 			return 1.0;
 		if (text1.length() == 0 || text2.length() == 0)
@@ -71,5 +71,13 @@ public class SoundExSimilarity extends TextSimilarity {
 			return 1.0;
 
 		return 0.0;
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new SoundExSimilarity();
 	}
 }

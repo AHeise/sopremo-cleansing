@@ -17,12 +17,14 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 import it.unimi.dsi.fastutil.objects.Object2DoubleArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
@@ -37,7 +39,11 @@ public class BeliefResolution extends ConflictResolution {
 	 */
 	private static final long serialVersionUID = -295135181065628313L;
 
-	private final EvaluationExpression[] evidences;
+	private final List<EvaluationExpression> evidences;
+
+	public BeliefResolution(List<EvaluationExpression> evidences) {
+		this.evidences = evidences;
+	}
 
 	/**
 	 * Initializes BelieveResolution.
@@ -45,7 +51,16 @@ public class BeliefResolution extends ConflictResolution {
 	 * @param evidences
 	 */
 	public BeliefResolution(EvaluationExpression... evidences) {
-		this.evidences = evidences;
+		this(Arrays.asList(evidences));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
+	 */
+	@Override
+	protected EvaluationExpression createCopy() {
+		return new BeliefResolution(SopremoUtil.deepClone(this.evidences));
 	}
 
 	/*
@@ -54,13 +69,13 @@ public class BeliefResolution extends ConflictResolution {
 	 * eu.stratosphere.sopremo.cleansing.fusion.FusionContext)
 	 */
 	@Override
-	public void fuse(IArrayNode values, double[] weights, FusionContext context) {
-		List<IJsonNode> mostProbableValues = getFinalMassFunction(values, weights, context).getMostProbableValues();
+	public void fuse(IArrayNode values) {
+		final IArrayNode mostProbableValues = getFinalMassFunction(values, getWeights()).getMostProbableValues();
 		values.clear();
-		values.addAll(mostProbableValues);
+		values.add(mostProbableValues);
 	}
 
-	protected BeliefMassFunction getFinalMassFunction(IArrayNode values, double[] weights, FusionContext context) {
+	protected BeliefMassFunction getFinalMassFunction(IArrayNode values, double[] weights) {
 		Deque<BeliefMassFunction> massFunctions = new LinkedList<BeliefMassFunction>();
 
 		// TODO: add support for arrays
@@ -69,8 +84,7 @@ public class BeliefResolution extends ConflictResolution {
 				massFunctions.add(new BeliefMassFunction(values.get(index), weights[index]));
 
 		while (massFunctions.size() > 1)
-			massFunctions.addFirst(massFunctions.removeFirst().combine(massFunctions.removeFirst(), this.evidences,
-				context));
+			massFunctions.addFirst(massFunctions.removeFirst().combine(massFunctions.removeFirst(), this.evidences));
 
 		return massFunctions.getFirst();
 	}
@@ -94,21 +108,23 @@ public class BeliefResolution extends ConflictResolution {
 		public BeliefMassFunction() {
 		}
 
+		private final transient IArrayNode maxValues = new ArrayNode(new LinkedList<IJsonNode>());
+
 		/**
 		 * @return
 		 */
-		public List<IJsonNode> getMostProbableValues() {
+		public IArrayNode getMostProbableValues() {
 			double maxBelief = 0;
-			List<IJsonNode> maxValues = new LinkedList<IJsonNode>();
+			this.maxValues.clear();
 			for (Object2DoubleMap.Entry<IJsonNode> entry : this.valueMasses.object2DoubleEntrySet()) {
 				if (entry.getDoubleValue() > maxBelief) {
-					maxValues.clear();
-					maxValues.add(entry.getKey());
+					this.maxValues.clear();
+					this.maxValues.add(entry.getKey());
 					maxBelief = entry.getDoubleValue();
 				} else if (entry.getDoubleValue() == maxBelief)
-					maxValues.add(entry.getKey());
+					this.maxValues.add(entry.getKey());
 			}
-			return maxValues;
+			return this.maxValues;
 		}
 
 		/**
@@ -123,8 +139,7 @@ public class BeliefResolution extends ConflictResolution {
 		/**
 		 * @param removeLast
 		 */
-		public BeliefMassFunction combine(BeliefMassFunction other,
-				EvaluationExpression[] evidenceExpressions, FusionContext context) {
+		public BeliefMassFunction combine(BeliefMassFunction other, List<EvaluationExpression> evidenceExpressions) {
 			BeliefMassFunction combined = new BeliefMassFunction();
 
 			Object2DoubleMap<IJsonNode> nominators1 = new Object2DoubleArrayMap<IJsonNode>();
@@ -138,10 +153,8 @@ public class BeliefResolution extends ConflictResolution {
 					IJsonNode value1 = entry1.getKey();
 					IJsonNode value2 = entry2.getKey();
 					boolean equal = value1.equals(value2);
-					boolean isFirstEvidenceForSecond = equal
-						|| isEvidence(value1, value2, evidenceExpressions, context);
-					boolean isSecondEvidenceForFirst = equal
-						|| isEvidence(value2, value1, evidenceExpressions, context);
+					boolean isFirstEvidenceForSecond = equal || isEvidence(value1, value2, evidenceExpressions);
+					boolean isSecondEvidenceForFirst = equal || isEvidence(value2, value1, evidenceExpressions);
 
 					double mass1 = entry1.getDoubleValue();
 					double mass2 = entry2.getDoubleValue();
@@ -168,16 +181,19 @@ public class BeliefResolution extends ConflictResolution {
 			return combined;
 		}
 
-		private boolean isEvidence(IJsonNode node1, IJsonNode node2, EvaluationExpression[] evidenceExpressions,
-				FusionContext context) {
+		private final IArrayNode array = new ArrayNode(2);
+
+		private boolean isEvidence(IJsonNode node1, IJsonNode node2, List<EvaluationExpression> evidenceExpressions) {
 			if (node1 == ALL)
 				return true;
 
 			if (node2 == ALL)
 				return false;
 
-			for (int index = 0; index < evidenceExpressions.length; index++)
-				if (evidenceExpressions[index].evaluate(new ArrayNode(node1, node2), null, context) == BooleanNode.TRUE)
+			this.array.set(0, node1);
+			this.array.set(1, node2);
+			for (EvaluationExpression evidenceExpression : evidenceExpressions)
+				if (evidenceExpression.evaluate(this.array) == BooleanNode.TRUE)
 					return true;
 
 			return false;
@@ -198,12 +214,12 @@ public class BeliefResolution extends ConflictResolution {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.scrubbing.CleansingRule#toString(java.lang.StringBuilder)
+	 * @see eu.stratosphere.sopremo.cleansing.scrubbing.CleansingRule#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void toString(StringBuilder builder) {
-		super.toString(builder);
-		builder.append(" with evidences ").append(Arrays.asList(this.evidences));
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		SopremoUtil.append(appendable, " with evidences ", this.evidences);
 	}
 
 	@Override
@@ -221,7 +237,7 @@ public class BeliefResolution extends ConflictResolution {
 		if (!super.equals(obj))
 			return false;
 		BeliefResolution other = (BeliefResolution) obj;
-		return Arrays.equals(this.evidences, other.evidences);
+		return this.evidences.equals(other.evidences);
 	}
 
 }

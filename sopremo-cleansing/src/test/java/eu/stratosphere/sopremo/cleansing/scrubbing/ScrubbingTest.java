@@ -1,7 +1,5 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
-import static eu.stratosphere.sopremo.JsonUtil.createObjectNode;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -11,11 +9,12 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
+import eu.stratosphere.sopremo.cleansing.Scrubbing;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
-import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.IntNode;
 
 @RunWith(Parameterized.class)
 public class ScrubbingTest {

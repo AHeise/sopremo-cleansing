@@ -9,7 +9,7 @@ public abstract class ValueCorrection extends CleansingRule<ValidationContext> {
 	private static final long serialVersionUID = 5426600708331727317L;
 
 	@Override
-	public IJsonNode evaluateRule(final IJsonNode node, IJsonNode target, final ValidationContext context) {
+	public IJsonNode evaluateRule(final IJsonNode node) {
 		return this.fix(node,target, context);
 	}
 

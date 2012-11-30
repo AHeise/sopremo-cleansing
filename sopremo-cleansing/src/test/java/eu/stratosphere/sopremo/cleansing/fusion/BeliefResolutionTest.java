@@ -24,10 +24,9 @@ import eu.stratosphere.sopremo.cleansing.fusion.BeliefResolution.BeliefMassFunct
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.pact.CharSequenceUtil;
 import eu.stratosphere.sopremo.type.ArrayNode;
-import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.JsonUtil;
 import eu.stratosphere.sopremo.type.TextNode;
 
 /**
@@ -79,7 +78,7 @@ public class BeliefResolutionTest {
 
 		TextNode john = new TextNode("John"), j = new TextNode("J."), bill = new TextNode("Bill");
 		ArrayNode choices = new ArrayNode(john, j, bill);
-		beliefResolution.fuse(choices, new double[] { 0.8, 0.7, 0.9 }, new FusionContext(new EvaluationContext()));
+		beliefResolution.fuse(choices);
 
 		Assert.assertEquals(new ArrayNode(john), choices);
 	}

@@ -15,7 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.similarity;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.PathExpression;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -28,16 +28,16 @@ public class SimilarityFactory {
 	public Similarity<?> create(final Similarity<?> similarity, final EvaluationExpression leftPath,
 			final EvaluationExpression rightPath, final boolean coercion) {
 		Similarity<?> baseSimilarity = similarity;
-		EvaluationExpression left = leftPath;
-		EvaluationExpression right = rightPath;
+		PathSegmentExpression left = (PathSegmentExpression) leftPath;
+		PathSegmentExpression right = (PathSegmentExpression) rightPath;
 		boolean shouldCoerce = coercion;
 
 		while (true) {
 			if (baseSimilarity instanceof PathSimilarity<?>) {
 				final PathSimilarity<?> pathSimilarity = (PathSimilarity<?>) baseSimilarity;
 				baseSimilarity = pathSimilarity.getActualSimilarity();
-				left = PathExpression.wrapIfNecessary(pathSimilarity.getLeftExpression(), left);
-				right = PathExpression.wrapIfNecessary(pathSimilarity.getRightExpression(), right);
+				left = pathSimilarity.getLeftExpression().clone().withTail(left);
+				right = pathSimilarity.getRightExpression().clone().withTail(left);
 			} else if (baseSimilarity instanceof CoercingSimilarity) {
 				baseSimilarity = ((CoercingSimilarity) baseSimilarity).getActualSimilarity();
 				shouldCoerce = true;

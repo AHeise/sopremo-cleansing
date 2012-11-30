@@ -23,8 +23,12 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.text;
 
+import java.io.IOException;
+
 import uk.ac.shef.wit.simmetrics.similaritymetrics.AbstractStringMetric;
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
+import eu.stratosphere.util.reflect.ReflectUtil;
 
 /**
  * Basic adaptor for all simmetrics metrics.
@@ -58,8 +62,17 @@ public abstract class SimmetricsSimilarity<M extends AbstractStringMetric> exten
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2, EvaluationContext context) {
+	public double getSimilarity(CharSequence text1, CharSequence text2) {
 		return this.metric.getSimilarity(text1.toString(), text2.toString());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return ReflectUtil.newInstance(getClass());
 	}
 
 	@Override
@@ -93,11 +106,11 @@ public abstract class SimmetricsSimilarity<M extends AbstractStringMetric> exten
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#toString(java.lang.StringBuilder)
+	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void toString(StringBuilder builder) {
-		super.toString(builder);
-		builder.append(" [metric=").append(this.metric).append("]");
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		SopremoUtil.append(appendable, " [metric=", this.metric, "]");
 	}
 }

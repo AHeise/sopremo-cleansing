@@ -7,7 +7,6 @@ import org.junit.runners.Parameterized;
 
 import eu.stratosphere.pact.common.type.KeyValuePair;
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;

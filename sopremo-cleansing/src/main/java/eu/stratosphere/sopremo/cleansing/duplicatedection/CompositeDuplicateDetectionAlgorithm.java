@@ -14,9 +14,14 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.base.Union;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoModule;
@@ -25,8 +30,7 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
  * @author Arvid Heise
  */
 public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends CompositeDuplicateDetectionAlgorithm<ImplType>>
-		extends
-		CompositeOperator<ImplType> {
+		extends CompositeOperator<ImplType> {
 	/**
 	 * 
 	 */
@@ -45,6 +49,8 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	}
 
 	private CandidateComparison comparison = new CandidateComparison();
+
+	private CandidateSelection selection = new CandidateSelection();
 
 	/**
 	 * Returns the value of comparison.
@@ -80,6 +86,39 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 		return self();
 	}
 
+	/**
+	 * Returns the selection.
+	 * 
+	 * @return the selection
+	 */
+	public CandidateSelection getSelection() {
+		return this.selection;
+	}
+
+	/**
+	 * Sets the selection to the specified value.
+	 * 
+	 * @param selection
+	 *        the selection to set
+	 */
+	public ImplType withSelection(CandidateSelection selection) {
+		setSelection(selection);
+		return self();
+	}
+
+	/**
+	 * Sets the selection to the specified value.
+	 * 
+	 * @param selection
+	 *        the selection to set
+	 */
+	public void setSelection(CandidateSelection selection) {
+		if (selection == null)
+			throw new NullPointerException("selection must not be null");
+
+		this.selection = selection;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see
@@ -89,7 +128,7 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	@Override
 	public void addImplementation(SopremoModule module, EvaluationContext context) {
 		final CandidateComparison comparison = this.getComparison();
-		
+
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<Operator<?>> inputs = (List) module.getInputs();
 		if (comparison.requiresEnumeration())
@@ -98,8 +137,20 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 		if (comparison.isInnerSource())
 			inputs.add(inputs.get(0));
 		comparison.setup();
-		module.embed(getImplementation(inputs, comparison, context));
+		module.embed(getMultipassImplementation(inputs, selection, comparison, context));
 	}
 
-	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateComparison comparison2, EvaluationContext context);
+	protected Operator<?> getMultipassImplementation(List<Operator<?>> inputs, CandidateSelection selection,
+			CandidateComparison comparison, EvaluationContext context) {
+		if (selection.getPasses().size() <= 0)
+			return getImplementation(inputs, Collections.EMPTY_LIST, comparison, context);
+
+		List<Operator<?>> passOutput = new ArrayList<Operator<?>>();
+		for (Pass pass : selection.getPasses())
+			passOutput.add(getImplementation(inputs, pass.getBlockingKey(), comparison, context));
+		return new Union().withInputs(passOutput);
+	}
+
+	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, List<EvaluationExpression> blockingKeys,
+			CandidateComparison comparison, EvaluationContext context);
 }

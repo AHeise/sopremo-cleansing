@@ -29,7 +29,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.CompoundSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
@@ -123,13 +122,13 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2, EvaluationContext context) {
+	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
 		for (int index = 0; index < this.individualSimilarities.length; index++)
-			this.individualSimilarities[index] = this.similarities.get(index).getSimilarity(node1, node2, context);
-		return this.aggregateSimilarity(this.individualSimilarities, context);
+			this.individualSimilarities[index] = this.similarities.get(index).getSimilarity(node1, node2);
+		return this.aggregateSimilarity(this.individualSimilarities);
 	}
 
-	protected abstract double aggregateSimilarity(double[] individualSimilarities, EvaluationContext context);
+	protected abstract double aggregateSimilarity(double[] individualSimilarities);
 
 	/* (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()

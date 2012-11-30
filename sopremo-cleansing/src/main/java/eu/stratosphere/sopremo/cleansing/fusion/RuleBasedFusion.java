@@ -37,7 +37,7 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 	 */
 	private static final long serialVersionUID = 5940873648636098610L;
 
-private ConflictResolution conflictResolution = new MergeRule();
+	private ConflictResolution conflictResolution = new MergeRule();
 
 	/*
 	 * (non-Javadoc)
@@ -50,33 +50,19 @@ private ConflictResolution conflictResolution = new MergeRule();
 		JsonStream pipeline = module.getInput(0);
 
 		// wrap in array
-//		pipeline = new Projection().withInputs(pipeline).withResultProjection(new UnionObjects());
-		
-			pipeline = new Projection().
-				withInputs(pipeline).
-				withResultProjection(this.conflictResolution);
-		
+		// pipeline = new Projection().withInputs(pipeline).withResultProjection(new UnionObjects());
+
+		pipeline = new Projection().
+			withInputs(pipeline).
+			withResultProjection(this.conflictResolution);
+
 		// unwrap in array
-//		pipeline = new Projection().withInputs(pipeline).withResultProjection(new arrayUn);
-		
-		pipeline = new Selection().withInputs(pipeline).withCondition(UnaryExpression.not( new ValueTreeContains(FilterRecord.Instance)));
+		// pipeline = new Projection().withInputs(pipeline).withResultProjection(new arrayUn);
+
+		pipeline = new Selection().withInputs(pipeline).withCondition(
+			UnaryExpression.not(new ValueTreeContains(FilterRecord.Instance)));
 
 		module.getOutput(0).setInput(0, pipeline);
 	}
-	
-	public static class FusionProjection extends Projection {
 
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 8789803661218267988L;
-		
-		/* (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.base.Projection#asPactModule(eu.stratosphere.sopremo.EvaluationContext)
-		 */
-		@Override
-		public PactModule asPactModule(EvaluationContext context) {
-			return super.asPactModule(new FusionContext(context));
-		}
-	}
 }

@@ -23,7 +23,7 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IArrayNode;
 
 /**
@@ -42,7 +42,15 @@ public class CosineSimilarity extends SetSimilarity {
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2, EvaluationContext context) {
+	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2) {
 		return getNumberOfCommonTokens(node1, node2) / Math.pow(node1.size(), 0.5) / Math.pow(node2.size(), 0.5);
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
+	@Override
+	protected AbstractSopremoType createCopy() {
+		return new CosineSimilarity();
 	}
 }

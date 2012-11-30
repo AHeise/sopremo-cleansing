@@ -1,20 +1,14 @@
 package eu.stratosphere.sopremo.cleansing.similarity.contentbased;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
 import org.junit.runners.Parameterized.Parameters;
 
-import de.hpi.fgis.dude.junit.comparator.SimilarityBaseTest;
-import eu.stratosphere.sopremo.cleansing.preprocessor.DocumentFrequencyPreprocessor;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.cleansing.similarity.SimilarityBaseTest;
 import eu.stratosphere.sopremo.cleansing.similarity.text.TFIDFSimilarity;
-import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * Tests the {@link TFIDFSimilarityTest} class.

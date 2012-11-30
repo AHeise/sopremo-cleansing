@@ -1,6 +1,8 @@
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import java.io.IOException;
+
+import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Asymmetric;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
@@ -48,12 +50,12 @@ public class MongeElkanSimilarity extends SetSimilarity {
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode leftValues, IArrayNode rightValues, EvaluationContext context) {
+	protected double getSetSimilarity(IArrayNode leftValues, IArrayNode rightValues) {
 		double sum = 0;
 		for (IJsonNode leftValue : leftValues) {
 			double max = 0;
 			for (IJsonNode rightValue : rightValues)
-				max = Math.max(max, this.baseMeasure.getSimilarity(leftValue, rightValue, context));
+				max = Math.max(max, this.baseMeasure.getSimilarity(leftValue, rightValue));
 			sum += max;
 		}
 
@@ -75,9 +77,21 @@ public class MongeElkanSimilarity extends SetSimilarity {
 		MongeElkanSimilarity other = (MongeElkanSimilarity) obj;
 		return this.baseMeasure.equals(other.baseMeasure);
 	}
-
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
+	 */
 	@Override
-	public void toString(StringBuilder builder) {
-		builder.append("monge elkan of").append(this.baseMeasure);
+	protected AbstractSopremoType createCopy() {
+		return new MongeElkanSimilarity(baseMeasure.clone());
+	}
+
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("monge elkan of ");
+		this.baseMeasure.appendAsString(appendable);
 	}
 }

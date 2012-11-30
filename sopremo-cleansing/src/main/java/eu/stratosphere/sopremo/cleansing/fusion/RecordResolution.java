@@ -14,16 +14,12 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
+import java.util.Map.Entry;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import eu.stratosphere.sopremo.pact.SopremoUtil;
+import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -32,7 +28,6 @@ import eu.stratosphere.sopremo.type.ObjectNode;
 
 /**
  * @author Arvid Heise
- *
  */
 public abstract class RecordResolution extends ConflictResolution {
 
@@ -40,23 +35,42 @@ public abstract class RecordResolution extends ConflictResolution {
 	 * 
 	 */
 	private static final long serialVersionUID = -5841402171573265477L;
-	
+
 	private Multimap<String, ConflictResolution> rules = HashMultimap.create();
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.fusion.ConflictResolution#fuse(eu.stratosphere.sopremo.type.IArrayNode, double[], eu.stratosphere.sopremo.cleansing.fusion.FusionContext)
+
+	private transient IObjectNode fusedRecord = new ObjectNode();
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.fusion.ConflictResolution#fuse(eu.stratosphere.sopremo.type
+	 * .IArrayNode)
 	 */
 	@Override
-	public void fuse(IArrayNode values, IJsonNode target, double[] weights, FusionContext context) {
-		IObjectNode fusedRecord = SopremoUtil.reinitializeTarget(target, ObjectNode.class);
+	public void fuse(IArrayNode values) {
+		this.fusedRecord.clear();
+
 		for (IJsonNode value : values) {
 			IObjectNode object = (IObjectNode) value;
-			for(String fieldName : object.getFieldNames()) {
-				 IJsonNode fieldValues = fusedRecord.get(fieldName);
-				if(fieldValues.isMissing()) 
-					fusedRecord.put(fieldName, fieldValues = new ArrayNode());
+			for (String fieldName : object.getFieldNames()) {
+				IJsonNode fieldValues = this.fusedRecord.get(fieldName);
+				if (fieldValues.isMissing())
+					this.fusedRecord.put(fieldName, fieldValues = new ArrayNode());
 				((IArrayNode) fieldValues).add(object.get(fieldName));
 			}
 		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.expressions.PathSegmentExpression#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType
+	 * )
+	 */
+	@Override
+	public void copyPropertiesFrom(ISopremoType original) {
+		super.copyPropertiesFrom(original);
+		for (Entry<String, ConflictResolution> rule : ((RecordResolution) original).rules.entries())
+			this.rules.put(rule.getKey(), (ConflictResolution) rule.getValue().clone());
 	}
 }
