@@ -33,7 +33,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 /**
  * @author Arvid Heise
  */
-public class BeliefResolution extends ConflictResolution {
+public class BeliefResolution extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -69,13 +69,13 @@ public class BeliefResolution extends ConflictResolution {
 	 * eu.stratosphere.sopremo.cleansing.fusion.FusionContext)
 	 */
 	@Override
-	public void fuse(IArrayNode values) {
-		final IArrayNode mostProbableValues = getFinalMassFunction(values, getWeights()).getMostProbableValues();
+	public void fuse(IArrayNode<IJsonNode> values) {
+		final IArrayNode<IJsonNode> mostProbableValues = getFinalMassFunction(values, getWeights()).getMostProbableValues();
 		values.clear();
 		values.add(mostProbableValues);
 	}
 
-	protected BeliefMassFunction getFinalMassFunction(IArrayNode values, double[] weights) {
+	protected BeliefMassFunction getFinalMassFunction(IArrayNode<IJsonNode> values, double[] weights) {
 		Deque<BeliefMassFunction> massFunctions = new LinkedList<BeliefMassFunction>();
 
 		// TODO: add support for arrays
@@ -92,7 +92,7 @@ public class BeliefResolution extends ConflictResolution {
 	static class BeliefMassFunction {
 		private final Object2DoubleMap<IJsonNode> valueMasses = new Object2DoubleArrayMap<IJsonNode>();
 
-		private final static IJsonNode ALL = new ArrayNode();
+		private final static IJsonNode ALL = new ArrayNode<IJsonNode>();
 
 		/**
 		 * Initializes BeliefMassFunction.
@@ -108,12 +108,12 @@ public class BeliefResolution extends ConflictResolution {
 		public BeliefMassFunction() {
 		}
 
-		private final transient IArrayNode maxValues = new ArrayNode(new LinkedList<IJsonNode>());
+		private final transient IArrayNode<IJsonNode> maxValues = new ArrayNode<IJsonNode>(new LinkedList<IJsonNode>());
 
 		/**
 		 * @return
 		 */
-		public IArrayNode getMostProbableValues() {
+		public IArrayNode<IJsonNode> getMostProbableValues() {
 			double maxBelief = 0;
 			this.maxValues.clear();
 			for (Object2DoubleMap.Entry<IJsonNode> entry : this.valueMasses.object2DoubleEntrySet()) {
@@ -181,7 +181,7 @@ public class BeliefResolution extends ConflictResolution {
 			return combined;
 		}
 
-		private final IArrayNode array = new ArrayNode(2);
+		private final IArrayNode<IJsonNode> array = new ArrayNode<IJsonNode>(2);
 
 		private boolean isEvidence(IJsonNode node1, IJsonNode node2, List<EvaluationExpression> evidenceExpressions) {
 			if (node1 == ALL)

@@ -2,8 +2,9 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class FilterRecordResolution extends ConflictResolution {
+public class FilterRecordResolution extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -15,7 +16,7 @@ public class FilterRecordResolution extends ConflictResolution {
 	public final static FilterRecordResolution INSTANCE = new FilterRecordResolution();
 
 	@Override
-	public void fuse(final IArrayNode values) {
+	public void fuse(final IArrayNode<IJsonNode> values) {
 		throw new UnresolvableEvaluationException();
 	}
 	

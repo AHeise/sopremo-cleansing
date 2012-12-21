@@ -14,10 +14,9 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.type.ArrayNode;
@@ -29,14 +28,14 @@ import eu.stratosphere.sopremo.type.ObjectNode;
 /**
  * @author Arvid Heise
  */
-public abstract class RecordResolution extends ConflictResolution {
+public abstract class RecordResolution extends ConflictResolution<IObjectNode> {
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5841402171573265477L;
 
-	private Multimap<String, ConflictResolution> rules = HashMultimap.create();
+	private Map<String, ConflictResolution<?>> rules = new HashMap<String, ConflictResolution<?>>();
 
 	private transient IObjectNode fusedRecord = new ObjectNode();
 
@@ -46,18 +45,24 @@ public abstract class RecordResolution extends ConflictResolution {
 	 * eu.stratosphere.sopremo.cleansing.fusion.ConflictResolution#fuse(eu.stratosphere.sopremo.type
 	 * .IArrayNode)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
-	public void fuse(IArrayNode values) {
+	public void fuse(IArrayNode<IObjectNode> objects) {
 		this.fusedRecord.clear();
 
-		for (IJsonNode value : values) {
-			IObjectNode object = (IObjectNode) value;
-			for (String fieldName : object.getFieldNames()) {
-				IJsonNode fieldValues = this.fusedRecord.get(fieldName);
+		for (IObjectNode object : objects) {
+			for (Entry<String, IJsonNode> field : object) {
+				IJsonNode fieldValues = this.fusedRecord.get(field.getKey());
 				if (fieldValues.isMissing())
-					this.fusedRecord.put(fieldName, fieldValues = new ArrayNode());
-				((IArrayNode) fieldValues).add(object.get(fieldName));
+					this.fusedRecord.put(field.getKey(), fieldValues = new ArrayNode<IJsonNode>());
+				((IArrayNode<IJsonNode>) fieldValues).add(field.getValue());
 			}
+		}
+
+		for (Entry<String, ConflictResolution<?>> rule : this.rules.entrySet()) {
+			final IJsonNode entry = this.fusedRecord.get(rule.getKey());
+			if (!entry.isMissing()) 
+				this.fusedRecord.put(rule.getKey(), rule.getValue().evaluate(entry));
 		}
 	}
 
@@ -70,7 +75,7 @@ public abstract class RecordResolution extends ConflictResolution {
 	@Override
 	public void copyPropertiesFrom(ISopremoType original) {
 		super.copyPropertiesFrom(original);
-		for (Entry<String, ConflictResolution> rule : ((RecordResolution) original).rules.entries())
-			this.rules.put(rule.getKey(), (ConflictResolution) rule.getValue().clone());
+		for (Entry<String, ConflictResolution<?>> rule : ((RecordResolution) original).rules.entrySet())
+			this.rules.put(rule.getKey(), (ConflictResolution<?>) rule.getValue().clone());
 	}
 }

@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoReduce;
 import eu.stratosphere.sopremo.serialization.Schema;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IStreamArrayNode;
+import eu.stratosphere.sopremo.type.IStreamNode;
 
 public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<SortedNeighborhood> {
 	/**
@@ -157,11 +157,11 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 			/*
 			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.SopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamArrayNode,
+			 * @see eu.stratosphere.sopremo.pact.SopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamNode,
 			 * eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void reduce(IStreamArrayNode values, JsonCollector out) {
+			protected void reduce(IStreamNode values, JsonCollector out) {
 				for (IJsonNode value : values) {
 					for (IJsonNode bufferedValue : buffer) {
 						comparison.process(value, bufferedValue, out);

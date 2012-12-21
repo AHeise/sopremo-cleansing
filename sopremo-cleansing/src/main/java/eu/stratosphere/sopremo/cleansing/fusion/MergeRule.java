@@ -6,7 +6,7 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class MergeRule extends ConflictResolution {
+public class MergeRule extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -18,7 +18,7 @@ public class MergeRule extends ConflictResolution {
 	public final static MergeRule INSTANCE = new MergeRule();
 
 	@Override
-	public void fuse(final IArrayNode values) {
+	public void fuse(final IArrayNode<IJsonNode> values) {
 		Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext()) 
 			if(iterator.next().isNull())

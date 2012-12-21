@@ -14,7 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
-import eu.stratosphere.pact.common.plan.PactModule;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
@@ -37,7 +36,7 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 	 */
 	private static final long serialVersionUID = 5940873648636098610L;
 
-	private ConflictResolution conflictResolution = new MergeRule();
+	private ConflictResolution<?> conflictResolution = new MergeRule();
 
 	/*
 	 * (non-Javadoc)

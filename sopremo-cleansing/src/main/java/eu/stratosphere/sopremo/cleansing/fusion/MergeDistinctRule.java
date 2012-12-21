@@ -9,7 +9,7 @@ import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
-public class MergeDistinctRule extends ConflictResolution {
+public class MergeDistinctRule extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -18,7 +18,7 @@ public class MergeDistinctRule extends ConflictResolution {
 	private transient final Set<IJsonNode> distinctValues = new HashSet<IJsonNode>();
 
 	@Override
-	public void fuse(final IArrayNode values) {
+	public void fuse(final IArrayNode<IJsonNode> values) {
 		this.distinctValues.clear();
 		this.distinctValues.add(NullNode.getInstance());
 		

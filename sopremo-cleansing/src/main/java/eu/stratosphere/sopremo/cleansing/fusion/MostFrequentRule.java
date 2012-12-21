@@ -7,7 +7,7 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class MostFrequentRule extends ConflictResolution {
+public class MostFrequentRule extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -16,7 +16,7 @@ public class MostFrequentRule extends ConflictResolution {
 	private transient final Object2DoubleMap<IJsonNode> histogram = new Object2DoubleOpenHashMap<IJsonNode>();
 
 	@Override
-	public void fuse(final IArrayNode values) {
+	public void fuse(final IArrayNode<IJsonNode> values) {
 		this.histogram.clear();
 		final double[] weights = getWeights();
 		for (int index = 0; index < values.size(); index++) {

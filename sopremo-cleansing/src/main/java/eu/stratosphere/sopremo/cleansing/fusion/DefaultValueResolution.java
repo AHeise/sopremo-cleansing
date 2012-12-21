@@ -4,7 +4,7 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class DefaultValueResolution extends ConflictResolution {
+public class DefaultValueResolution extends ConflictResolution<IJsonNode> {
 	/**
 	 * 
 	 */
@@ -17,7 +17,7 @@ public class DefaultValueResolution extends ConflictResolution {
 	}
 
 	@Override
-	public void fuse(final IArrayNode values) {
+	public void fuse(final IArrayNode<IJsonNode> values) {
 		values.clear();
 		values.add(this.defaultValue);
 	}

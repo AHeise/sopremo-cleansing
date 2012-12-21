@@ -124,7 +124,7 @@ public class CircularArrayNode extends AbstractArrayNode {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.type.IStreamArrayNode#isEmpty()
+	 * @see eu.stratosphere.sopremo.type.IStreamNode#isEmpty()
 	 */
 	@Override
 	public boolean isEmpty() {

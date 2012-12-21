@@ -16,7 +16,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
-import eu.stratosphere.sopremo.type.custom.CustomObjectNode;
+import eu.stratosphere.sopremo.type.typed.CustomObjectNode;
 
 /**
  * @author Arvid Heise

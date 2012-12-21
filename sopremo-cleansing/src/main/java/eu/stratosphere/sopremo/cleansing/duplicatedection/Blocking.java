@@ -11,7 +11,7 @@ import eu.stratosphere.sopremo.pact.SopremoCoGroup;
 import eu.stratosphere.sopremo.pact.SopremoReduce;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IStreamArrayNode;
+import eu.stratosphere.sopremo.type.IStreamNode;
 
 public class Blocking extends CompositeDuplicateDetectionAlgorithm<Blocking> {
 	/**
@@ -43,20 +43,20 @@ public class Blocking extends CompositeDuplicateDetectionAlgorithm<Blocking> {
 		public static final class Implementation extends SopremoReduce {
 			private CandidateComparison comparison;
 
-			private transient CachingArrayNode cachedNodes = new CachingArrayNode();
+			private transient CachingArrayNode<IJsonNode> cachedNodes = new CachingArrayNode<IJsonNode>();
 
 			/*
 			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.SopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamArrayNode,
+			 * @see eu.stratosphere.sopremo.pact.SopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamNode,
 			 * eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void reduce(IStreamArrayNode values, JsonCollector out) {
+			protected void reduce(IStreamNode<IJsonNode> values, JsonCollector out) {
 				for (IJsonNode value : values)
 					this.cachedNodes.add(value);
 
-				for (IJsonNode node1 : cachedNodes)
-					for (IJsonNode node2 : cachedNodes)
+				for (IJsonNode node1 : this.cachedNodes)
+					for (IJsonNode node2 : this.cachedNodes)
 						this.comparison.process(node1, node2, out);
 
 				this.cachedNodes.clear();
@@ -75,21 +75,21 @@ public class Blocking extends CompositeDuplicateDetectionAlgorithm<Blocking> {
 		public static final class Implementation extends SopremoCoGroup {
 			private CandidateComparison comparison;
 
-			private transient CachingArrayNode cachedNodes = new CachingArrayNode();
+			private transient CachingArrayNode<IJsonNode> cachedNodes = new CachingArrayNode<IJsonNode>();
 
 			/*
 			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.SopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamArrayNode,
-			 * eu.stratosphere.sopremo.type.IStreamArrayNode, eu.stratosphere.sopremo.pact.JsonCollector)
+			 * @see eu.stratosphere.sopremo.pact.SopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void coGroup(IStreamArrayNode values1, IStreamArrayNode values2, JsonCollector out) {
+			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2, JsonCollector out) {
 				// cache one side only
 				for (IJsonNode value : values1)
 					this.cachedNodes.add(value);
 
 				for (IJsonNode node2 : values2)
-					for (IJsonNode node1 : cachedNodes)
+					for (IJsonNode node1 : this.cachedNodes)
 						this.comparison.process(node1, node2, out);
 
 				this.cachedNodes.clear();

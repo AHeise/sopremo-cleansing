@@ -7,7 +7,7 @@ import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public abstract class ConflictResolution extends PathSegmentExpression {
+public abstract class ConflictResolution<T extends IJsonNode> extends PathSegmentExpression {
 
 	/**
 	 * 
@@ -21,7 +21,8 @@ public abstract class ConflictResolution extends PathSegmentExpression {
 	@Override
 	public IJsonNode evaluate(IJsonNode node) {
 		final IJsonNode result = this.getInputExpression().evaluate(node);
-		final IArrayNode values = (IArrayNode) result;
+		@SuppressWarnings("unchecked")
+		final IArrayNode<T> values = (IArrayNode<T>) result;
 		if (values.size() <= 1)
 			return values;
 		return evaluateSegment(result);
@@ -37,10 +38,11 @@ public abstract class ConflictResolution extends PathSegmentExpression {
 	 * eu.stratosphere.sopremo.expressions.PathSegmentExpression#evaluateSegment(eu.stratosphere.sopremo.type.IJsonNode)
 	 */
 	@Override
-	protected IJsonNode evaluateSegment(IJsonNode node) {
-		final IArrayNode values = (IArrayNode) node;
+	protected IArrayNode<T> evaluateSegment(IJsonNode node) {
+		@SuppressWarnings("unchecked")
+		final IArrayNode<T> values = (IArrayNode<T>) node;
 		this.fuse(values);
-		return node;
+		return values;
 	}
 
 	/*
@@ -52,5 +54,5 @@ public abstract class ConflictResolution extends PathSegmentExpression {
 		appendable.append(this.getClass().getSimpleName());
 	}
 
-	public abstract void fuse(IArrayNode values);
+	public abstract void fuse(IArrayNode<T> values);
 }
