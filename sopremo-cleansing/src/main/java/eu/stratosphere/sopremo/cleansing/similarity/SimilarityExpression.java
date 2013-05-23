@@ -14,9 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -26,11 +24,6 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  */
 public class SimilarityExpression extends EvaluationExpression {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8785651122862947081L;
-
 	private final Similarity<IJsonNode> similarity;
 
 	/**
@@ -38,8 +31,9 @@ public class SimilarityExpression extends EvaluationExpression {
 	 * 
 	 * @param similarity
 	 */
-	public SimilarityExpression(Similarity<IJsonNode> similarity) {
-		this.similarity = similarity;
+	@SuppressWarnings("unchecked")
+	public SimilarityExpression(Similarity<? extends IJsonNode> similarity) {
+		this.similarity = (Similarity<IJsonNode>) similarity;
 	}
 
 	/**
@@ -51,16 +45,8 @@ public class SimilarityExpression extends EvaluationExpression {
 		return this.similarity;
 	}
 
-	private final transient DoubleNode sim = new DoubleNode();
+	private transient DoubleNode result = new DoubleNode();
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
-	 */
-	@Override
-	protected EvaluationExpression createCopy() {
-		return null;
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode,
@@ -68,9 +54,9 @@ public class SimilarityExpression extends EvaluationExpression {
 	 */
 	@Override
 	public IJsonNode evaluate(IJsonNode node) {
-		final IArrayNode pair = (IArrayNode) node;
-		this.sim.setValue(this.similarity.getSimilarity(pair.get(0), pair.get(1)));
-		return this.sim;
+		final IArrayNode<?> pair = (IArrayNode<?>) node;
+		this.result.setValue(this.similarity.getSimilarity(pair.get(0), pair.get(1)));
+		return this.result;
 	}
 
 }

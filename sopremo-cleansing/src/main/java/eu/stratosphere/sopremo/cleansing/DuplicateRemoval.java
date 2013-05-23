@@ -31,11 +31,6 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 @InputCardinality(1)
 @OutputCardinality(1)
 public class DuplicateRemoval extends CompositeOperator<DuplicateRemoval> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6245621810982544036L;
-
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)

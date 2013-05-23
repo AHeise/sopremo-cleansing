@@ -23,20 +23,16 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 /**
  * @author Arvid Heise
  */
-public abstract class SetSimilarity extends AbstractSimilarity<IArrayNode> {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6458014392152370570L;
+public abstract class SetSimilarity extends AbstractSimilarity<IArrayNode<IJsonNode>> {
 
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.Similarity#getExpectedType()
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public Class<IArrayNode> getExpectedType() {
-		return IArrayNode.class;
+	public Class<IArrayNode<IJsonNode>> getExpectedType() {
+		return (Class) IArrayNode.class;
 	}
 
 	/*
@@ -46,25 +42,26 @@ public abstract class SetSimilarity extends AbstractSimilarity<IArrayNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IArrayNode node1, IArrayNode node2) {
+	public double getSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		final boolean node1Empty = node1.isEmpty(), node2Empty = node2.isEmpty();
 		if (node1Empty || node2Empty)
 			return node1Empty == node2Empty ? 1 : 0;
-		return getSetSimilarity(node1, node2);
+		return this.getSetSimilarity(node1, node2);
 	}
 
-	protected abstract double getSetSimilarity(IArrayNode node1, IArrayNode node2);
+	protected abstract double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2);
 
-	protected int getNumberOfCommonTokens(IArrayNode node1, IArrayNode node2) {
+	protected int getNumberOfCommonTokens(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		int commonTokens = 0;
-		IArrayNode minNode = node1.size() < node2.size() ? node1 : node2, maxNode = node1 == minNode ? node2 : node1;
+		IArrayNode<IJsonNode> minNode = node1.size() < node2.size() ? node1 : node2, maxNode = node1 == minNode ? node2
+			: node1;
 		for (IJsonNode node : minNode)
 			if (maxNode.contains(node))
 				commonTokens++;
 		return commonTokens;
 	}
 
-	protected Object2IntMap<IJsonNode> getTermFrequencies(IArrayNode node1) {
+	protected Object2IntMap<IJsonNode> getTermFrequencies(IArrayNode<IJsonNode> node1) {
 		final Object2IntOpenHashMap<IJsonNode> termFrequencies = new Object2IntOpenHashMap<IJsonNode>(node1.size());
 		termFrequencies.defaultReturnValue(0);
 		for (IJsonNode node : node1)

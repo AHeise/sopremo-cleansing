@@ -33,11 +33,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.NeedlemanWunch;
  */
 public class NeedlemanWunchSimilarity extends SimmetricsSimilarity<NeedlemanWunch> {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4099957931347604677L;
-
-	/**
 	 * Initializes a <code>NeedlemanWunchDistanceSimilarity</code>.
 	 */
 	public NeedlemanWunchSimilarity() {

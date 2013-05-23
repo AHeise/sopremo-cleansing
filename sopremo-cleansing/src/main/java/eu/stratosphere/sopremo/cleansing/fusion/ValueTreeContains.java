@@ -17,25 +17,28 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 import java.util.Map.Entry;
 
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IObjectNode;
+import eu.stratosphere.sopremo.type.IStreamNode;
 
 /**
  * @author Arvid Heise
  */
 public class ValueTreeContains extends BooleanExpression {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5454820392452557849L;
-
 	private final IJsonNode valueToFind;
 
 	public ValueTreeContains(IJsonNode valueToFind) {
 		this.valueToFind = valueToFind;
+	}
+	
+	/**
+	 * Initializes ValueTreeContains.
+	 *
+	 */
+	ValueTreeContains() {
+		this.valueToFind = null;
 	}
 
 	/*
@@ -45,15 +48,7 @@ public class ValueTreeContains extends BooleanExpression {
 	 */
 	@Override
 	public BooleanNode evaluate(IJsonNode node) {
-		return BooleanNode.valueOf(isContainedIn(node));
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
-	 */
-	@Override
-	protected EvaluationExpression createCopy() {
-		return new ValueTreeContains(this.valueToFind);
+		return BooleanNode.valueOf(this.isContainedIn(node));
 	}
 
 	/**
@@ -65,14 +60,14 @@ public class ValueTreeContains extends BooleanExpression {
 	private boolean isContainedIn(IJsonNode node) {
 		if (node.equals(this.valueToFind))
 			return true;
-		if (node.isArray()) {
+		if (node instanceof IStreamNode<?>) {
 			for (IJsonNode element : (Iterable<IJsonNode>) node)
-				if (isContainedIn(element))
+				if (this.isContainedIn(element))
 					return true;
 		}
-		else if (node.isObject())
+		else if (node instanceof IObjectNode)
 			for (Entry<String, IJsonNode> element : (IObjectNode) node)
-				if (isContainedIn(element.getValue()))
+				if (this.isContainedIn(element.getValue()))
 					return true;
 		return false;
 	}

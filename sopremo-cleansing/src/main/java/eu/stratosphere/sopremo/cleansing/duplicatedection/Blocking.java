@@ -1,98 +1,75 @@
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.base.Union;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.pact.JsonCollector;
-import eu.stratosphere.sopremo.pact.SopremoCoGroup;
-import eu.stratosphere.sopremo.pact.SopremoReduce;
-import eu.stratosphere.sopremo.type.CachingArrayNode;
+import eu.stratosphere.sopremo.pact.SopremoMatch;
+import eu.stratosphere.sopremo.type.ArrayNode;
+import eu.stratosphere.sopremo.type.BooleanNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IStreamNode;
 
+@InputCardinality(min = 1, max = 2)
+@OutputCardinality(1)
+@Name(noun = "blocking")
 public class Blocking extends CompositeDuplicateDetectionAlgorithm<Blocking> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 9162693656982906448L;
 
 	/*
 	 * (non-Javadoc)
 	 * @see
 	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#getImplementation(java
-	 * .util.List, java.util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison,
+	 * .util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison,
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected Operator<?> getImplementation(List<Operator<?>> inputs, List<EvaluationExpression> blockingKeys,
+	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
 			CandidateComparison comparison, EvaluationContext context) {
-		return new SinglePassIntraSourceBlocking().withComparison(comparison).withKeyExpressions(0, blockingKeys);
+		if (selection.getPasses().size() == 1)
+			return createPass(selection.getPasses().get(0), comparison).withInputs(inputs);
+
+		List<Operator<?>> passes = new ArrayList<Operator<?>>();
+		for (Pass pass : selection.getPasses())
+			passes.add(createPass(pass, comparison).withInputs(inputs));
+
+		return new Union().withInputs(passes);
 	}
 
-	@InputCardinality(min = 1, max = 1)
-	public static class SinglePassIntraSourceBlocking extends
-			ElementaryDuplicateDetectionAlgorithm<SinglePassIntraSourceBlocking> {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 8219222010267680701L;
+	private Operator<?> createPass(Pass pass, CandidateComparison comparison) {
+		return new DirectBlocking().
+			withKeyExpression(0, pass.getBlockingKeys().get(0)).
+			withKeyExpression(1, pass.getBlockingKeys().get(comparison.isInnerSource() ? 0 : 1)).
+			withCondition(comparison.asCondition()).
+			withResultProjection(comparison.getResultProjectionWithSimilarity());
+	}
 
-		public static final class Implementation extends SopremoReduce {
-			private CandidateComparison comparison;
+	@InputCardinality(2)
+	public static class DirectBlocking extends ElementaryDuplicateDetectionAlgorithm<DirectBlocking> {
+		public static class Implementation extends SopremoMatch {
+			private BooleanExpression condition;
 
-			private transient CachingArrayNode<IJsonNode> cachedNodes = new CachingArrayNode<IJsonNode>();
+			private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
 
 			/*
 			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.SopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamNode,
-			 * eu.stratosphere.sopremo.pact.JsonCollector)
+			 * @see eu.stratosphere.sopremo.pact.TypedSopremoMatch#match(eu.stratosphere.sopremo.type.IJsonNode,
+			 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void reduce(IStreamNode<IJsonNode> values, JsonCollector out) {
-				for (IJsonNode value : values)
-					this.cachedNodes.add(value);
-
-				for (IJsonNode node1 : this.cachedNodes)
-					for (IJsonNode node2 : this.cachedNodes)
-						this.comparison.process(node1, node2, out);
-
-				this.cachedNodes.clear();
-			}
-		}
-	}
-
-	@InputCardinality(min = 1, max = 1)
-	public static class SinglePassInterSourceBlocking extends
-			ElementaryDuplicateDetectionAlgorithm<SinglePassInterSourceBlocking> {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 8219222010267680701L;
-
-		public static final class Implementation extends SopremoCoGroup {
-			private CandidateComparison comparison;
-
-			private transient CachingArrayNode<IJsonNode> cachedNodes = new CachingArrayNode<IJsonNode>();
-
-			/*
-			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.SopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
-			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
-			 */
-			@Override
-			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2, JsonCollector out) {
-				// cache one side only
-				for (IJsonNode value : values1)
-					this.cachedNodes.add(value);
-
-				for (IJsonNode node2 : values2)
-					for (IJsonNode node1 : this.cachedNodes)
-						this.comparison.process(node1, node2, out);
-
-				this.cachedNodes.clear();
+			protected void match(IJsonNode left, IJsonNode right, JsonCollector collector) {
+				this.pair.set(0, left);
+				this.pair.set(1, right);
+				if (this.condition.evaluate(this.pair) == BooleanNode.TRUE)
+					collector.collect(this.pair);
 			}
 		}
 	}

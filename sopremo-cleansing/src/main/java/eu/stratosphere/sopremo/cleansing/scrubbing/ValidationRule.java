@@ -2,27 +2,20 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public abstract class ValidationRule extends CleansingRule {
+public abstract class ValidationRule extends CleansingRule<ValidationContext> {
 	public static final UnresolvableCorrection DEFAULT_CORRECTION = UnresolvableCorrection.INSTANCE;
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7139939245760263511L;
 
 	private ValueCorrection valueCorrection = DEFAULT_CORRECTION;
 
 	@Override
-	public IJsonNode evaluateRule(IJsonNode value) {
-		if (!this.validate(value, context)) {
-			context.setViolatedRule(this);
-			return this.fix(value, target, context);
-		}
+	public IJsonNode evaluate(IJsonNode value) {
+		if (!this.validate(value))
+			return this.fix(value);
 		return value;
 	}
 
-	protected IJsonNode fix(final IJsonNode value, IJsonNode target, final ValidationContext context) {
-		return this.valueCorrection.fix(value, target,  context);
+	protected IJsonNode fix(final IJsonNode value) {
+		return this.valueCorrection.fix(value, this);
 	}
 
 	public ValueCorrection getValueCorrection() {
@@ -36,7 +29,8 @@ public abstract class ValidationRule extends CleansingRule {
 		this.valueCorrection = valueCorrection;
 	}
 
-	protected boolean validate(final IJsonNode value, final ValidationContext context) {
+	@SuppressWarnings("unused")
+	protected boolean validate(final IJsonNode value) {
 		return false;
 	}
 

@@ -16,11 +16,16 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.base.Predicates;
+
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
@@ -28,6 +33,31 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
  */
 public class CandidateSelection extends AbstractSopremoType {
 	private List<Pass> passes = new ArrayList<Pass>();
+
+	private SelectionHint selectionHint;
+
+	public static enum SelectionHint {
+		BLOCK, SORT;
+	}
+
+	/**
+	 * Sets the selectionHint to the specified value.
+	 * 
+	 * @param selectionHint
+	 *        the selectionHint to set
+	 */
+	public void setSelectionHint(SelectionHint selectionHint) {
+		this.selectionHint = selectionHint;
+	}
+
+	/**
+	 * Returns the selectionHint.
+	 * 
+	 * @return the selectionHint
+	 */
+	public SelectionHint getSelectionHint() {
+		return this.selectionHint;
+	}
 
 	/**
 	 * Returns the passes.
@@ -48,26 +78,8 @@ public class CandidateSelection extends AbstractSopremoType {
 		if (passes == null)
 			throw new NullPointerException("passes must not be null");
 
-		this.passes = passes;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new CandidateSelection();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
-	 */
-	@Override
-	public void copyPropertiesFrom(ISopremoType original) {
-		super.copyPropertiesFrom(original);
-		this.passes.addAll(SopremoUtil.deepClone(((CandidateSelection) original).getPasses()));
+		this.passes.clear();
+		this.passes.addAll(passes);
 	}
 
 	/*
@@ -81,16 +93,7 @@ public class CandidateSelection extends AbstractSopremoType {
 
 	public static class Pass extends AbstractSopremoType {
 
-		private List<EvaluationExpression> blockingKey = new ArrayList<EvaluationExpression>();
-
-		/**
-		 * Initializes Pass.
-		 * 
-		 * @param blockingKey
-		 */
-		public Pass(List<EvaluationExpression> blockingKey) {
-			this.blockingKey = blockingKey;
-		}
+		private List<EvaluationExpression> blockingKeys = new ArrayList<EvaluationExpression>();
 
 		/**
 		 * Initializes Pass.
@@ -98,22 +101,13 @@ public class CandidateSelection extends AbstractSopremoType {
 		public Pass() {
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-		 */
-		@Override
-		protected AbstractSopremoType createCopy() {
-			return new Pass(SopremoUtil.deepClone(this.blockingKey));
-		}
-
 		/**
 		 * Returns the value of blockingKey.
 		 * 
 		 * @return the blockingKey
 		 */
-		public List<EvaluationExpression> getBlockingKey() {
-			return this.blockingKey;
+		public List<EvaluationExpression> getBlockingKeys() {
+			return this.blockingKeys;
 		}
 
 		/**
@@ -122,11 +116,25 @@ public class CandidateSelection extends AbstractSopremoType {
 		 * @param blockingKey
 		 *        the blockingKey to set
 		 */
-		public void setBlockingKey(List<EvaluationExpression> blockingKey) {
-			if (blockingKey == null)
+		public void setBlockingKeys(List<EvaluationExpression> blockingKeys) {
+			if (blockingKeys == null)
 				throw new NullPointerException("blockingKey must not be null");
 
-			this.blockingKey = blockingKey;
+			this.blockingKeys.clear();
+			this.blockingKeys.addAll( blockingKeys);
+		}
+
+		/**
+		 * Sets the value of blockingKey to the given value.
+		 * 
+		 * @param blockingKey
+		 *        the blockingKey to set
+		 */
+		public void setBlockingKeys(EvaluationExpression... blockingKeys) {
+			if (blockingKeys.length == 0)
+				throw new IllegalArgumentException("blockingKey must not be empty");
+
+			this.setBlockingKeys(Arrays.asList(blockingKeys));
 		}
 
 		/*
@@ -135,7 +143,54 @@ public class CandidateSelection extends AbstractSopremoType {
 		 */
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
-			SopremoUtil.append(appendable, this.blockingKey);
+			SopremoUtil.append(appendable, this.blockingKeys);
 		}
+
+	}
+
+	/**
+	 * @param expression
+	 * @param i
+	 */
+	public void parse(EvaluationExpression expression, int numSources) {
+		this.passes.clear();
+
+		if (expression instanceof ObjectCreation) {
+			if (numSources != 2)
+				throw new IllegalArgumentException("Can only use mappings for two sources");
+
+			final ObjectCreation oc = (ObjectCreation) expression;
+			for (int index = 0, size = oc.getMappingSize(); index < size; index++) {
+				final Pass pass = new Pass();
+				final Mapping<?> mapping = oc.getMapping(index);
+				final EvaluationExpression key1 = mapping.getTargetTagExpression();
+				final EvaluationExpression key2 = mapping.getExpression();
+				if (key1.findFirst(InputSelection.class).getIndex() == key2.findFirst(InputSelection.class).getIndex())
+					throw new IllegalArgumentException("The mapping " + mapping + " does not point to both sources");
+				pass.setBlockingKeys(key1, key2);
+				this.passes.add(pass);
+			}
+			return;
+		}
+
+		for (EvaluationExpression subExpression : expression) {
+			Pass pass = new Pass();
+			if (numSources == 1)
+				pass.setBlockingKeys(subExpression);
+			else
+				pass.setBlockingKeys(
+					subExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(0)),
+					subExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(1)));
+			this.passes.add(pass);
+		}
+	}
+
+	/**
+	 * @param blockingKey
+	 */
+	public void addPass(EvaluationExpression... blockingKey) {
+		Pass pass = new Pass();
+		pass.setBlockingKeys(blockingKey);
+		this.passes.add(pass);
 	}
 }

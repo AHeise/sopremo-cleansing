@@ -4,17 +4,19 @@ import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 public class ValidationContext extends EvaluationContext {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3830001019910981066L;
-
 	private transient ValidationRule violatedRule;
 
 	private transient IJsonNode contextNode;
 
 	public ValidationContext(final EvaluationContext context) {
 		super(context);
+	}
+	
+	/**
+	 * Initializes ValidationContext.
+	 *
+	 */
+	ValidationContext() {
 	}
 
 	public IJsonNode getContextNode() {

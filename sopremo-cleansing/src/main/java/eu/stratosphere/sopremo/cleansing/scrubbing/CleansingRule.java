@@ -3,17 +3,18 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 import java.io.IOException;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.type.IJsonNode;
 
-public abstract class CleansingRule extends EvaluationExpression {
+public abstract class CleansingRule<ContextType extends EvaluationContext> extends EvaluationExpression {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1801909303463739160L;
+	@SuppressWarnings("unchecked")
+	protected ContextType getContext() {
+		return (ContextType) SopremoEnvironment.getInstance().getEvaluationContext();
+	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#appendAsString(java.lang.Appendable)
 	 */
 	@Override

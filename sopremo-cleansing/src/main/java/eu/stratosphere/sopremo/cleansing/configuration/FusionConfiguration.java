@@ -12,13 +12,11 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.duplicatedection;
-
-import eu.stratosphere.sopremo.type.typed.ITypedObjectNode;
+package eu.stratosphere.sopremo.cleansing.configuration;
 
 /**
  * @author Arvid Heise
  */
-public interface DuplicatePair extends ITypedObjectNode {
-	public IJsonNode getRecord1();
+public class FusionConfiguration {
+
 }

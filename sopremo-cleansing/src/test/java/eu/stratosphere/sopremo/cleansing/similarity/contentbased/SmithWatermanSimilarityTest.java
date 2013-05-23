@@ -3,6 +3,7 @@ package eu.stratosphere.sopremo.cleansing.similarity.contentbased;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
@@ -14,6 +15,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.SmithWatermanSimilarity
  * 
  * @author Arvid Heise
  */
+@Ignore
 public class SmithWatermanSimilarityTest extends SimilarityBaseTest {
 	public SmithWatermanSimilarityTest(Object node1, Object node2, double expected) {
 		super(node1, node2, expected);

@@ -23,11 +23,6 @@ import eu.stratosphere.util.dag.ConnectionNavigator;
  * @author Arvid Heise
  */
 public class SimilarityNavigator implements ConnectionNavigator<Similarity<?>> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 19650599276648218L;
-
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.util.dag.ConnectionNavigator#getConnectedNodes(java.lang.Object)

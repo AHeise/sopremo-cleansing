@@ -14,24 +14,25 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * @author Arvid Heise
  */
 public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8439163685604981104L;
-
 	private double similarity;
 
 	public ConstantSimilarity(double similarity) {
-		checkSimilarity(similarity);
-		
+		this.checkSimilarity(similarity);
+
 		this.similarity = similarity;
+	}
+	
+	/**
+	 * Initializes ConstantSimilarity.
+	 *
+	 */
+	ConstantSimilarity() {
 	}
 
 	public double getSimilarity() {
@@ -39,8 +40,8 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 	}
 
 	public void setSimilarity(double similarity) {
-		checkSimilarity(similarity);
-		
+		this.checkSimilarity(similarity);
+
 		this.similarity = similarity;
 	}
 
@@ -48,18 +49,10 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 	 * @param similarity2
 	 */
 	private void checkSimilarity(double similarity) {
-		if(similarity < 0 || similarity > 1)
+		if (similarity < 0 || similarity > 1)
 			throw new IllegalArgumentException();
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new ConstantSimilarity(similarity);
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.Similarity#getExpectedType()

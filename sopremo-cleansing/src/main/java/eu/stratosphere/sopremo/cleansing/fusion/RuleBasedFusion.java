@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
+import eu.stratosphere.pact.common.plan.PactModule;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
@@ -31,12 +32,7 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 @InputCardinality(1)
 @OutputCardinality(1)
 public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 5940873648636098610L;
-
-	private ConflictResolution<?> conflictResolution = new MergeRule();
+	private ConflictResolution conflictResolution = new MergeRule();
 
 	/*
 	 * (non-Javadoc)
@@ -64,4 +60,15 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		module.getOutput(0).setInput(0, pipeline);
 	}
 
+	public static class FusionProjection extends Projection {
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.base.Projection#asPactModule(eu.stratosphere.sopremo.EvaluationContext)
+		 */
+		@Override
+		public PactModule asPactModule(EvaluationContext context) {
+			return super.asPactModule(new FusionContext(context));
+		}
+	}
 }

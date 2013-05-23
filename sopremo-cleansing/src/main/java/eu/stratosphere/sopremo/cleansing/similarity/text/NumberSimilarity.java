@@ -25,10 +25,8 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 
 import java.io.IOException;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.ISopremoType;
+import javolution.text.TypeFormat;
 import eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.INumericNode;
 
 /**
@@ -39,11 +37,6 @@ import eu.stratosphere.sopremo.type.INumericNode;
  * @author Arvid Heise
  */
 public class NumberSimilarity extends AbstractSimilarity<INumericNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3588670283519008490L;
-
 	/**
 	 * The absolute value of maximum allowed variation.
 	 */
@@ -63,8 +56,9 @@ public class NumberSimilarity extends AbstractSimilarity<INumericNode> {
 			return 0;
 		return 1 - diff / this.maxDiff;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.Similarity#getExpectedType()
 	 */
 	@Override
@@ -103,32 +97,18 @@ public class NumberSimilarity extends AbstractSimilarity<INumericNode> {
 		this.maxDiff = maxDiff;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#appendAsString(java.lang.Appendable)
 	 */
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		super.appendAsString(appendable);
-		SopremoUtil.append(appendable, "[maxDiff=", this.maxDiff, "]");
+		appendable.append("[maxDiff=");
+		TypeFormat.format(this.maxDiff, appendable);
+		appendable.append("]");
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new NumberSimilarity();
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
-	 */
-	@Override
-	public void copyPropertiesFrom(ISopremoType original) {
-		super.copyPropertiesFrom(original);
-		this.setMaxDiff(((NumberSimilarity) original).getMaxDiff());
-	}
-	
 	public NumberSimilarity withMaxDiff(double maxDiff) {
 		this.setMaxDiff(maxDiff);
 		return this;

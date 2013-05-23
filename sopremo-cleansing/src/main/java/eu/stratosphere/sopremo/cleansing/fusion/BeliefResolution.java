@@ -29,21 +29,13 @@ import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.NullNode;
 
 /**
  * @author Arvid Heise
  */
-public class BeliefResolution extends ConflictResolution<IJsonNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -295135181065628313L;
-
-	private final List<EvaluationExpression> evidences;
-
-	public BeliefResolution(List<EvaluationExpression> evidences) {
-		this.evidences = evidences;
-	}
+public class BeliefResolution extends ConflictResolution {
+	private final EvaluationExpression[] evidences;
 
 	/**
 	 * Initializes BelieveResolution.
@@ -51,16 +43,7 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 	 * @param evidences
 	 */
 	public BeliefResolution(EvaluationExpression... evidences) {
-		this(Arrays.asList(evidences));
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
-	 */
-	@Override
-	protected EvaluationExpression createCopy() {
-		return new BeliefResolution(SopremoUtil.deepClone(this.evidences));
+		this.evidences = evidences;
 	}
 
 	/*
@@ -69,10 +52,10 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 	 * eu.stratosphere.sopremo.cleansing.fusion.FusionContext)
 	 */
 	@Override
-	public void fuse(IArrayNode<IJsonNode> values) {
-		final IArrayNode<IJsonNode> mostProbableValues = getFinalMassFunction(values, getWeights()).getMostProbableValues();
+	public void fuse(IArrayNode<IJsonNode> values, double[] weights) {
+		List<IJsonNode> mostProbableValues = this.getFinalMassFunction(values, weights).getMostProbableValues();
 		values.clear();
-		values.add(mostProbableValues);
+		values.addAll(mostProbableValues);
 	}
 
 	protected BeliefMassFunction getFinalMassFunction(IArrayNode<IJsonNode> values, double[] weights) {
@@ -80,7 +63,7 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 
 		// TODO: add support for arrays
 		for (int index = 0, size = values.size(); index < size; index++)
-			if (!values.get(index).isNull())
+			if (values.get(index) != NullNode.getInstance())
 				massFunctions.add(new BeliefMassFunction(values.get(index), weights[index]));
 
 		while (massFunctions.size() > 1)
@@ -108,23 +91,20 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 		public BeliefMassFunction() {
 		}
 
-		private final transient IArrayNode<IJsonNode> maxValues = new ArrayNode<IJsonNode>(new LinkedList<IJsonNode>());
-
 		/**
 		 * @return
 		 */
-		public IArrayNode<IJsonNode> getMostProbableValues() {
+		public List<IJsonNode> getMostProbableValues() {
 			double maxBelief = 0;
-			this.maxValues.clear();
-			for (Object2DoubleMap.Entry<IJsonNode> entry : this.valueMasses.object2DoubleEntrySet()) {
+			List<IJsonNode> maxValues = new LinkedList<IJsonNode>();
+			for (Object2DoubleMap.Entry<IJsonNode> entry : this.valueMasses.object2DoubleEntrySet())
 				if (entry.getDoubleValue() > maxBelief) {
-					this.maxValues.clear();
-					this.maxValues.add(entry.getKey());
+					maxValues.clear();
+					maxValues.add(entry.getKey());
 					maxBelief = entry.getDoubleValue();
 				} else if (entry.getDoubleValue() == maxBelief)
-					this.maxValues.add(entry.getKey());
-			}
-			return this.maxValues;
+					maxValues.add(entry.getKey());
+			return maxValues;
 		}
 
 		/**
@@ -139,7 +119,8 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 		/**
 		 * @param removeLast
 		 */
-		public BeliefMassFunction combine(BeliefMassFunction other, List<EvaluationExpression> evidenceExpressions) {
+		public BeliefMassFunction combine(BeliefMassFunction other,
+				EvaluationExpression[] evidenceExpressions) {
 			BeliefMassFunction combined = new BeliefMassFunction();
 
 			Object2DoubleMap<IJsonNode> nominators1 = new Object2DoubleArrayMap<IJsonNode>();
@@ -148,13 +129,15 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 
 			double denominator = 1;
 
-			for (Object2DoubleMap.Entry<IJsonNode> entry1 : this.valueMasses.object2DoubleEntrySet()) {
+			for (Object2DoubleMap.Entry<IJsonNode> entry1 : this.valueMasses.object2DoubleEntrySet())
 				for (Object2DoubleMap.Entry<IJsonNode> entry2 : other.valueMasses.object2DoubleEntrySet()) {
 					IJsonNode value1 = entry1.getKey();
 					IJsonNode value2 = entry2.getKey();
 					boolean equal = value1.equals(value2);
-					boolean isFirstEvidenceForSecond = equal || isEvidence(value1, value2, evidenceExpressions);
-					boolean isSecondEvidenceForFirst = equal || isEvidence(value2, value1, evidenceExpressions);
+					boolean isFirstEvidenceForSecond = equal
+						|| this.isEvidence(value1, value2, evidenceExpressions);
+					boolean isSecondEvidenceForFirst = equal
+						|| this.isEvidence(value2, value1, evidenceExpressions);
 
 					double mass1 = entry1.getDoubleValue();
 					double mass2 = entry2.getDoubleValue();
@@ -166,7 +149,6 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 					if (!isFirstEvidenceForSecond && !isSecondEvidenceForFirst)
 						denominator -= massProduct;
 				}
-			}
 
 			for (Object2DoubleMap.Entry<IJsonNode> entry1 : this.valueMasses.object2DoubleEntrySet()) {
 				IJsonNode value = entry1.getKey();
@@ -181,19 +163,15 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 			return combined;
 		}
 
-		private final IArrayNode<IJsonNode> array = new ArrayNode<IJsonNode>(2);
-
-		private boolean isEvidence(IJsonNode node1, IJsonNode node2, List<EvaluationExpression> evidenceExpressions) {
+		private boolean isEvidence(IJsonNode node1, IJsonNode node2, EvaluationExpression[] evidenceExpressions) {
 			if (node1 == ALL)
 				return true;
 
 			if (node2 == ALL)
 				return false;
 
-			this.array.set(0, node1);
-			this.array.set(1, node2);
-			for (EvaluationExpression evidenceExpression : evidenceExpressions)
-				if (evidenceExpression.evaluate(this.array) == BooleanNode.TRUE)
+			for (int index = 0; index < evidenceExpressions.length; index++)
+				if (evidenceExpressions[index].evaluate(new ArrayNode<IJsonNode>(node1, node2)) == BooleanNode.TRUE)
 					return true;
 
 			return false;
@@ -219,7 +197,7 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		super.appendAsString(appendable);
-		SopremoUtil.append(appendable, " with evidences ", this.evidences);
+		SopremoUtil.append(appendable, " with evidences ", Arrays.asList(this.evidences));
 	}
 
 	@Override
@@ -237,7 +215,7 @@ public class BeliefResolution extends ConflictResolution<IJsonNode> {
 		if (!super.equals(obj))
 			return false;
 		BeliefResolution other = (BeliefResolution) obj;
-		return this.evidences.equals(other.evidences);
+		return Arrays.equals(this.evidences, other.evidences);
 	}
 
 }

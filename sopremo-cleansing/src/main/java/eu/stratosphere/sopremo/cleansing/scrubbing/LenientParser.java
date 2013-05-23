@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
+
+import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.INumericNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 
@@ -64,22 +68,24 @@ public class LenientParser {
 			parserList.set(pos, parser);
 	}
 
+	private transient NodeCache nodeCache = new NodeCache();
+
 	private void addNumberParsers() {
 		final Pattern removeNonInt = Pattern.compile("[^0-9+-]");
 		final Pattern removeNonFloat = Pattern.compile("[^0-9+-.]");
-		for (final Class<? extends NumericNode> type : TypeCoercer.NUMERIC_TYPES) {
+		for (final Class<? extends INumericNode> type : TypeCoercer.NUMERIC_TYPES) {
 			this.add(type, new Parser(STRICT) {
 				@Override
 				public IJsonNode parse(TextNode textNode) {
-					return TypeCoercer.INSTANCE.coerce(textNode, type);
+					return TypeCoercer.INSTANCE.coerce(textNode, LenientParser.this.nodeCache, type);
 				}
 			});
-			final NumericNode defaultValue = TypeCoercer.INSTANCE.coerce(TextNode.valueOf("0"), type);
+			final INumericNode defaultValue = TypeCoercer.INSTANCE.coerce(TextNode.valueOf("0"), this.nodeCache, type);
 			this.add(type, new TextualParser(ELIMINATE_NOISE) {
 				Pattern removePattern = defaultValue.isIntegralNumber() ? removeNonInt : removeNonFloat;
 
 				@Override
-				public IJsonNode parse(final String textualValue) {
+				public IJsonNode parse(final CharSequence textualValue) {
 					StringBuilder cleanedValue = new StringBuilder(this.removePattern.matcher(textualValue).replaceAll(
 						""));
 					if (!this.removeSuperfluxSigns(cleanedValue))
@@ -88,7 +94,8 @@ public class LenientParser {
 					if (defaultValue.isFloatingPointNumber())
 						this.remomveSuperfluxDots(cleanedValue);
 
-					return TypeCoercer.INSTANCE.coerce(TextNode.valueOf(cleanedValue.toString()), type);
+					return TypeCoercer.INSTANCE.coerce(TextNode.valueOf(cleanedValue.toString()),
+						LenientParser.this.nodeCache, type);
 				}
 
 				private void remomveSuperfluxDots(StringBuilder cleanedValue) {
@@ -114,7 +121,7 @@ public class LenientParser {
 			this.add(type, new TextualParser(FORCE_PARSING) {
 
 				@Override
-				public IJsonNode parse(final String textualValue) {
+				public IJsonNode parse(final CharSequence textualValue) {
 					return defaultValue;
 				}
 			});
@@ -124,10 +131,10 @@ public class LenientParser {
 	private void addBooleanParsers() {
 		this.add(BooleanNode.class, new TextualParser(STRICT) {
 			@Override
-			public IJsonNode parse(final String textualValue) {
-				if (textualValue.equalsIgnoreCase("true"))
+			public IJsonNode parse(final CharSequence textualValue) {
+				if (StringUtils.equalsIgnoreCase(textualValue, "true"))
 					return BooleanNode.TRUE;
-				if (textualValue.equalsIgnoreCase("false"))
+				if (StringUtils.equalsIgnoreCase(textualValue, "false"))
 					return BooleanNode.FALSE;
 				return null;
 			}
@@ -138,7 +145,7 @@ public class LenientParser {
 			Pattern falsePattern = Pattern.compile("(?i).*f.*a.*l*.s*.e.*");
 
 			@Override
-			public IJsonNode parse(final String textualValue) {
+			public IJsonNode parse(final CharSequence textualValue) {
 				if (this.truePattern.matcher(textualValue).matches())
 					return BooleanNode.TRUE;
 				if (this.falsePattern.matcher(textualValue).matches())
@@ -148,7 +155,7 @@ public class LenientParser {
 		});
 		this.add(BooleanNode.class, new TextualParser(FORCE_PARSING) {
 			@Override
-			public IJsonNode parse(final String textualValue) {
+			public IJsonNode parse(final CharSequence textualValue) {
 				return BooleanNode.FALSE;
 			}
 		});
@@ -189,11 +196,11 @@ public class LenientParser {
 			super(parseLevel);
 		}
 
-		public abstract IJsonNode parse(String textualValue);
+		public abstract IJsonNode parse(CharSequence textualValue);
 
 		@Override
 		public final IJsonNode parse(TextNode textNode) {
-			return this.parse(textNode.getTextValue());
+			return this.parse(textNode);
 		}
 	}
 }

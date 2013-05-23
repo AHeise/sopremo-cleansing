@@ -39,11 +39,6 @@ import eu.stratosphere.util.reflect.ReflectUtil;
 public abstract class AbstractSimilarity<NodeType extends IJsonNode> extends AbstractSopremoType implements
 		Similarity<NodeType> {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 2458703144897619013L;
-
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -61,17 +56,7 @@ public abstract class AbstractSimilarity<NodeType extends IJsonNode> extends Abs
 	 */
 	@Override
 	public boolean isSymmetric() {
-		return ReflectUtil.getAnnotation(getClass(), Asymmetric.class) == null;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see java.lang.Object#clone()
-	 */
-	@SuppressWarnings("unchecked")
-	@Override
-	public AbstractSimilarity<NodeType> clone() {
-		return (AbstractSimilarity<NodeType>) super.clone();
+		return ReflectUtil.getAnnotation(this.getClass(), Asymmetric.class) == null;
 	}
 
 	// /*

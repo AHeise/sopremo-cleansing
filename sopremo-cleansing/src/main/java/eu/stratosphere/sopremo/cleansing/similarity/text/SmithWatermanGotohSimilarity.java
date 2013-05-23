@@ -33,11 +33,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.SmithWatermanGotoh;
  */
 public class SmithWatermanGotohSimilarity extends SimmetricsSimilarity<SmithWatermanGotoh> {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4509415487377977040L;
-
-	/**
 	 * Initializes a <code>SWGotohDistanceSimilarity</code>.
 	 */
 	public SmithWatermanGotohSimilarity() {

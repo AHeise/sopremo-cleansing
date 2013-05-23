@@ -16,7 +16,6 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 /**
  * @author Arvid Heise
- *
  */
 public interface Setupable {
 	public void setup();

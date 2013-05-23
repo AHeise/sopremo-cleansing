@@ -15,12 +15,23 @@
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 /**
- * @author Arvid Heise
+ * 
  */
-public class DuplicateDetectionAlgorithmFactory {
-	public final static DuplicateDetectionAlgorithmFactory INSTANCE = new DuplicateDetectionAlgorithmFactory();
+public enum DuplicateDetectionImplementation {
+	NAIVE(NaiveDuplicateDetection.class), BLOCKING(Blocking.class);
+	
+	private Class<? extends CompositeDuplicateDetectionAlgorithm<?>> type;
 
-	public CompositeDuplicateDetectionAlgorithm<?> getAlgorithm(CandidateSelection candidateSelection) {
-		return new NaiveDuplicateDetection();
+	private DuplicateDetectionImplementation(Class<? extends CompositeDuplicateDetectionAlgorithm<?>> type) {
+		this.type = type;
+	}
+	
+	/**
+	 * Returns the type.
+	 * 
+	 * @return the type
+	 */
+	public Class<? extends CompositeDuplicateDetectionAlgorithm<?>> getType() {
+		return this.type;
 	}
 }

@@ -14,6 +14,9 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 
 /**
@@ -21,44 +24,39 @@ import eu.stratosphere.sopremo.operator.ElementaryOperator;
  */
 public abstract class ElementaryDuplicateDetectionAlgorithm<ImplType extends ElementaryDuplicateDetectionAlgorithm<ImplType>>
 		extends ElementaryOperator<ImplType> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8029175167683349177L;
-
-	private CandidateComparison comparison = new CandidateComparison();
+	private BooleanExpression condition = new UnaryExpression(new ConstantExpression(true));
 
 	/**
-	 * Returns the value of comparison.
+	 * Returns the value of condition.
 	 * 
-	 * @return the comparison
+	 * @return the condition
 	 */
-	public CandidateComparison getComparison() {
-		return this.comparison;
+	public BooleanExpression getCondition() {
+		return this.condition;
 	}
 
 	/**
-	 * Sets the value of comparison to the given value.
+	 * Sets the value of condition to the given value.
 	 * 
-	 * @param comparison
-	 *        the comparison to set
+	 * @param condition
+	 *        the condition to set
 	 */
-	public void setComparison(CandidateComparison comparison) {
-		if (comparison == null)
-			throw new NullPointerException("comparison must not be null");
+	public void setCondition(BooleanExpression condition) {
+		if (condition == null)
+			throw new NullPointerException("condition must not be null");
 
-		this.comparison = comparison;
+		this.condition = condition;
 	}
 
 	/**
-	 * Sets the value of comparison to the given value.
+	 * Sets the value of condition to the given value.
 	 * 
-	 * @param comparison
-	 *        the comparison to set
+	 * @param condition
+	 *        the condition to set
 	 * @return this
 	 */
-	public ImplType withComparison(CandidateComparison comparison) {
-		setComparison(comparison);
-		return self();
+	public ImplType withCondition(BooleanExpression condition) {
+		this.setCondition(condition);
+		return this.self();
 	}
 }

@@ -5,17 +5,21 @@ import java.util.Collection;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.pact.common.type.KeyValuePair;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * Tests {@link Naive} {@link InterSourceRecordLinkage} with one data source.
  * 
  * @author Arvid Heise
  */
-public class NaiveRecordLinkageIntraSourceTest extends IntraSourceRecordLinkageTestBase<Naive> {
+public class NaiveDuplicateDetectionTest extends DuplicateDetectionTestBase<NaiveDuplicateDetection> {
 
 	/**
 	 * Initializes NaiveRecordLinkageIntraSourceTest.
@@ -23,28 +27,27 @@ public class NaiveRecordLinkageIntraSourceTest extends IntraSourceRecordLinkageT
 	 * @param resultProjection
 	 * @param useId
 	 */
-	public NaiveRecordLinkageIntraSourceTest(
+	public NaiveDuplicateDetectionTest(
 			final EvaluationExpression resultProjection, final boolean useId) {
 		super(resultProjection, useId);
 	}
 
 	@Override
-	protected RecordLinkageAlgorithm createAlgorithm() {
-		return new Naive();
+	protected DuplicateDetectionImplementation getImplementation() {
+		return DuplicateDetectionImplementation.NAIVE;
 	}
 
 	@Override
-	protected void generateExpectedPairs(Input input) {
-		for (final KeyValuePair<IJsonNode, IJsonNode> left : input) {
-			boolean skipPairs = true;
-			for (final KeyValuePair<IJsonNode, IJsonNode> right : input) {
-				if (left == right) {
-					skipPairs = false;
-					continue;
-				} else if (skipPairs)
-					continue;
-
-				this.emitCandidate(left, right);
+	protected void generateExpectedPairs(Input input, CandidateComparison comparison) {
+		if (comparison.getIdProjection() == null) {
+			comparison.setPreselect(new NodeOrderSelector());
+		}
+		
+		final BooleanExpression condition = comparison.asCondition();
+		for (final IJsonNode left : input) {
+			for (final IJsonNode right : input) {
+				if (condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
+					this.emitCandidate(left, right);
 			}
 		}
 	}

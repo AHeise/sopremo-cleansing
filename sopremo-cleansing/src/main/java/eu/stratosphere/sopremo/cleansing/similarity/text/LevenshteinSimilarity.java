@@ -33,11 +33,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.Levenshtein;
  */
 public class LevenshteinSimilarity extends SimmetricsSimilarity<Levenshtein> {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4695627390143623463L;
-
-	/**
 	 * Initializes a <code>LevenshteinDistanceSimilarity</code>.
 	 */
 	public LevenshteinSimilarity() {

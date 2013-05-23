@@ -23,7 +23,6 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.text;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
@@ -33,11 +32,6 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * @author Arvid Heise
  */
 public class IdentitySimilarity extends AbstractSimilarity<IJsonNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 66432635725114156L;
-
 	@Override
 	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
 		return node1.equals(node2) ? 1 : 0;
@@ -50,13 +44,5 @@ public class IdentitySimilarity extends AbstractSimilarity<IJsonNode> {
 	@Override
 	public Class<IJsonNode> getExpectedType() {
 		return IJsonNode.class;
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new IdentitySimilarity();
 	}
 }

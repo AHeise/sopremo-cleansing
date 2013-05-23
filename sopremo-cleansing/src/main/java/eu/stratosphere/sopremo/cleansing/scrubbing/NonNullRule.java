@@ -5,11 +5,6 @@ import eu.stratosphere.sopremo.type.NullNode;
 
 public class NonNullRule extends ValidationRule {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7143578623739556651L;
-
 	public NonNullRule() {
 	}
 
@@ -18,7 +13,7 @@ public class NonNullRule extends ValidationRule {
 	}
 
 	@Override
-	protected boolean validate(IJsonNode value, ValidationContext context) {
+	protected boolean validate(IJsonNode value) {
 		return value != NullNode.getInstance();
 	}
 }

@@ -4,38 +4,30 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
-public class MergeDistinctRule extends ConflictResolution<IJsonNode> {
+public class MergeDistinctRule extends ConflictResolution {
 	/**
-	 * 
+	 * The default, stateless instance.
 	 */
-	private static final long serialVersionUID = -281898889096008741L;
-	
+	public final static MergeDistinctRule INSTANCE = new MergeDistinctRule();
+
 	private transient final Set<IJsonNode> distinctValues = new HashSet<IJsonNode>();
 
 	@Override
-	public void fuse(final IArrayNode<IJsonNode> values) {
+	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
 		this.distinctValues.clear();
 		this.distinctValues.add(NullNode.getInstance());
-		
+
 		Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext()) {
 			IJsonNode element = iterator.next();
-			if(this.distinctValues.contains(element))
+			if (this.distinctValues.contains(element))
 				iterator.remove();
-			else this.distinctValues.add(element);
+			else
+				this.distinctValues.add(element);
 		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
-	 */
-	@Override
-	protected EvaluationExpression createCopy() {
-		return new MergeDistinctRule();
 	}
 }

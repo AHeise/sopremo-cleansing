@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
@@ -28,21 +27,24 @@ import eu.stratosphere.sopremo.type.TypeCoercer;
  */
 public class CoercingSimilarity extends AbstractSimilarity<IJsonNode> implements
 		CompoundSimilarity<IJsonNode, Similarity<IJsonNode>> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 669569819842928949L;
-
 	private final Similarity<IJsonNode> actualSimilarity;
 
 	private final Class<IJsonNode> coercionType;
 
-	private final transient NodeCache nodeCache1 = new NodeCache(), nodeCache2 = new NodeCache();
+	private transient NodeCache cache1 = new NodeCache(), cache2 = new NodeCache();
 
 	@SuppressWarnings("unchecked")
 	public CoercingSimilarity(Similarity<?> actualSimilarity) {
 		this.actualSimilarity = (Similarity<IJsonNode>) actualSimilarity;
 		this.coercionType = (Class<IJsonNode>) actualSimilarity.getExpectedType();
+	}
+
+	/**
+	 * Initializes CoercingSimilarity.
+	 */
+	CoercingSimilarity() {
+		this.actualSimilarity = null;
+		this.coercionType = null;
 	}
 
 	/*
@@ -54,14 +56,6 @@ public class CoercingSimilarity extends AbstractSimilarity<IJsonNode> implements
 		return IJsonNode.class;
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new CoercingSimilarity(this.actualSimilarity.clone());
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -98,7 +92,7 @@ public class CoercingSimilarity extends AbstractSimilarity<IJsonNode> implements
 	@Override
 	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
 		return this.actualSimilarity.getSimilarity(
-			TypeCoercer.INSTANCE.coerce(node1, this.nodeCache1, this.coercionType),
-			TypeCoercer.INSTANCE.coerce(node2, this.nodeCache2, this.coercionType));
+			TypeCoercer.INSTANCE.coerce(node1, this.cache1, this.coercionType),
+			TypeCoercer.INSTANCE.coerce(node2, this.cache2, this.coercionType));
 	}
 }

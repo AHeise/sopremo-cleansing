@@ -17,36 +17,31 @@ package eu.stratosphere.sopremo.cleansing.similarity;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.text.TextSimilarity;
 import eu.stratosphere.sopremo.tokenizer.DelimiterTokenizer;
 import eu.stratosphere.sopremo.tokenizer.Tokenizer;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.TextNode;
 
 /**
  * @author Arvid Heise
  */
 public class TokenizingSimilarity extends TextSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4152280954056950068L;
-
-	private Similarity<IArrayNode> innerSimilarity;
+	private Similarity<IArrayNode<TextNode>> innerSimilarity;
 
 	private Tokenizer tokenizer = DelimiterTokenizer.WHITESPACES;
 
-	private transient CachingArrayNode tokens1 = new CachingArrayNode(), tokens2 = new CachingArrayNode();
+	private transient CachingArrayNode<TextNode> tokens1 = new CachingArrayNode<TextNode>(), tokens2 = new CachingArrayNode<TextNode>();
 
-	public TokenizingSimilarity(Similarity<IArrayNode> innerSimilarity) {
+	public TokenizingSimilarity(Similarity<IArrayNode<TextNode>> innerSimilarity) {
 		this.innerSimilarity = innerSimilarity;
 	}
 
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 		ois.defaultReadObject();
-		this.tokens1 = new CachingArrayNode();
-		this.tokens2 = new CachingArrayNode();
+		this.tokens1 = new CachingArrayNode<TextNode>();
+		this.tokens2 = new CachingArrayNode<TextNode>();
 	}
 
 	/**
@@ -58,14 +53,6 @@ public class TokenizingSimilarity extends TextSimilarity {
 		return this.tokenizer;
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new TokenizingSimilarity(innerSimilarity.clone());
-	}
-	
 	/**
 	 * Sets the tokenizer to the specified value.
 	 * 

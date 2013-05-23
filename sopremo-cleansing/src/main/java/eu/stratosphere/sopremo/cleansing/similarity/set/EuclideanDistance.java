@@ -28,7 +28,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
@@ -38,18 +37,16 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * @author Arvid Heise
  */
 public class EuclideanDistance extends SetSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4387988465211098604L;
-
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.
+	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2) {
-		final Object2IntMap<IJsonNode> termFrequencies1 = getTermFrequencies(node1);
-		final Object2IntMap<IJsonNode> termFrequencies2 = getTermFrequencies(node2);
+	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+		final Object2IntMap<IJsonNode> termFrequencies1 = this.getTermFrequencies(node1);
+		final Object2IntMap<IJsonNode> termFrequencies2 = this.getTermFrequencies(node2);
 
 		final Set<IJsonNode> values = new HashSet<IJsonNode>(termFrequencies1.keySet());
 		values.addAll(termFrequencies2.keySet());
@@ -62,13 +59,5 @@ public class EuclideanDistance extends SetSimilarity {
 		final double maxSq = node1.size() * node1.size() + node2.size() * node2.size();
 
 		return Math.pow(distanceSq / maxSq, 0.5);
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new EuclideanDistance();
 	}
 }

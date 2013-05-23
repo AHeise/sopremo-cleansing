@@ -23,7 +23,6 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
@@ -33,11 +32,6 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * @author Arvid Heise
  */
 public class JaccardSimilarity extends SetSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 8580009440150845162L;
-
 	/*
 	 * (non-Javadoc)
 	 * @see
@@ -45,16 +39,8 @@ public class JaccardSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2) {
-		int commonTokens = getNumberOfCommonTokens(node1, node2);
+	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+		int commonTokens = this.getNumberOfCommonTokens(node1, node2);
 		return commonTokens / (node1.size() + node2.size() - commonTokens);
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new JaccardSimilarity();
 	}
 }

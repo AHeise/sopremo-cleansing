@@ -4,12 +4,7 @@ import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.type.IArrayNode;
 
 public class FusionContext extends EvaluationContext {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -3830001019910981066L;
-
-	private IArrayNode contextNodes;
+	private IArrayNode<?> contextNodes;
 
 	private int[] sourceIndexes;
 
@@ -19,7 +14,7 @@ public class FusionContext extends EvaluationContext {
 		super(context);
 	}
 
-	public IArrayNode getContextNodes() {
+	public IArrayNode<?> getContextNodes() {
 		return this.contextNodes;
 	}
 
@@ -31,7 +26,7 @@ public class FusionContext extends EvaluationContext {
 		return this.weights;
 	}
 
-	public void setContextNodes(final IArrayNode contextNodes) {
+	public void setContextNodes(final IArrayNode<?> contextNodes) {
 		if (contextNodes == null)
 			throw new NullPointerException("contextNode must not be null");
 

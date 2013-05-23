@@ -39,7 +39,6 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  * <code>SimilarityBaseTest</code> provides {@link IJsonNode} test instances that can be used by all comparator tests.
  * 
  * @author Matthias Pohl
- * @author Arvid Heise
  */
 @Ignore
 @RunWith(Parameterized.class)
@@ -85,7 +84,6 @@ public abstract class SimilarityBaseTest {
 		}
 
 		if (similarity.isSymmetric() && !Double.isNaN(this.expected))
-			Assert.assertEquals("Not symmetric", this.expected, similarity.getSimilarity(this.node2, this.node1),
-				0.0001);
+			Assert.assertEquals("Not symmetric", this.expected, similarity.getSimilarity(this.node2, this.node1), 0.0001);
 	}
 }

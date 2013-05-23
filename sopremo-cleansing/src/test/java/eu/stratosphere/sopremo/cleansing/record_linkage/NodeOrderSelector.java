@@ -12,49 +12,17 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.duplicatedection;
+package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.io.IOException;
-
-import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.AbstractPreselection;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * @author arv
- *
+ * 
  */
-public final class NoPreselection extends Preselection {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8632780096174691250L;
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
-	 */
-	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
-	}
-
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#clone()
-	 */
-	@Override
-	public NoPreselection clone() {
-		return (NoPreselection) super.clone();
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return this;
-	}
-	
+final class NodeOrderSelector extends AbstractPreselection {
 	@Override
 	public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-		return true;
+		return left.compareTo(right) < 0;
 	}
 }

@@ -18,11 +18,17 @@ import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionAlgorithmFactory;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.util.reflect.ReflectUtil;
 
 /**
  * @author Arvid Heise
@@ -31,14 +37,11 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 @OutputCardinality(1)
 public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 5097323266252206628L;
-
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
 	private CandidateComparison comparison = new CandidateComparison().withInnerSource(true);
+
+	private DuplicateDetectionImplementation implementation = null;
 
 	/**
 	 * Returns the candidateSelection.
@@ -60,6 +63,48 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 			throw new NullPointerException("candidateSelection must not be null");
 
 		this.candidateSelection = candidateSelection;
+	}
+
+	@Property
+	@Name(preposition = "where")
+	public void setComparisonExpression(EvaluationExpression expression) {
+		this.comparison.parseRules(expression);
+	}
+
+	@Property
+	@Name(preposition = "sort on")
+	public void setSortingKeyExpression(EvaluationExpression expression) {
+		this.candidateSelection.parse(expression, 1);
+		this.candidateSelection.setSelectionHint(SelectionHint.SORT);
+	}
+
+	@Property
+	@Name(preposition = "partition on")
+	public void setPartitionKeyExpression(EvaluationExpression expression) {
+		this.candidateSelection.parse(expression, 1);
+		this.candidateSelection.setSelectionHint(SelectionHint.BLOCK);
+	}
+	
+	@Property
+	@Name(preposition = "on")
+	public void setKeyExpression(EvaluationExpression expression) {
+		this.candidateSelection.parse(expression, 1);
+		this.candidateSelection.setSelectionHint(null);
+	}
+
+	@Property
+	@Name(preposition = "with")
+	public void setImplementation(DuplicateDetectionImplementation implementation) {
+		this.implementation = implementation;
+	}
+
+	/**
+	 * Returns the implementation.
+	 * 
+	 * @return the implementation
+	 */
+	public DuplicateDetectionImplementation getImplementation() {
+		return this.implementation;
 	}
 
 	/**
@@ -90,8 +135,12 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 */
 	@Override
 	public void addImplementation(SopremoModule module, EvaluationContext context) {
-		final CompositeDuplicateDetectionAlgorithm<?> algorithm =
-			DuplicateDetectionAlgorithmFactory.INSTANCE.getAlgorithm(this.candidateSelection);
+		final CompositeDuplicateDetectionAlgorithm<?> algorithm;
+		if (this.implementation != null)
+			algorithm = ReflectUtil.newInstance(this.implementation.getType());
+		else
+			algorithm = DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 1);
+		algorithm.setCandidateSelection(this.candidateSelection);
 		algorithm.setComparison(this.comparison);
 		module.embed(algorithm);
 	}

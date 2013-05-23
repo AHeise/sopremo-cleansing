@@ -23,8 +23,8 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * <code>CosineSimilarity</code> compares two {@link IJsonNode}s based on the Cosine Similarity
@@ -33,24 +33,14 @@ import eu.stratosphere.sopremo.type.IArrayNode;
  * @author Arvid Heise
  */
 public class CosineSimilarity extends SetSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3231226795346697233L;
-
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.similarity.set.SetSimilarity#getSetSimilarity(eu.stratosphere.sopremo.type.
+	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode node1, IArrayNode node2) {
-		return getNumberOfCommonTokens(node1, node2) / Math.pow(node1.size(), 0.5) / Math.pow(node2.size(), 0.5);
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new CosineSimilarity();
+	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+		return this.getNumberOfCommonTokens(node1, node2) / Math.pow(node1.size(), 0.5) / Math.pow(node2.size(), 0.5);
 	}
 }

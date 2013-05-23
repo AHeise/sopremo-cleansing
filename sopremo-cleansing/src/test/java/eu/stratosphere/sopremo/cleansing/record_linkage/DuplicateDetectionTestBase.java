@@ -5,14 +5,19 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import eu.stratosphere.pact.common.type.KeyValuePair;
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * Base for inner source {@link InterSourceRecordLinkage} test cases within one source.
@@ -23,8 +28,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  */
 @RunWith(Parameterized.class)
 @Ignore
-public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAlgorithm> extends
-		RecordLinkageAlgorithmTestBase {
+public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDetectionAlgorithm<P>> {
 	private final EvaluationExpression resultProjection;
 
 	private final boolean useId;
@@ -37,7 +41,7 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	 * @param resultProjection
 	 * @param useId
 	 */
-	public IntraSourceRecordLinkageTestBase(EvaluationExpression resultProjection, boolean useId) {
+	public DuplicateDetectionTestBase(EvaluationExpression resultProjection, boolean useId) {
 		this.resultProjection = resultProjection;
 		this.useId = useId;
 	}
@@ -47,15 +51,19 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	 */
 	@Test
 	public void pactCodeShouldPerformLikeStandardImplementation() {
-		final IntraSourceRecordLinkage recordLinkage = new IntraSourceRecordLinkage();
-		recordLinkage.setAlgorithm(this.createAlgorithm());
-		this.sopremoTestPlan = this.createTestPlan(recordLinkage, this.useId, this.resultProjection);
 
-		EvaluationExpression resultProjection = this.resultProjection;
-		if (resultProjection == null)
-			resultProjection = EvaluationExpression.VALUE;
+		final DuplicateDetection dd = new DuplicateDetection();
+		dd.setCandidateSelection(getCandidateSelection());
+		dd.setImplementation(getImplementation());
+		if (this.useId) {
+			dd.getComparison().setIdProjection(new ObjectAccess("id"));
+		}
+		if (this.resultProjection != null)
+			dd.getComparison().setResultProjection(this.resultProjection);
+		
+		this.sopremoTestPlan = createTestPlan(dd);
 
-		this.generateExpectedPairs(this.sopremoTestPlan.getInput(0));
+		this.generateExpectedPairs(this.sopremoTestPlan.getInput(0), dd.getComparison());
 
 		try {
 			this.sopremoTestPlan.run();
@@ -65,11 +73,18 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	}
 
 	/**
+	 * @return
+	 */
+	protected CandidateSelection getCandidateSelection() {
+		return new CandidateSelection();
+	}
+
+	/**
 	 * Generates the expected pairs and invokes {@link #emitCandidate(KeyValuePair, KeyValuePair)}.
 	 * 
 	 * @param input
 	 */
-	protected abstract void generateExpectedPairs(Input input);
+	protected abstract void generateExpectedPairs(Input input, CandidateComparison comparison);
 
 	/**
 	 * Emit the candidate.
@@ -77,21 +92,12 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	 * @param left
 	 * @param right
 	 */
-	protected void emitCandidate(KeyValuePair<IJsonNode, IJsonNode> left, KeyValuePair<IJsonNode, IJsonNode> right) {
+	protected void emitCandidate(IJsonNode left, IJsonNode right) {
 		EvaluationExpression resultProjection = this.resultProjection;
 		if (resultProjection == null)
 			resultProjection = EvaluationExpression.VALUE;
 
-		final EvaluationContext context = this.getContext();
-
-		IJsonNode smaller = left.getValue(), bigger = right.getValue();
-		if (bigger.compareTo(smaller) < 0) {
-			IJsonNode temp = smaller;
-			smaller = bigger;
-			bigger = temp;
-		}
-		this.sopremoTestPlan.getExpectedOutput(0).addArray(resultProjection.evaluate(smaller, context),
-			resultProjection.evaluate(bigger, context));
+		this.sopremoTestPlan.getExpectedOutput(0).add(resultProjection.evaluate(JsonUtil.asArray(left, right)));
 	}
 
 	/**
@@ -108,7 +114,7 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	 * 
 	 * @return the configured algorithm
 	 */
-	protected abstract RecordLinkageAlgorithm createAlgorithm();
+	protected abstract DuplicateDetectionImplementation getImplementation();
 
 	/**
 	 * Creates a test plan for the record linkage operator.
@@ -118,13 +124,9 @@ public abstract class IntraSourceRecordLinkageTestBase<P extends RecordLinkageAl
 	 * @param projection
 	 * @return the generated test plan
 	 */
-	protected SopremoTestPlan createTestPlan(final IntraSourceRecordLinkage recordLinkage, final boolean useId,
-			final EvaluationExpression projection) {
-		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(recordLinkage);
-		if (useId)
-			recordLinkage.getRecordLinkageInput().setIdProjection(new ObjectAccess("id"));
-		if (projection != null)
-			recordLinkage.getRecordLinkageInput().setResultProjection(projection);
+	protected SopremoTestPlan createTestPlan(DuplicateDetection dd) {
+
+		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(dd);
 		sopremoTestPlan.getInput(0).
 			addObject("id", 0, "first name", "albert", "last name", "perfect duplicate", "age", 80).
 			addObject("id", 1, "first name", "berta", "last name", "typo", "age", 70).

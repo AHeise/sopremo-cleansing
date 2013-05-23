@@ -23,7 +23,7 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity;
 
-import eu.stratosphere.sopremo.ISerializableSopremoType;
+import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -34,7 +34,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * @author Arvid Heise
  * @see AbstractSimilarity
  */
-public interface Similarity<NodeType extends IJsonNode> extends ISerializableSopremoType {
+public interface Similarity<NodeType extends IJsonNode> extends ISopremoType {
 	public static double NOT_APPLICABLE = Double.valueOf("-0");
 
 	/**
@@ -49,8 +49,6 @@ public interface Similarity<NodeType extends IJsonNode> extends ISerializableSop
 	public double getSimilarity(NodeType node1, NodeType node2);
 
 	public Class<NodeType> getExpectedType();
-	
+
 	public boolean isSymmetric();
-	
-	public Similarity<NodeType> clone();
 }

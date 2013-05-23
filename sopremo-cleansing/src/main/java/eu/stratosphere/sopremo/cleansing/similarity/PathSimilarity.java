@@ -18,21 +18,15 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.MissingNode;
 
 /**
  * @author Arvid Heise
  */
 public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilarity<IJsonNode> implements
 		CompoundSimilarity<IJsonNode, Similarity<NodeType>> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3168384409276920868L;
-
 	private final PathSegmentExpression leftExpression, rightExpression;
 
 	private final Similarity<NodeType> actualSimilarity;
@@ -42,6 +36,15 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 		this.leftExpression = leftExpression;
 		this.actualSimilarity = actualSimilarity;
 		this.rightExpression = rightExpression;
+	}
+
+	/**
+	 * Initializes PathSimilarity.
+	 */
+	PathSimilarity() {
+		this.leftExpression = null;
+		this.actualSimilarity = null;
+		this.rightExpression = null;
 	}
 
 	/*
@@ -69,15 +72,6 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	@Override
 	public List<Similarity<NodeType>> getSubsimilarities() {
 		return Collections.singletonList(this.actualSimilarity);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new PathSimilarity<NodeType>(leftExpression.clone(), actualSimilarity.clone(), rightExpression.clone());
 	}
 
 	/**
@@ -113,14 +107,15 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	 * eu.stratosphere.sopremo.cleansing.similarity.Similarity#getSimilarity(eu.stratosphere.sopremo.type.IJsonNode,
 	 * eu.stratosphere.sopremo.type.IJsonNode)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
 		final NodeType left = (NodeType) this.leftExpression.evaluate(node1);
-		if (left.isMissing())
+		if (left == MissingNode.getInstance())
 			return 0;
 		// two missing nodes are still not similar in contrast to two null nodes
 		final NodeType right = (NodeType) this.rightExpression.evaluate(node2);
-		if (right.isMissing())
+		if (right == MissingNode.getInstance())
 			return 0;
 		return this.actualSimilarity.getSimilarity(left, right);
 	}

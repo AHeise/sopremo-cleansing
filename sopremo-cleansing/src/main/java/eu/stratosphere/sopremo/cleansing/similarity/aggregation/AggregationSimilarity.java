@@ -39,12 +39,8 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise
  */
-public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode> implements CompoundSimilarity<IJsonNode, Similarity<IJsonNode>> {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1611709871788111311L;
+public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode> implements
+		CompoundSimilarity<IJsonNode, Similarity<IJsonNode>> {
 
 	private final List<Similarity<IJsonNode>> similarities = new ArrayList<Similarity<IJsonNode>>();
 
@@ -108,9 +104,10 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 			if (similarity.getExpectedType() != this.expectedType) {
 				if (!this.expectedType.isAssignableFrom(similarity.getExpectedType()))
 					throw new IllegalArgumentException(
-						String.format(
-							"Incompatible similarity measures used; use coercing to decide for one of the following types: %s, %s",
-							this.expectedType, similarity.getExpectedType()));
+						String
+							.format(
+								"Incompatible similarity measures used; use coercing to decide for one of the following types: %s, %s",
+								this.expectedType, similarity.getExpectedType()));
 				this.expectedType = (Class<IJsonNode>) similarity.getExpectedType();
 			}
 	}
@@ -123,6 +120,9 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	 */
 	@Override
 	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+		if(this.individualSimilarities.length == 0)
+			return Double.NaN;
+		
 		for (int index = 0; index < this.individualSimilarities.length; index++)
 			this.individualSimilarities[index] = this.similarities.get(index).getSimilarity(node1, node2);
 		return this.aggregateSimilarity(this.individualSimilarities);
@@ -130,22 +130,24 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 
 	protected abstract double aggregateSimilarity(double[] individualSimilarities);
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
 	public Iterator<Similarity<IJsonNode>> iterator() {
 		return this.similarities.iterator();
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.CompoundSimilarity#getSubsimilarities()
 	 */
 	@Override
 	public List<Similarity<IJsonNode>> getSubsimilarities() {
 		return this.similarities;
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#isSymmetric()

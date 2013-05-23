@@ -5,12 +5,7 @@ import java.util.List;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 public class WhiteListRule extends ValidationRule {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4224451859875263084L;
-
-	private List<IJsonNode> possibleValues;
+	private final List<IJsonNode> possibleValues;
 
 	@SuppressWarnings("unchecked")
 	public WhiteListRule(List<? extends IJsonNode> possibleValues) {
@@ -22,9 +17,17 @@ public class WhiteListRule extends ValidationRule {
 		this.possibleValues = (List<IJsonNode>) possibleValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
+	
+	/**
+	 * Initializes WhiteListRule.
+	 *
+	 */
+	WhiteListRule() {
+		this.possibleValues = null;
+	}
 
 	@Override
-	protected boolean validate(IJsonNode value, ValidationContext context) {
+	protected boolean validate(IJsonNode value) {
 		return this.possibleValues.contains(value);
 	}
 }

@@ -5,12 +5,7 @@ import java.util.List;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 public class BlackListRule extends ValidationRule {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4224451859875263084L;
-
-	private List<IJsonNode> blacklistedValues;
+	private final List<IJsonNode> blacklistedValues;
 
 	@SuppressWarnings("unchecked")
 	public BlackListRule(List<? extends IJsonNode> blacklistedValues) {
@@ -22,9 +17,13 @@ public class BlackListRule extends ValidationRule {
 		this.blacklistedValues = (List<IJsonNode>) blacklistedValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
+	
+	BlackListRule() {
+		this.blacklistedValues = null;
+	}
 
 	@Override
-	protected boolean validate(IJsonNode value, ValidationContext context) {
+	protected boolean validate(IJsonNode value) {
 		return !this.blacklistedValues.contains(value);
 	}
 

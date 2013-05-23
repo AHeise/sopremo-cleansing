@@ -12,29 +12,21 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.scrubbing;
-
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.type.BooleanNode;
-import eu.stratosphere.sopremo.type.IJsonNode;
+package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 /**
- * @author Arvid Heise
+ * 
  */
-public abstract class TupleConstraint extends BooleanExpression {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7085362472583912753L;
+public class DuplicateDetectionFactory {
+	private final static DuplicateDetectionFactory INSTANCE = new DuplicateDetectionFactory();
 
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode)
-	 */
-	@Override
-	public BooleanNode evaluate(IJsonNode node) {
-		return BooleanNode.valueOf(isValid(node));
+	public static DuplicateDetectionFactory getInstance() {
+		return INSTANCE;
 	}
 
-	public abstract boolean isValid(IJsonNode node);
+	public CompositeDuplicateDetectionAlgorithm<?> getMatchingAlgorithm(CandidateSelection selection, @SuppressWarnings("unused") int numInputs) {
+		if (selection.getPasses().isEmpty())
+			return new NaiveDuplicateDetection();
+		return new Blocking();
+	}
 }

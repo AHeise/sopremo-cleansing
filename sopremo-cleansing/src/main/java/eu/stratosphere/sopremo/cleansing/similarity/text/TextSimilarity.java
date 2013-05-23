@@ -21,11 +21,6 @@ import eu.stratosphere.sopremo.type.TextNode;
  * @author Arvid Heise
  */
 public abstract class TextSimilarity extends AbstractSimilarity<TextNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 4971853056009835566L;
-
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#getExpectedType()
@@ -51,6 +46,4 @@ public abstract class TextSimilarity extends AbstractSimilarity<TextNode> {
 	}
 
 	public abstract double getSimilarity(CharSequence text1, CharSequence text2);
-	
-	
 }

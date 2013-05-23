@@ -26,7 +26,6 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 import uk.ac.shef.wit.simmetrics.math.MathFuncs;
 import uk.ac.shef.wit.simmetrics.similaritymetrics.costfunctions.AbstractSubstitutionCost;
 import uk.ac.shef.wit.simmetrics.similaritymetrics.costfunctions.SubCost1_Minus2;
-import eu.stratosphere.sopremo.AbstractSopremoType;
 
 /**
  * <code>SmithWatermanSimilarity</code> compares two {@link IJsonNode}s based on the Smith Waterman Distance attribute.
@@ -34,11 +33,6 @@ import eu.stratosphere.sopremo.AbstractSopremoType;
  * @author Arvid Heise
  */
 public class SmithWatermanSimilarity extends TextSimilarity {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -2166171739070205462L;
 
 	/**
 	 * the private cost function used in the levenstein distance.
@@ -195,13 +189,5 @@ public class SmithWatermanSimilarity extends TextSimilarity {
 
 		// return max value within matrix as holds the maximum edit score
 		return maxSoFar;
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new SmithWatermanSimilarity();
 	}
 }

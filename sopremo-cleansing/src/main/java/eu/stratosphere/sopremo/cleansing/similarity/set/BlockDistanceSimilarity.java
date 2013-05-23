@@ -23,8 +23,8 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
-import eu.stratosphere.sopremo.cleansing.similarity.text.SimmetricsSimilarity;
 import uk.ac.shef.wit.simmetrics.similaritymetrics.BlockDistance;
+import eu.stratosphere.sopremo.cleansing.similarity.text.SimmetricsSimilarity;
 
 /**
  * <code>BlockDistanceSimilarity</code> compares two {@link IJsonNode}s based on the (city) Block Distance
@@ -33,11 +33,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.BlockDistance;
  * @author Arvid Heise
  */
 public class BlockDistanceSimilarity extends SimmetricsSimilarity<BlockDistance> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6646369212544485223L;
-
 	/**
 	 * Initializes a <code>BlockDistanceSimilarity</code>.
 	 * 

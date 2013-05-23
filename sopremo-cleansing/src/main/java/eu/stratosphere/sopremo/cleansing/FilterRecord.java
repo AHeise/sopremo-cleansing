@@ -14,31 +14,32 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
+import com.esotericsoftware.kryo.DefaultSerializer;
+
+import eu.stratosphere.sopremo.SingletonSerializer;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.AbstractJsonNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * @author Arvid Heise
  */
+@DefaultSerializer(FilterRecord.FilterRecordSerializer.class)
 public class FilterRecord extends AbstractJsonNode {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 2584161416150519211L;
-
 	public final static FilterRecord Instance = new FilterRecord();
+
+	public final static EvaluationExpression Expression = new ConstantExpression(Instance);
 
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#getType()
 	 */
 	@Override
-	public Type getType() {
-		return Type.CustomNode;
+	public Class<FilterRecord> getType() {
+		return FilterRecord.class;
 	}
 
 	/*
@@ -59,18 +60,11 @@ public class FilterRecord extends AbstractJsonNode {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#read(java.io.DataInput)
+	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void read(DataInput in) throws IOException {
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#write(java.io.DataOutput)
-	 */
-	@Override
-	public void write(DataOutput out) throws IOException {
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("<filter>");
 	}
 
 	/*
@@ -91,12 +85,9 @@ public class FilterRecord extends AbstractJsonNode {
 		return 0;
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
-	 */
-	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
-		appendable.append("<filter>");
+	public static class FilterRecordSerializer extends SingletonSerializer {
+		public FilterRecordSerializer() {
+			super(FilterRecord.Instance);
+		}
 	}
-
 }

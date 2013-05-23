@@ -1,15 +1,9 @@
 package eu.stratosphere.sopremo.cleansing.fusion;
 
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class DefaultValueResolution extends ConflictResolution<IJsonNode> {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 3038287806909149202L;
-
+public class DefaultValueResolution extends ConflictResolution {
 	private final IJsonNode defaultValue;
 
 	public DefaultValueResolution(final IJsonNode defaultValue) {
@@ -17,16 +11,8 @@ public class DefaultValueResolution extends ConflictResolution<IJsonNode> {
 	}
 
 	@Override
-	public void fuse(final IArrayNode<IJsonNode> values) {
+	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
 		values.clear();
 		values.add(this.defaultValue);
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#createCopy()
-	 */
-	@Override
-	protected EvaluationExpression createCopy() {
-		return new DefaultValueResolution(this.defaultValue.clone());
 	}
 }

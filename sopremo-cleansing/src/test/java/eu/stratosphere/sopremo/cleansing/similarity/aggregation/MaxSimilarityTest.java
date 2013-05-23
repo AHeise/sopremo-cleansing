@@ -27,6 +27,10 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
+import eu.stratosphere.sopremo.cleansing.similarity.ConstantSimilarity;
+import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.ObjectNode;
+
 /**
  * Tests the {@link MaxSimilarity} class.
  * 
@@ -34,36 +38,36 @@ import org.junit.Test;
  */
 public class MaxSimilarityTest {
 	
-	private final IJsonNodePair pair = new IJsonNodePair(new IJsonNode(new JsonRecord(), "", ""), new IJsonNode(new JsonRecord(), "", ""));
+	private final IJsonNode node1 = new ObjectNode(), node2 = new ObjectNode();
 
 	/**
-	 * Tests the behavior of {@link MaxSimilarity#compareObjects(IJsonNode, IJsonNode)}.
+	 * Tests the behavior of {@link MaxSimilarity#getSimilarity(IJsonNode, IJsonNode)}.
 	 */
 	@Test
 	public void testCompareObjectsIJsonNodeIJsonNode() {
-		MaxSimilarity comparator = new MaxSimilarity();
+		MaxSimilarity similarity = new MaxSimilarity();
 		
-		assertEquals(1.0, comparator.getSimilarity(this.pair), 0.0);
+		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		comparator.add(new ConstantComparator(0.0));
+		similarity.add(new ConstantSimilarity(0.0));
 		
-		assertEquals(0.0, comparator.compareObjects(this.pair), 0.0);
+		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		comparator.add(new ConstantComparator(0.1));
+		similarity.add(new ConstantSimilarity(0.1));
 		
-		assertEquals(0.1, comparator.compareObjects(this.pair), 0.0);
+		assertEquals(0.1, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		comparator.add(new ConstantComparator(0.5));
+		similarity.add(new ConstantSimilarity(0.5));
 		
-		assertEquals(0.5, comparator.compareObjects(this.pair), 0.0);
+		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		comparator.add(new ConstantComparator(0.5));
+		similarity.add(new ConstantSimilarity(0.5));
 		
-		assertEquals(0.5, comparator.compareObjects(this.pair), 0.0);
+		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		comparator.add(new ConstantComparator(1.0));
+		similarity.add(new ConstantSimilarity(1.0));
 		
-		assertEquals(1.0, comparator.compareObjects(this.pair), 0.0);
+		assertEquals(1.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
 	}
 
 }

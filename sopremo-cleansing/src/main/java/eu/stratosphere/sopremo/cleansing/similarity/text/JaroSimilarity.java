@@ -27,19 +27,12 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.BitSet;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
-
 /**
  * <code>JaroSimilarity</code> compares two {@link IJsonNode}s based on the Jaro Distance attribute.
  * 
  * @author Arvid Heise
  */
 public class JaroSimilarity extends TextSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -6164950344618325118L;
-
 	protected transient BitSet leftMatched = new BitSet(), rightMatched = new BitSet();
 
 	protected transient int commonChars, transpositions;
@@ -60,13 +53,13 @@ public class JaroSimilarity extends TextSimilarity {
 		this.leftMatched.clear();
 		this.rightMatched.clear();
 
-		findCommonChars(text1, text2);
+		this.findCommonChars(text1, text2);
 
 		/* If no characters in common - return */
 		if (this.commonChars == 0)
 			return 0;
 
-		countTranspositions(text1, text2);
+		this.countTranspositions(text1, text2);
 
 		double dCommonChars = this.commonChars;
 		return (dCommonChars / text1.length() + dCommonChars / text2.length() + //
@@ -94,22 +87,13 @@ public class JaroSimilarity extends TextSimilarity {
 
 			final char unmatchedChar1 = text1.charAt(pos1);
 			int pos2 = Math.max(pos1 - searchRange, 0) - 1;
-			for (; (pos2 = this.rightMatched.nextClearBit(pos2 + 1)) <= maxPos;) {
+			for (; (pos2 = this.rightMatched.nextClearBit(pos2 + 1)) <= maxPos;)
 				if (text2.charAt(pos2) == unmatchedChar1) {
 					this.commonChars++;
 					this.leftMatched.set(pos1);
 					this.rightMatched.set(pos2);
 					break;
 				}
-			}
 		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new JaroWinklerSimilarity();
 	}
 }

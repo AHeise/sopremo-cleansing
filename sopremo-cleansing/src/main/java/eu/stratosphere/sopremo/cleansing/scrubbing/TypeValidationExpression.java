@@ -1,35 +1,41 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 
 public class TypeValidationExpression extends ValidationRule {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5475336828366519516L;
-
 	private final Class<? extends IJsonNode> type;
 
 	public TypeValidationExpression(final Class<? extends IJsonNode> type) {
 		this.type = type;
 	}
 
+	/**
+	 * Initializes TypeValidationExpression.
+	 *
+	 */
+	TypeValidationExpression() {
+		this.type = null;
+	}
+	
+	private transient NodeCache nodeCache = new NodeCache();
+
 	@Override
-	protected IJsonNode fix(final IJsonNode value, final IJsonNode target, final ValidationContext context) {
+	protected IJsonNode fix(final IJsonNode value) {
 		try {
-			if (value.isTextual())
+			if (value instanceof TextNode)
 				return LenientParser.INSTANCE.parse((TextNode) value, this.type,
 					LenientParser.ELIMINATE_NOISE);
-			return TypeCoercer.INSTANCE.coerce(value, this.type);
+			return TypeCoercer.INSTANCE.coerce(value, this.nodeCache, this.type);
 		} catch (final Exception e) {
-			return super.fix(value, context);
+			return super.fix(value);
 		}
 	}
 
 	@Override
-	protected boolean validate(final IJsonNode value, final ValidationContext context) {
+	protected boolean validate(final IJsonNode value) {
 		return this.type.isInstance(value);
 	}
 

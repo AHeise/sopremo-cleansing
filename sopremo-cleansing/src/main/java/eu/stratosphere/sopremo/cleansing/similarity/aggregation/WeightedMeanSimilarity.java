@@ -24,16 +24,12 @@
 package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleListIterator;
+import it.unimi.dsi.fastutil.doubles.DoubleIterator;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * <code>HarmonicMeanSimilarity</code> calculates the similarities of each collected Similarity and returns the weighted
@@ -42,52 +38,43 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
  * @author Arvid Heise
  */
 public class WeightedMeanSimilarity extends AggregationSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 8627665157209879569L;
-
 	private DoubleArrayList weights = new DoubleArrayList();
 
 	public final static double ARITHMETIC_MEAN = 1, HARMONIC_MEAN = -1, GEOMETRIC_MEAN = 0.001, QUADRATIC_MEAN = 2,
 			MAXIMUM = 1000, MINIMUM = -1000;
 
-	private double m = ARITHMETIC_MEAN, weightSum = 0;
+	private final double m;
+	
+	private double weightSum = 0;
 
 	public double getM() {
 		return this.m;
 	}
-
-	public void setM(double m) {
-		this.m = m;
-	}
-
 	/**
 	 * Initializes WeightedMeanSimilarity.
 	 */
 	public WeightedMeanSimilarity() {
+		this(ARITHMETIC_MEAN);
 	}
 
 	public WeightedMeanSimilarity(Similarity<?>... similarities) {
+		this(ARITHMETIC_MEAN, similarities);
+	}
+
+	public WeightedMeanSimilarity(double m, Similarity<?>... similarities) {
 		super(similarities);
+		this.m = m;
 		this.weights.size(similarities.length);
 		Arrays.fill(this.weights.elements(), 1);
 		this.weightSum = similarities.length;
 	}
 
-	public WeightedMeanSimilarity(Collection<? extends Similarity<?>> similarities, Collection<Double> weights) {
-		super(similarities);
-		if (similarities.size() != weights.size())
-			throw new IllegalArgumentException();
-		this.weights.addAll(weights);
-		final DoubleListIterator iterator = this.weights.iterator();
-		while (iterator.hasNext())
-			this.weightSum += iterator.nextDouble();
-	}
-
-	public WeightedMeanSimilarity(Map<Similarity<?>, Double> similarities) {
+	public WeightedMeanSimilarity(Object2DoubleMap<Similarity<?>> similarities) {
 		super(similarities.keySet());
-		for (Double weight : similarities.values()) {
+		this.m = ARITHMETIC_MEAN;
+		final DoubleIterator weightIter = similarities.values().iterator();
+		while (weightIter.hasNext()) {
+			final double weight = weightIter.nextDouble();
 			this.weights.add(weight);
 			this.weightSum += weight;
 		}
@@ -120,33 +107,16 @@ public class WeightedMeanSimilarity extends AggregationSimilarity {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new WeightedMeanSimilarity(SopremoUtil.deepClone(getSubsimilarities()), weights);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType)
-	 */
-	@Override
-	public void copyPropertiesFrom(ISopremoType original) {
-		super.copyPropertiesFrom(original);
-		this.m = ((WeightedMeanSimilarity) original).getM();
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.aggregation.AggregationSimilarity#aggregateSimilarity(double[],
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
 	protected double aggregateSimilarity(double[] individualSimilarities) {
 		double mean = 0;
-		for (int index = 0; index < individualSimilarities.length; index++)
-			mean += Math.pow(individualSimilarities[index] * this.weights.get(index), this.m);
-		return Math.pow(mean / this.weightSum, 1 / this.m);
+		for (int index = 0; index < individualSimilarities.length; index++) {
+			final double sim = individualSimilarities[index];
+			mean += Math.pow(sim, this.m) * this.weights.get(index) / this.weightSum;
+		}
+		return Math.pow(mean, 1 / this.m);
 	}
 }

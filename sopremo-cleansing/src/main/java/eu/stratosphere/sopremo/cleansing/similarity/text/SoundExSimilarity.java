@@ -26,7 +26,6 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.blocking.SoundEx;
 
 /**
@@ -37,11 +36,6 @@ import eu.stratosphere.sopremo.cleansing.blocking.SoundEx;
  * @author Arvid Heise
  */
 public class SoundExSimilarity extends TextSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8082441174024098419L;
-
 	private transient StringBuilder soundex1 = new StringBuilder(), soundex2 = new StringBuilder();
 
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
@@ -71,13 +65,5 @@ public class SoundExSimilarity extends TextSimilarity {
 			return 1.0;
 
 		return 0.0;
-	}
-	
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new SoundExSimilarity();
 	}
 }

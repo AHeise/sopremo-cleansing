@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -9,12 +10,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.Scrubbing;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IntNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 @RunWith(Parameterized.class)
 public class ScrubbingTest {
@@ -22,57 +24,60 @@ public class ScrubbingTest {
 	public static Collection<Object[]> getParameters() {
 		return Arrays.asList(
 			new Object[] {
-				Arrays.asList(),
-				Arrays.asList(),
-				createObjectNode(new Object[] { "stringInsteadOfInteger", "12", "outsideMonthRange", 14,
-					"shouldBeNonNull", null }) },
+				EvaluationExpression.VALUE,
+				EvaluationExpression.VALUE,
+				JsonUtil.createObjectNode("stringInsteadOfInteger", "12", "outsideMonthRange", 14,
+					"shouldBeNonNull", null) },
 
 			new Object[] {
-				Arrays.asList(new ObjectAccess("stringInsteadOfInteger")),
-				Arrays.asList(new TypeValidationExpression(IntNode.class)),
-				createObjectNode(new Object[] { "stringInsteadOfInteger", 12, "outsideMonthRange", 14,
-					"shouldBeNonNull", null }) },
+				new ObjectAccess("stringInsteadOfInteger"),
+				new TypeValidationExpression(IntNode.class),
+				JsonUtil.createObjectNode("stringInsteadOfInteger", 12, "outsideMonthRange", 14,
+					"shouldBeNonNull", null) },
 
 			new Object[] {
-				Arrays.asList(new ObjectAccess("outsideMonthRange")),
-				Arrays.asList(new RangeRule(IntNode.valueOf(1), IntNode.valueOf(12))),
-				createObjectNode(new Object[] { "stringInsteadOfInteger", "12", "outsideMonthRange", 12,
-					"shouldBeNonNull", null }) },
+				new ObjectAccess("outsideMonthRange"),
+				new RangeRule(IntNode.valueOf(1), IntNode.valueOf(12)),
+				JsonUtil.createObjectNode("stringInsteadOfInteger", "12", "outsideMonthRange", 12,
+					"shouldBeNonNull", null) },
 
 			new Object[] {
-				Arrays.asList(new ObjectAccess("shouldBeNonNull")),
-				Arrays.asList(new NonNullRule()),
+				new ObjectAccess("shouldBeNonNull"),
+				new NonNullRule(),
 				ERROR });
 	}
 
 	private static final IJsonNode ERROR = null;
 
-	private List<EvaluationExpression> path;
+	private PathSegmentExpression path;
 
 	private List<EvaluationExpression> validationRules;
 
 	private IJsonNode expectedObject;
 
-	public ScrubbingTest(List<EvaluationExpression> path, List<EvaluationExpression> validationRules,
+	@SuppressWarnings("unchecked")
+	public ScrubbingTest(PathSegmentExpression path, Object validationRules,
 			IJsonNode expectedObject) {
 		this.path = path;
-		this.validationRules = validationRules;
+		this.validationRules = validationRules instanceof Collection ?
+			new ArrayList<EvaluationExpression>((Collection<EvaluationExpression>) validationRules) :
+			Arrays.asList((EvaluationExpression) validationRules);
 		this.expectedObject = expectedObject;
 	}
 
 	@Test
 	public void testMapping() {
-		final Scrubbing scrubbing = new Scrubbing();
-		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(scrubbing);
-		for (int index = 0; index < this.path.size(); index++)
+		final RuleBasedScrubbing scrubbing = new RuleBasedScrubbing();
+		final SopremoTestPlan EqualCloneTestPlan = new SopremoTestPlan(scrubbing);
+		for (int index = 0; index < this.validationRules.size(); index++)
 			scrubbing.addRule(this.validationRules.get(index), this.path);
 		Object[] fields = { "stringInsteadOfInteger", "12", "outsideMonthRange", 14, "shouldBeNonNull", null };
 
-		sopremoTestPlan.getInput(0).addObject(fields);
+		EqualCloneTestPlan.getInput(0).addObject(fields);
 		if (this.expectedObject == ERROR)
-			sopremoTestPlan.getExpectedOutput(0).setEmpty();
+			EqualCloneTestPlan.getExpectedOutput(0).setEmpty();
 		else
-			sopremoTestPlan.getExpectedOutput(0).add(this.expectedObject);
-		sopremoTestPlan.run();
+			EqualCloneTestPlan.getExpectedOutput(0).add(this.expectedObject);
+		EqualCloneTestPlan.run();
 	}
 }

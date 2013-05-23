@@ -33,11 +33,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.MatchingCoefficient;
  */
 public class MatchingCoefficientSimilarity extends SimmetricsSimilarity<MatchingCoefficient> {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 334192052047250764L;
-
-	/**
 	 * Initializes a <code>MatchingCoefficientSimilarity</code>.
 	 */
 	public MatchingCoefficientSimilarity() {

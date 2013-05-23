@@ -25,9 +25,7 @@ package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import java.util.Collection;
 
-import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * <code>MaxSimilarity</code> calculates the similarities of each collected Similarity and returns the maximum value.
@@ -35,11 +33,6 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
  * @author Arvid Heise
  */
 public class MaxSimilarity extends AggregationSimilarity {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 5241198977987007012L;
 
 	/**
 	 * Initializes MaxSimilarity with no sub-similarity.
@@ -67,14 +60,6 @@ public class MaxSimilarity extends AggregationSimilarity {
 		super(similarities);
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.AbstractSopremoType#createCopy()
-	 */
-	@Override
-	protected AbstractSopremoType createCopy() {
-		return new MaxSimilarity(SopremoUtil.deepClone(getSubsimilarities()));
-	}
-	
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.cleansing.similarity.aggregation.AggregationSimilarity#aggregateSimilarity(double[],

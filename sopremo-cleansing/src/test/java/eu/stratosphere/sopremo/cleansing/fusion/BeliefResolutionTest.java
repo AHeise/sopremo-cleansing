@@ -19,7 +19,6 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.fusion.BeliefResolution.BeliefMassFunction;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.pact.CharSequenceUtil;
@@ -34,10 +33,6 @@ import eu.stratosphere.sopremo.type.TextNode;
  */
 public class BeliefResolutionTest {
 	public class AbbrExpression extends EvaluationExpression {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = -5154400835672538630L;
 
 		/*
 		 * (non-Javadoc)
@@ -46,9 +41,9 @@ public class BeliefResolutionTest {
 		 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 		 */
 		@Override
-		public IJsonNode evaluate(IJsonNode node, IJsonNode target, EvaluationContext context) {
-			CharSequence value1 = ((TextNode) ((IArrayNode) node).get(0)).getTextValue();
-			CharSequence value2 = ((TextNode) ((IArrayNode) node).get(1)).getTextValue();
+		public IJsonNode evaluate(IJsonNode node) {
+			CharSequence value1 = ((TextNode) ((IArrayNode<?>) node).get(0));
+			CharSequence value2 = ((TextNode) ((IArrayNode<?>) node).get(1));
 			if(value2.length() < value1.length())
 				return BooleanNode.FALSE;
 			final int lastPos = value1.length() - 1;
@@ -63,8 +58,8 @@ public class BeliefResolutionTest {
 
 		TextNode john = new TextNode("John"), j = new TextNode("J."), bill = new TextNode("Bill");
 		BeliefMassFunction massFunction = beliefResolution.getFinalMassFunction(
-			new ArrayNode(john, j, bill),
-			new double[] { 0.8, 0.7, 0.9 }, new FusionContext(new EvaluationContext()));
+			new ArrayNode<IJsonNode>(john, j, bill),
+			new double[] { 0.8, 0.7, 0.9 });
 
 		Object2DoubleMap<IJsonNode> valueMasses = massFunction.getValueMasses();
 		Assert.assertEquals(0.52, valueMasses.getDouble(john), 0.01);
@@ -77,9 +72,9 @@ public class BeliefResolutionTest {
 		BeliefResolution beliefResolution = new BeliefResolution(new AbbrExpression());
 
 		TextNode john = new TextNode("John"), j = new TextNode("J."), bill = new TextNode("Bill");
-		ArrayNode choices = new ArrayNode(john, j, bill);
-		beliefResolution.fuse(choices);
+		ArrayNode<IJsonNode> choices = new ArrayNode<IJsonNode>(john, j, bill);
+		beliefResolution.fuse(choices, new double[] { 0.8, 0.7, 0.9 });
 
-		Assert.assertEquals(new ArrayNode(john), choices);
+		Assert.assertEquals(new ArrayNode<TextNode>(john), choices);
 	}
 }

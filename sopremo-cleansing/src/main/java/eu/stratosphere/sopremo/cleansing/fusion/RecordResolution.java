@@ -14,68 +14,38 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 
-import eu.stratosphere.sopremo.ISopremoType;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IObjectNode;
+import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.ObjectNode;
 
 /**
  * @author Arvid Heise
  */
-public abstract class RecordResolution extends ConflictResolution<IObjectNode> {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -5841402171573265477L;
-
-	private Map<String, ConflictResolution<?>> rules = new HashMap<String, ConflictResolution<?>>();
+public abstract class RecordResolution extends ConflictResolution {
 
 	private transient IObjectNode fusedRecord = new ObjectNode();
 
 	/*
 	 * (non-Javadoc)
-	 * @see
-	 * eu.stratosphere.sopremo.cleansing.fusion.ConflictResolution#fuse(eu.stratosphere.sopremo.type
-	 * .IArrayNode)
+	 * @see eu.stratosphere.sopremo.cleansing.fusion.ConflictResolution#fuse(eu.stratosphere.sopremo.type.IArrayNode,
+	 * double[])
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void fuse(IArrayNode<IObjectNode> objects) {
-		this.fusedRecord.clear();
-
-		for (IObjectNode object : objects) {
+	public void fuse(IArrayNode<IJsonNode> values, double[] weights) {
+		for (IJsonNode value : values) {
+			IObjectNode object = (IObjectNode) value;
 			for (Entry<String, IJsonNode> field : object) {
 				IJsonNode fieldValues = this.fusedRecord.get(field.getKey());
-				if (fieldValues.isMissing())
+				if (fieldValues == MissingNode.getInstance())
 					this.fusedRecord.put(field.getKey(), fieldValues = new ArrayNode<IJsonNode>());
 				((IArrayNode<IJsonNode>) fieldValues).add(field.getValue());
 			}
 		}
-
-		for (Entry<String, ConflictResolution<?>> rule : this.rules.entrySet()) {
-			final IJsonNode entry = this.fusedRecord.get(rule.getKey());
-			if (!entry.isMissing()) 
-				this.fusedRecord.put(rule.getKey(), rule.getValue().evaluate(entry));
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * eu.stratosphere.sopremo.expressions.PathSegmentExpression#copyPropertiesFrom(eu.stratosphere.sopremo.ISopremoType
-	 * )
-	 */
-	@Override
-	public void copyPropertiesFrom(ISopremoType original) {
-		super.copyPropertiesFrom(original);
-		for (Entry<String, ConflictResolution<?>> rule : ((RecordResolution) original).rules.entrySet())
-			this.rules.put(rule.getKey(), (ConflictResolution<?>) rule.getValue().clone());
 	}
 }

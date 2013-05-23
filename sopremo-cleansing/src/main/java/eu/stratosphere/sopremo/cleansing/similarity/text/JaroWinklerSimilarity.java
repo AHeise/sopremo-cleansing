@@ -23,18 +23,12 @@
 
 package eu.stratosphere.sopremo.cleansing.similarity.text;
 
-
 /**
  * <code>JaroWinklerSimilarity</code> compares two {@link IJsonNode}s based on the extended Jaro Distance attribute.
  * 
  * @author Arvid Heise
  */
 public class JaroWinklerSimilarity extends JaroSimilarity {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8293892965742742690L;
-
 	private double minSimilarityForBoost = 0.7;
 
 	/**

@@ -5,11 +5,6 @@ import eu.stratosphere.sopremo.type.NullNode;
 
 public class DefaultValueCorrection extends ValueCorrection {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1536110850287975405L;
-
-	/**
 	 * The default, stateless instance.
 	 */
 	public final static DefaultValueCorrection SET_NULL = new DefaultValueCorrection(NullNode.getInstance());
@@ -19,12 +14,22 @@ public class DefaultValueCorrection extends ValueCorrection {
 	public DefaultValueCorrection(final IJsonNode defaultValue) {
 		this.defaultValue = defaultValue;
 	}
+	
+	/**
+	 * Initializes DefaultValueCorrection.
+	 *
+	 */
+	DefaultValueCorrection() {
+		this.defaultValue = null;
+	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection#fix(eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.cleansing.scrubbing.ValidationContext)
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection#fix(eu.stratosphere.sopremo.type.IJsonNode,
+	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.cleansing.scrubbing.ValidationContext)
 	 */
 	@Override
-	public IJsonNode fix(IJsonNode value, IJsonNode target, ValidationContext context) {
+	public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
 		return this.defaultValue;
 	}
 

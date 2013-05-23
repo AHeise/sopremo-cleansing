@@ -32,11 +32,6 @@ import uk.ac.shef.wit.simmetrics.similaritymetrics.OverlapCoefficient;
  */
 public class OverlapCoefficientSimilarity extends SimmetricsSimilarity<OverlapCoefficient> {
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 5069991215623895676L;
-
-	/**
 	 * Initializes a <code>OverlapCoefficientSimilarity</code>.
 	 */
 	public OverlapCoefficientSimilarity() {
