@@ -46,13 +46,14 @@
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
 			<version>${meteor.version}</version>
+			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>1.0.1</version>
+			<version>1.1.3</version>
 			<type>jar</type>
 			<scope>test</scope>
 		</dependency>

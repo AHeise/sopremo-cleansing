@@ -14,6 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
 import com.esotericsoftware.kryo.DefaultSerializer;
@@ -38,8 +40,8 @@ public class FilterRecord extends AbstractJsonNode {
 	 * @see eu.stratosphere.sopremo.type.AbstractJsonNode#getType()
 	 */
 	@Override
-	public Class<FilterRecord> getType() {
-		return FilterRecord.class;
+	public Type getType() {
+		return Type.CustomNode;
 	}
 
 	/*
@@ -89,5 +91,17 @@ public class FilterRecord extends AbstractJsonNode {
 		public FilterRecordSerializer() {
 			super(FilterRecord.Instance);
 		}
+	}
+
+	@Override
+	public IJsonNode readResolve(DataInput in) throws IOException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void write(DataOutput out) throws IOException {
+		// TODO Auto-generated method stub
+		
 	}
 }

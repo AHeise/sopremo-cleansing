@@ -29,7 +29,6 @@ public abstract class ValidationRule extends CleansingRule<ValidationContext> {
 		this.valueCorrection = valueCorrection;
 	}
 
-	@SuppressWarnings("unused")
 	protected boolean validate(final IJsonNode value) {
 		return false;
 	}

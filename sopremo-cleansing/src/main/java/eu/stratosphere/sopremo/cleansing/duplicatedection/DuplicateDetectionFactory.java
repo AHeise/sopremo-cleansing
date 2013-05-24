@@ -24,7 +24,7 @@ public class DuplicateDetectionFactory {
 		return INSTANCE;
 	}
 
-	public CompositeDuplicateDetectionAlgorithm<?> getMatchingAlgorithm(CandidateSelection selection, @SuppressWarnings("unused") int numInputs) {
+	public CompositeDuplicateDetectionAlgorithm<?> getMatchingAlgorithm(CandidateSelection selection, int numInputs) {
 		if (selection.getPasses().isEmpty())
 			return new NaiveDuplicateDetection();
 		return new Blocking();

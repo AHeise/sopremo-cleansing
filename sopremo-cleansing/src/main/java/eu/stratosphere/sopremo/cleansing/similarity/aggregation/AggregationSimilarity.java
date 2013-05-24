@@ -61,9 +61,9 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	 * @param similarities
 	 *        The sub-similarities.
 	 */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public AggregationSimilarity(Similarity<?>... similarities) {
-		this.similarities.addAll((Collection<? extends Similarity<IJsonNode>>) Arrays.asList(similarities));
+		this.similarities.addAll((Collection) Arrays.asList(similarities));
 		this.inferExpectedType();
 		this.individualSimilarities = new double[this.similarities.size()];
 	}
