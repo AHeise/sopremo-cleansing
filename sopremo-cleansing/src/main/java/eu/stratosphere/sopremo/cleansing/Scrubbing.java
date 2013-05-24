@@ -5,6 +5,7 @@ import java.util.List;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RuleBasedScrubbing;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ExpressionUtil;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -37,9 +38,12 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 			final PathSegmentExpression path = ExpressionUtil.makePath(value, mapping.getTargetExpression());
 			if (expression instanceof ObjectCreation)
 				this.parseRuleExpression((ObjectCreation) expression, path);
-			else
+			else if (expression instanceof ArrayCreation){
 				for (EvaluationExpression partial : expression)
 					this.ruleBasedScrubbing.addRule(partial, path);
+			} else{
+				this.ruleBasedScrubbing.addRule(expression, path);
+			}
 		}
 	}
 
