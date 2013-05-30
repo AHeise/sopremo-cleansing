@@ -1,6 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,6 +11,8 @@ import java.util.Queue;
 
 import com.esotericsoftware.kryo.DefaultSerializer;
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoException;
+import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
@@ -39,59 +42,48 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
 @OutputCardinality(1)
 @DefaultSerializer(value = RuleBasedScrubbing.RuleBasedScrubbingSerializer.class)
 public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
-	public static class RuleBasedScrubbingSerializer extends FieldSerializer<RuleBasedScrubbing>{
-
+	public static class RuleBasedScrubbingSerializer extends Serializer<RuleBasedScrubbing>{
+		FieldSerializer<RuleBasedScrubbing> fieldSerializer;
+		
 		public RuleBasedScrubbingSerializer(Kryo kryo, Class<RuleBasedScrubbing> type) {
-			super(kryo, type);
-			// TODO Auto-generated constructor stub
+			fieldSerializer = new FieldSerializer<RuleBasedScrubbing>(kryo, type);
 		}
-
+		
 		@Override
 		public void write(Kryo kryo, com.esotericsoftware.kryo.io.Output output, RuleBasedScrubbing object) {
-			for (int i = 0, n = super.getFields().length; i < n; i++){
-				try {
-					if(super.getFields()[i].getField().get(object) instanceof Multimap){
-						Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = object.rules.asMap();
-						kryo.writeObject(output, backingMapCopy, new MapSerializer());
-					}else{
-						super.getFields()[i].write(output, object);
-					}
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+			fieldSerializer.write(kryo, output, object);
+			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = new HashMap<PathSegmentExpression, Collection<EvaluationExpression>>();
+			for(Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : object.rules.asMap().entrySet()){
+				Collection<EvaluationExpression> tempList = new ArrayList<EvaluationExpression>();
+				tempList.addAll(entry.getValue());
+				backingMapCopy.put(entry.getKey(), tempList);
 			}
+			
+			kryo.writeObject(output, backingMapCopy, new MapSerializer());
 		}
 
 		@Override
 		public RuleBasedScrubbing read(Kryo kryo, Input input, Class<RuleBasedScrubbing> type) {
-			RuleBasedScrubbing object = create(kryo, input, type);
-			kryo.reference(object);
+			RuleBasedScrubbing object =  fieldSerializer.read(kryo, input, type);
+			MapSerializer mapSerializer = new MapSerializer();
+			mapSerializer.setKeyClass(PathSegmentExpression.class, null);
+			mapSerializer.setValueClass(Collection.class, null);
+			@SuppressWarnings("unchecked")
+			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy =  kryo.readObject(input, HashMap.class, mapSerializer);
+			for(Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : backingMapCopy.entrySet()){
+				object.rules.putAll(entry.getKey(), entry.getValue());
+			}
 			
-			for (int i = 0, n = super.getFields().length; i < n; i++)
-				try {
-					if(super.getFields()[i].getField().get(object) instanceof Multimap){
-						Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy =  kryo.readObject(input, HashMap.class, new MapSerializer());
-						for(Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : backingMapCopy.entrySet()){
-							object.rules.putAll(entry.getKey(), entry.getValue());
-						}
-					}else{
-						super.getFields()[i].read(input, object);
-					}
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
 			return object;
 		}
-		
+		@Override
+		public RuleBasedScrubbing copy (Kryo kryo, RuleBasedScrubbing original) {
+			RuleBasedScrubbing copy = this.fieldSerializer.copy(kryo, original);
+			for(Entry<PathSegmentExpression, EvaluationExpression> rule : original.rules.entries()){
+				copy.addRule((EvaluationExpression) rule.getValue().copy(), (PathSegmentExpression) rule.getKey().copy());
+			}
+			return original.copy();
+		}
 	}
 	
 	public RuleBasedScrubbing(){
