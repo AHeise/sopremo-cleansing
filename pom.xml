@@ -4,9 +4,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>stratosphere</artifactId>
+        <artifactId>sopremo</artifactId>
         <groupId>eu.stratosphere</groupId>
-        <version>0.2</version>
+        <version>0.3</version>
     </parent>
 
     <groupId>eu.stratosphere</groupId>

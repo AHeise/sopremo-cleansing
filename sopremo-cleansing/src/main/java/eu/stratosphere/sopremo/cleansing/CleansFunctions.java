@@ -4,24 +4,22 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
-import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cache.NodeCache;
-import eu.stratosphere.sopremo.cleansing.fusion.BeliefResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationRule;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
 import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.MethodPointerExpression;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.function.MacroBase;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
+import eu.stratosphere.sopremo.function.SopremoFunction2;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.packages.BuiltinProvider;
 import eu.stratosphere.sopremo.packages.ConstantRegistryCallback;
@@ -33,6 +31,8 @@ import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
+//0.2compability
+//import eu.stratosphere.sopremo.SopremoEnvironment;
 
 public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallback, FunctionRegistryCallback {
 
@@ -57,7 +57,8 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
-		registry.put("vote", new VoteMacro());
+// 0.2compability
+//		registry.put("vote", new VoteMacro());
 	}
 
 	public static final SopremoFunction GENERATE_ID = new GenerateId();
@@ -110,9 +111,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 		}
 	};
 
-	@Name(verb = "removeVowels")
-	public static final SopremoFunction REMOVE_VOWELS = CoreFunctions.REPLACE.bind(TextNode.valueOf("(?i)[aeiou]"),
-		TextNode.valueOf(""));
+// 0.2compability
+//	@Name(verb = "removeVowels")
+//	public static final SopremoFunction REMOVE_VOWELS = CoreFunctions.REPLACE.bind(TextNode.valueOf("(?i)[aeiou]"),
+//		TextNode.valueOf(""));
 
 	public static final SopremoFunction LONGEST = new Longest();
 	
@@ -153,6 +155,26 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 				if (maxSize == this.sizes.getInt(index))
 					this.result.addClone(values.get(index));
 			return this.result;
+		}
+	};
+	
+	public static final SopremoFunction PATTERN_VALIDATION = new PatternValidation();
+
+	@Name(verb = "patternValidation")
+	public static class PatternValidation extends SopremoFunction2<IJsonNode, TextNode> {
+		PatternValidation() {
+			super("patternValidation");
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu.stratosphere.sopremo.type.IArrayNode)
+		 */
+		@Override
+		public IJsonNode call(IJsonNode value, TextNode patternString) {
+			Pattern pattern =  Pattern.compile(patternString.toString());
+			PatternValidationRule patternValidationRule = new PatternValidationRule(pattern);
+			return patternValidationRule.evaluate(value);
 		}
 	};
 
@@ -203,40 +225,40 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 			return new SimilarityExpression(similarity);
 		}
 	}
-
-	private static class VoteMacro extends MacroBase {
-		/**
-		 * Initializes CleansFunctions.VoteMacro.
-		 */
-		public VoteMacro() {
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object, java.lang.Object,
-		 * eu.stratosphere.sopremo.EvaluationContext)
-		 */
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			for (int index = 0; index < params.length; index++)
-				if (params[index] instanceof MethodPointerExpression) {
-					final String functionName = ((MethodPointerExpression) params[index]).getFunctionName();
-					params[index] = new FunctionCall(functionName, SopremoEnvironment.getInstance()
-						.getEvaluationContext(), EvaluationExpression.VALUE);
-				}
-			return new BeliefResolution(params);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
-		 */
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			appendable.append("vote");
-		}
-
-	}
+// 0.2compability
+//	private static class VoteMacro extends MacroBase {
+//		/**
+//		 * Initializes CleansFunctions.VoteMacro.
+//		 */
+//		public VoteMacro() {
+//		}
+//
+//		/*
+//		 * (non-Javadoc)
+//		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object, java.lang.Object,
+//		 * eu.stratosphere.sopremo.EvaluationContext)
+//		 */
+//		@Override
+//		public EvaluationExpression call(EvaluationExpression[] params) {
+//			for (int index = 0; index < params.length; index++)
+//				if (params[index] instanceof MethodPointerExpression) {
+//					final String functionName = ((MethodPointerExpression) params[index]).getFunctionName();
+//					params[index] = new FunctionCall(functionName, SopremoEnvironment.getInstance()
+//						.getEvaluationContext(), EvaluationExpression.VALUE);
+//				}
+//			return new BeliefResolution(params);
+//		}
+//
+//		/*
+//		 * (non-Javadoc)
+//		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+//		 */
+//		@Override
+//		public void appendAsString(Appendable appendable) throws IOException {
+//			appendable.append("vote");
+//		}
+//
+//	}
 	
 //
 //	@Name(verb = "satisfies")

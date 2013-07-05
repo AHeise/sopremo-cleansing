@@ -6,13 +6,13 @@
 
 	<parent>
 		<groupId>eu.stratosphere</groupId>
-		<artifactId>stratosphere</artifactId>
-		<version>0.2.1</version>
+		<artifactId>ozone</artifactId>
+		<version>0.2</version>
 	</parent>
-	
+
 	<properties>
-		<sopremo.version>0.2.1</sopremo.version>
-		<meteor.version>0.2.1</meteor.version>
+		<sopremo.version>0.2</sopremo.version>
+		<meteor.version>0.2</meteor.version>
 	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>
@@ -31,13 +31,13 @@
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-base</artifactId>
-			<version>${sopremo.version}</version>
+			<version>0.3</version>
 		</dependency>
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-common</artifactId>
-			<version>${sopremo.version}</version>
+			<version>0.3</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
@@ -45,7 +45,7 @@
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
-			<version>${meteor.version}</version>
+			<version>0.3</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
