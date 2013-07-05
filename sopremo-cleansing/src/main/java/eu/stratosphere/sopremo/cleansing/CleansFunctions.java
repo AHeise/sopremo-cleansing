@@ -29,6 +29,7 @@ import eu.stratosphere.sopremo.packages.IFunctionRegistry;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.NullNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
@@ -38,9 +39,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see
-	 * eu.stratosphere.sopremo.packages.ConstantRegistryCallback#registerConstants(eu.stratosphere.sopremo.packages.
-	 * IConstantRegistry)
+	 * eu.stratosphere.sopremo.packages.ConstantRegistryCallback#registerConstants
+	 * (eu.stratosphere.sopremo.packages. IConstantRegistry)
 	 */
 	@Override
 	public void registerConstants(IConstantRegistry constantRegistry) {
@@ -49,16 +51,18 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see
-	 * eu.stratosphere.sopremo.packages.FunctionRegistryCallback#registerFunctions(eu.stratosphere.sopremo.packages.
-	 * IFunctionRegistry)
+	 * eu.stratosphere.sopremo.packages.FunctionRegistryCallback#registerFunctions
+	 * (eu.stratosphere.sopremo.packages. IFunctionRegistry)
 	 */
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
-// 0.2compability
-//		registry.put("vote", new VoteMacro());
+		registry.put("patternValidation", new PatternValidationRuleMacro());
+		// 0.2compability
+		// registry.put("vote", new VoteMacro());
 	}
 
 	public static final SopremoFunction GENERATE_ID = new GenerateId();
@@ -75,7 +79,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu.stratosphere.sopremo.type.IArrayNode)
+		 * 
+		 * @see
+		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
+		 * .stratosphere.sopremo.type.IArrayNode)
 		 */
 		@Override
 		public IJsonNode call(TextNode prefix) {
@@ -98,7 +105,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu.stratosphere.sopremo.type.IArrayNode)
+		 * 
+		 * @see
+		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
+		 * .stratosphere.sopremo.type.IArrayNode)
 		 */
 		@Override
 		public IJsonNode call(TextNode input) {
@@ -111,13 +121,14 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 		}
 	};
 
-// 0.2compability
-//	@Name(verb = "removeVowels")
-//	public static final SopremoFunction REMOVE_VOWELS = CoreFunctions.REPLACE.bind(TextNode.valueOf("(?i)[aeiou]"),
-//		TextNode.valueOf(""));
+	// 0.2compability
+	// @Name(verb = "removeVowels")
+	// public static final SopremoFunction REMOVE_VOWELS =
+	// CoreFunctions.REPLACE.bind(TextNode.valueOf("(?i)[aeiou]"),
+	// TextNode.valueOf(""));
 
 	public static final SopremoFunction LONGEST = new Longest();
-	
+
 	@Name(adjective = "longest")
 	public static class Longest extends SopremoFunction1<IArrayNode<IJsonNode>> {
 		Longest() {
@@ -132,7 +143,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu.stratosphere.sopremo.type.IArrayNode)
+		 * 
+		 * @see
+		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
+		 * .stratosphere.sopremo.type.IArrayNode)
 		 */
 		@Override
 		public IJsonNode call(IArrayNode<IJsonNode> values) {
@@ -157,26 +171,30 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 			return this.result;
 		}
 	};
-	
-	public static final SopremoFunction PATTERN_VALIDATION = new PatternValidation();
 
-	@Name(verb = "patternValidation")
-	public static class PatternValidation extends SopremoFunction2<IJsonNode, TextNode> {
-		PatternValidation() {
-			super("patternValidation");
-		}
+	private static class PatternValidationRuleMacro extends MacroBase {
 
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu.stratosphere.sopremo.type.IArrayNode)
+		 * 
+		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object)
 		 */
 		@Override
-		public IJsonNode call(IJsonNode value, TextNode patternString) {
-			Pattern pattern =  Pattern.compile(patternString.toString());
-			PatternValidationRule patternValidationRule = new PatternValidationRule(pattern);
-			return patternValidationRule.evaluate(value);
+		public PatternValidationRule call(EvaluationExpression[] params) {
+
+			if (params.length == 1)
+				return new PatternValidationRule(Pattern.compile(params[0].evaluate(NullNode.getInstance()).toString()));
+			else
+				throw new IllegalArgumentException("Wrong number of arguments.");
+
 		}
-	};
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+
+		}
+	}
 
 	/**
 	 * @author Arvid Heise
@@ -195,7 +213,10 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+		 * 
+		 * @see
+		 * eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable
+		 * )
 		 */
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -204,6 +225,7 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 		/*
 		 * (non-Javadoc)
+		 * 
 		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object)
 		 */
 		@SuppressWarnings("unchecked")
@@ -215,69 +237,73 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 
 			Similarity<IJsonNode> similarity;
 			if (params.length > 1)
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.
-					create(this.similarity, (PathSegmentExpression) params[0],
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
 						(PathSegmentExpression) params[1], true);
 			else
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.
-					create(this.similarity, (PathSegmentExpression) params[0],
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
 						(PathSegmentExpression) params[0], true);
 			return new SimilarityExpression(similarity);
 		}
 	}
-// 0.2compability
-//	private static class VoteMacro extends MacroBase {
-//		/**
-//		 * Initializes CleansFunctions.VoteMacro.
-//		 */
-//		public VoteMacro() {
-//		}
-//
-//		/*
-//		 * (non-Javadoc)
-//		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object, java.lang.Object,
-//		 * eu.stratosphere.sopremo.EvaluationContext)
-//		 */
-//		@Override
-//		public EvaluationExpression call(EvaluationExpression[] params) {
-//			for (int index = 0; index < params.length; index++)
-//				if (params[index] instanceof MethodPointerExpression) {
-//					final String functionName = ((MethodPointerExpression) params[index]).getFunctionName();
-//					params[index] = new FunctionCall(functionName, SopremoEnvironment.getInstance()
-//						.getEvaluationContext(), EvaluationExpression.VALUE);
-//				}
-//			return new BeliefResolution(params);
-//		}
-//
-//		/*
-//		 * (non-Javadoc)
-//		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
-//		 */
-//		@Override
-//		public void appendAsString(Appendable appendable) throws IOException {
-//			appendable.append("vote");
-//		}
-//
-//	}
-	
-//
-//	@Name(verb = "satisfies")
-//	public static class Filter extends SopremoFunction2<IArrayNode<IJsonNode>, FunctionNode> {
-//		Filter() {
-//			super("satisfies");
-//		}
-//
-//		@Override
-//		protected IJsonNode call(IArrayNode<IJsonNode> input, final FunctionNode mapExpression) {
-//			SopremoUtil.assertArguments(mapExpression.getFunction(), 1);
-//
-//			this.result.clear();
-//			final FunctionCache calls = this.caches.get(mapExpression.getFunction());
-//			for (int index = 0; index < input.size(); index++) {
-//				this.parameters.set(0, input.get(index));
-//				this.result.add(calls.get(index).call(this.parameters));
-//			}
-//			return this.result;
-//		}
-//	};
+	// 0.2compability
+	// private static class VoteMacro extends MacroBase {
+	// /**
+	// * Initializes CleansFunctions.VoteMacro.
+	// */
+	// public VoteMacro() {
+	// }
+	//
+	// /*
+	// * (non-Javadoc)
+	// * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object,
+	// java.lang.Object,
+	// * eu.stratosphere.sopremo.EvaluationContext)
+	// */
+	// @Override
+	// public EvaluationExpression call(EvaluationExpression[] params) {
+	// for (int index = 0; index < params.length; index++)
+	// if (params[index] instanceof MethodPointerExpression) {
+	// final String functionName = ((MethodPointerExpression)
+	// params[index]).getFunctionName();
+	// params[index] = new FunctionCall(functionName,
+	// SopremoEnvironment.getInstance()
+	// .getEvaluationContext(), EvaluationExpression.VALUE);
+	// }
+	// return new BeliefResolution(params);
+	// }
+	//
+	// /*
+	// * (non-Javadoc)
+	// * @see
+	// eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+	// */
+	// @Override
+	// public void appendAsString(Appendable appendable) throws IOException {
+	// appendable.append("vote");
+	// }
+	//
+	// }
+
+	//
+	// @Name(verb = "satisfies")
+	// public static class Filter extends
+	// SopremoFunction2<IArrayNode<IJsonNode>, FunctionNode> {
+	// Filter() {
+	// super("satisfies");
+	// }
+	//
+	// @Override
+	// protected IJsonNode call(IArrayNode<IJsonNode> input, final FunctionNode
+	// mapExpression) {
+	// SopremoUtil.assertArguments(mapExpression.getFunction(), 1);
+	//
+	// this.result.clear();
+	// final FunctionCache calls = this.caches.get(mapExpression.getFunction());
+	// for (int index = 0; index < input.size(); index++) {
+	// this.parameters.set(0, input.get(index));
+	// this.result.add(calls.get(index).call(this.parameters));
+	// }
+	// return this.result;
+	// }
+	// };
 }
