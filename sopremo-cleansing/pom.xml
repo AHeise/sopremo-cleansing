@@ -7,12 +7,12 @@
 	<parent>
 		<groupId>eu.stratosphere</groupId>
 		<artifactId>ozone</artifactId>
-		<version>0.2</version>
+		<version>0.3</version>
 	</parent>
 
 	<properties>
-		<sopremo.version>0.2</sopremo.version>
-		<meteor.version>0.2</meteor.version>
+		<sopremo.version>0.3</sopremo.version>
+		<meteor.version>0.3</meteor.version>
 	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>
