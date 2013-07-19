@@ -7,9 +7,13 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RangeRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
+import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
@@ -35,8 +39,7 @@ import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
 //import eu.stratosphere.sopremo.SopremoEnvironment;
 
-public class CleansFunctions implements BuiltinProvider,
-		ConstantRegistryCallback, FunctionRegistryCallback {
+public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallback, FunctionRegistryCallback {
 
 	/*
 	 * (non-Javadoc)
@@ -48,6 +51,7 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerConstants(IConstantRegistry constantRegistry) {
 		constantRegistry.put("required", new NonNullRule());
+		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 	}
 
 	/*
@@ -60,10 +64,11 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
-		registry.put("jaroWinkler", new SimilarityMacro(
-				new JaroWinklerSimilarity()));
+		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
 		registry.put("patternValidation", new PatternValidationRuleMacro());
 		registry.put("range", new RangeRuleMacro());
+		registry.put("default", new DefaultValueCorrectionMacro());
+		
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
 	}
@@ -117,8 +122,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.blocking.SoundEx
-						.generateSoundExInto(input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.blocking.SoundEx.generateSoundExInto(input, this.soundex);
 			} catch (IOException e) {
 			}
 			return this.soundex;
@@ -165,8 +169,7 @@ public class CleansFunctions implements BuiltinProvider,
 
 			this.sizes.clear();
 			for (IJsonNode value : values)
-				this.sizes.add(TypeCoercer.INSTANCE.coerce(value,
-						this.nodeCache, TextNode.class).length());
+				this.sizes.add(TypeCoercer.INSTANCE.coerce(value, this.nodeCache, TextNode.class).length());
 			int maxSize = this.sizes.getInt(0);
 			for (int index = 1; index < this.sizes.size(); index++)
 				maxSize = Math.max(index, maxSize);
@@ -188,8 +191,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public PatternValidationRule call(EvaluationExpression[] params) {
 
 			if (params.length == 1)
-				return new PatternValidationRule(Pattern.compile(params[0]
-						.evaluate(NullNode.getInstance()).toString()));
+				return new PatternValidationRule(Pattern.compile(params[0].evaluate(NullNode.getInstance()).toString()));
 			else
 				throw new IllegalArgumentException("Wrong number of arguments.");
 
@@ -213,9 +215,25 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 2) {
-				return new RangeRule(
-						params[0].evaluate(NullNode.getInstance()),
-						params[1].evaluate(NullNode.getInstance()));
+				return new RangeRule(params[0].evaluate(NullNode.getInstance()), params[1].evaluate(NullNode.getInstance()));
+			} else {
+				throw new IllegalArgumentException("Wrong number of arguments.");
+			}
+		}
+
+	}
+	
+	private static class DefaultValueCorrectionMacro extends MacroBase {
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public EvaluationExpression call(EvaluationExpression[] params) {
+			if (params.length == 1) {
+				return new DefaultValueCorrection(params[0].evaluate(NullNode.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -260,23 +278,37 @@ public class CleansFunctions implements BuiltinProvider,
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			for (EvaluationExpression evaluationExpression : params)
 				if (!(evaluationExpression instanceof PathSegmentExpression))
-					throw new IllegalArgumentException(
-							"Can only expand simple path expressions");
+					throw new IllegalArgumentException("Can only expand simple path expressions");
 
 			Similarity<IJsonNode> similarity;
 			if (params.length > 1)
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[1], true);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
+						(PathSegmentExpression) params[1], true);
 			else
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[0], true);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
+						(PathSegmentExpression) params[0], true);
 			return new SimilarityExpression(similarity);
 		}
 	}
+
+	private static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
+		private Object readResolve() {
+			return CHOOSE_NEAREST_BOUND;
+		}
+
+		@Override
+		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+			if (violatedRule instanceof RangeRule) {
+				final RangeRule that = (RangeRule) violatedRule;
+				if (that.getMin().compareTo(value) > 0)
+					return that.getMin();
+				return that.getMax();
+			} else {
+				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
+			}
+		}
+	};
+	
 	// 0.2compability
 	// private static class VoteMacro extends MacroBase {
 	// /**

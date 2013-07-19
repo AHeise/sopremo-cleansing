@@ -23,7 +23,7 @@ public class TypeValidationExpression extends ValidationRule {
 	private transient NodeCache nodeCache = new NodeCache();
 
 	@Override
-	protected IJsonNode fix(final IJsonNode value) {
+	public IJsonNode fix(final IJsonNode value) {
 		try {
 			if (value instanceof TextNode)
 				return LenientParser.INSTANCE.parse((TextNode) value, this.type,
@@ -35,7 +35,7 @@ public class TypeValidationExpression extends ValidationRule {
 	}
 
 	@Override
-	protected boolean validate(final IJsonNode value) {
+	public boolean validate(final IJsonNode value) {
 		return this.type.isInstance(value);
 	}
 

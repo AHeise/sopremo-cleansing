@@ -51,7 +51,7 @@ public class PatternValidationRule extends ValidationRule {
 	private transient NodeCache nodeCache = new NodeCache();
 
 	@Override
-	protected boolean validate(final IJsonNode node) {
+	public boolean validate(final IJsonNode node) {
 		return this.pattern.matcher(TypeCoercer.INSTANCE.coerce(node, this.nodeCache, TextNode.class)).matches();
 	}
 }

@@ -23,7 +23,7 @@ public class BlackListRule extends ValidationRule {
 	}
 
 	@Override
-	protected boolean validate(IJsonNode value) {
+	public boolean validate(IJsonNode value) {
 		return !this.blacklistedValues.contains(value);
 	}
 

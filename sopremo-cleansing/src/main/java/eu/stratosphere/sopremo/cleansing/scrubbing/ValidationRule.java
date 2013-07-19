@@ -14,7 +14,7 @@ public abstract class ValidationRule extends CleansingRule<ValidationContext> {
 		return value;
 	}
 
-	protected IJsonNode fix(final IJsonNode value) {
+	public IJsonNode fix(final IJsonNode value) {
 		return this.valueCorrection.fix(value, this);
 	}
 
@@ -29,7 +29,7 @@ public abstract class ValidationRule extends CleansingRule<ValidationContext> {
 		this.valueCorrection = valueCorrection;
 	}
 
-	protected boolean validate(final IJsonNode value) {
+	public boolean validate(final IJsonNode value) {
 		return false;
 	}
 

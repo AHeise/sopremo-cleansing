@@ -27,7 +27,7 @@ public class WhiteListRule extends ValidationRule {
 	}
 
 	@Override
-	protected boolean validate(IJsonNode value) {
+	public boolean validate(IJsonNode value) {
 		return this.possibleValues.contains(value);
 	}
 }

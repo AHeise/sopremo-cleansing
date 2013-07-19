@@ -21,9 +21,9 @@ import com.google.common.collect.Multimap;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
+import eu.stratosphere.sopremo.cleansing.CleansingSpecificChainedSegmentExpression;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.cleansing.fusion.ValueTreeContains;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -134,7 +134,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 	private EvaluationExpression createResultProjection() {
 		// no nested rule
 		if (this.rules.size() == 1 && this.rules.containsKey(EvaluationExpression.VALUE))
-			return new ChainedSegmentExpression(this.rules.values());
+			return new CleansingSpecificChainedSegmentExpression(this.rules.values());
 
 		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(this.rules.keySet());
 
@@ -142,7 +142,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 		objectCreation.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
 		while (!uncoveredPaths.isEmpty()) {
 			final PathSegmentExpression path = uncoveredPaths.remove();
-			this.addToObjectCreation(objectCreation, path, path, new ChainedSegmentExpression(this.rules.get(path)).withTail(path));
+			this.addToObjectCreation(objectCreation, path, path, new CleansingSpecificChainedSegmentExpression(this.rules.get(path)).withTail(path));
 		}
 		return objectCreation;
 	}
