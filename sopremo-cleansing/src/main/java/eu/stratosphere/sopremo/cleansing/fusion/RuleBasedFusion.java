@@ -25,6 +25,7 @@ import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.serialization.SopremoRecordLayout;
 
 /**
  * @author Arvid Heise
@@ -36,39 +37,36 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see
-	 * eu.stratosphere.sopremo.operator.CompositeOperator#addImplementation(eu.stratosphere.sopremo.operator.SopremoModule
-	 * , eu.stratosphere.sopremo.EvaluationContext)
+	 * eu.stratosphere.sopremo.operator.CompositeOperator#addImplementation(
+	 * eu.stratosphere.sopremo.operator.SopremoModule ,
+	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
 	public void addImplementation(SopremoModule module, EvaluationContext context) {
 		JsonStream pipeline = module.getInput(0);
 
 		// wrap in array
-		// pipeline = new Projection().withInputs(pipeline).withResultProjection(new UnionObjects());
+		// pipeline = new
+		// Projection().withInputs(pipeline).withResultProjection(new
+		// UnionObjects());
 
-		pipeline = new Projection().
-			withInputs(pipeline).
-			withResultProjection(this.conflictResolution);
+		pipeline = new Projection().withInputs(pipeline).withResultProjection(this.conflictResolution);
 
 		// unwrap in array
-		// pipeline = new Projection().withInputs(pipeline).withResultProjection(new arrayUn);
+		// pipeline = new
+		// Projection().withInputs(pipeline).withResultProjection(new arrayUn);
 
-		pipeline = new Selection().withInputs(pipeline).withCondition(
-			UnaryExpression.not(new ValueTreeContains(FilterRecord.Instance)));
+		pipeline = new Selection().withInputs(pipeline).withCondition(UnaryExpression.not(new ValueTreeContains(FilterRecord.Instance)));
 
 		module.getOutput(0).setInput(0, pipeline);
 	}
 
 	public static class FusionProjection extends Projection {
-
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.base.Projection#asPactModule(eu.stratosphere.sopremo.EvaluationContext)
-		 */
 		@Override
-		public PactModule asPactModule(EvaluationContext context) {
-			return super.asPactModule(new FusionContext(context));
+		public PactModule asPactModule(EvaluationContext context, SopremoRecordLayout layout) {
+			return super.asPactModule(new FusionContext(context), layout);
 		}
 	}
 }
