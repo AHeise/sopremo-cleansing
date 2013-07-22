@@ -4,7 +4,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
-public class NonNullRule extends ValidationRule {
+public class NonNullRule extends ValidationRule implements StatefulConstant{
 
 	public NonNullRule() {
 	}

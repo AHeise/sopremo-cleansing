@@ -5,6 +5,7 @@ import java.util.List;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RuleBasedScrubbing;
+import eu.stratosphere.sopremo.cleansing.scrubbing.StatefulConstant;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
@@ -57,10 +58,12 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 				for (EvaluationExpression partial : ((TernaryExpression)expression).getIfExpression()){
 					if(partial instanceof TernaryExpression){
 						ValidationRule rule = (ValidationRule) ((TernaryExpression)partial).getIfExpression();
+						rule = checkForStatefulConstantAndCopy(rule);
 						ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression)partial).getThenExpression();
 						rule.setValueCorrection(explicitFix);
 						rulesWithFixes.add(rule);
 					}else if(partial instanceof ValidationRule){
+						partial = checkForStatefulConstantAndCopy((ValidationRule) partial);
 						((ValidationRule) partial).setValueCorrection(generalFix);
 						rulesWithFixes.add(partial);
 					}else{
@@ -71,6 +74,7 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 			}else {
 			ValidationRule rule = (ValidationRule) ((TernaryExpression)expression).getIfExpression();
 			ValueCorrection fix = (ValueCorrection) ((TernaryExpression)expression).getThenExpression();
+			rule = checkForStatefulConstantAndCopy(rule);
 			rule.setValueCorrection(fix);
 			rulesWithFixes.add(rule);
 			}
@@ -79,6 +83,7 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 				if(partial instanceof TernaryExpression){
 					ValidationRule rule = (ValidationRule) ((TernaryExpression)partial).getIfExpression();
 					ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression)partial).getThenExpression();
+					rule = checkForStatefulConstantAndCopy(rule);
 					rule.setValueCorrection(explicitFix);
 					rulesWithFixes.add(rule);
 				}else if(partial instanceof ValidationRule){
@@ -88,9 +93,14 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 				}
 			}
 		}else{
+			expression = checkForStatefulConstantAndCopy((ValidationRule) expression);
 			rulesWithFixes.add(expression);
 		}
 		return rulesWithFixes;
+	}
+
+	private ValidationRule checkForStatefulConstantAndCopy(ValidationRule rule) {
+		return (ValidationRule) ((rule instanceof StatefulConstant)?rule.clone():rule);
 	}
 
 	public void addRule(EvaluationExpression ruleExpression, PathSegmentExpression target) {
