@@ -5,4 +5,5 @@ sopremo-cleansing/.settings/
 sopremo-cleansing/target/
 target/
 .project
+.classpath
 .settings/
