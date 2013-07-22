@@ -1,100 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
+	<modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>sopremo</artifactId>
-        <groupId>eu.stratosphere</groupId>
-        <version>0.3</version>
-    </parent>
+	<parent>
+		<groupId>eu.stratosphere</groupId>
+		<artifactId>ozone</artifactId>
+		<version>0.3</version>
+	</parent>
 
-    <groupId>eu.stratosphere</groupId>
-    <artifactId>sopremo-package</artifactId>
+	<properties>
+		<sopremo.version>0.3</sopremo.version>
+		<meteor.version>0.3</meteor.version>
+	</properties>
 
-    <packaging>pom</packaging>
-	
-    <version>0.2</version>
-    <name>sopremo-package</name>
+	<artifactId>sopremo-cleansing</artifactId>
+	<name>sopremo-cleansing</name>
+	<version>0.1</version>
 
-    <inceptionYear>2012</inceptionYear>
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>nephele</distribution>
-        </license>
-    </licenses>
+	<packaging>jar</packaging>
 
-    <developers>
-        <developer>
-            <id>aheise</id>
-            <name>Arvid Heise</name>
-            <email>arvid.heise@hpi.uni-potsdam.de</email>
-            <organization>Hasso Plattner Institute, University of Potsdam</organization>
-            <organizationUrl>http://hpi.uni-potsdam.de</organizationUrl>
-            <roles>
-                <role>Lead Developer</role>
-            </roles>
-        </developer>
-    </developers>
+	<dependencies>
+		<dependency>
+			<groupId>uk.ac.shef.wit</groupId>
+			<artifactId>simmetrics</artifactId>
+			<version>1.6.2</version>
+		</dependency>
 
-    <properties>
-    </properties>
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-base</artifactId>
+			<version>0.3</version>
+		</dependency>
 
-    <dependencyManagement>
-        <!--
-        this section defines the module versions that are used if nothing
-        else is specified.
-        -->
-        <dependencies>
-        </dependencies>
-    </dependencyManagement>
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-common</artifactId>
+			<version>0.3</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
 
-    <dependencies>	
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>meteor-meteor</artifactId>
+			<version>0.3</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
-			<version>1.0.1</version>
+			<version>1.1.3</version>
 			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
-    </dependencies>
+	</dependencies>
 
 	<repositories>
 		<repository>
-			<id>equalsverifier-repository</id>
-			<url>http://equalsverifier.googlecode.com/svn/maven/</url>
+			<id>maven.mse.jhu.edu/m2repository</id>
+			<name>JHU Maven Repository</name>
+			<url>http://maven.mse.jhu.edu/m2repository</url>
 		</repository>
 	</repositories>
-    
-    <build>
+
+
+	<reporting>
 		<plugins>
-		
+		</plugins>
+	</reporting>
+
+	<build>
+		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin</artifactId>
-				<version>2.1.1</version>
-				<executions>
-					<execution>
-					  <id>source:aggregate</id>
-					  <phase>package</phase>
-					  <goals>
-						<goal>aggregate</goal>
-					  </goals>
-					</execution>
-				</executions>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.4.2</version>
 				<configuration>
-					<includes>
-						<include>eu/stratosphere/sopremo/*</include>
-					</includes>
+					<systemProperties>
+						<property>
+							<name>java.util.logging.config.file</name>
+							<value>${project.build.directory}/test-classes/logging.properties</value>
+						</property>
+					</systemProperties>
 				</configuration>
 			</plugin>
-			
 		</plugins>
 	</build>
-
-    <modules>
-        <module>sopremo-cleansing</module>
-    </modules>
 </project>
