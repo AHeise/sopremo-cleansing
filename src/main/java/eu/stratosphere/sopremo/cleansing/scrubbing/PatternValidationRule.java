@@ -41,7 +41,9 @@ public class PatternValidationRule extends ValidationRule {
 
 		@Override
 		public PatternValidationRule copy(Kryo kryo, PatternValidationRule original) {
-			return new PatternValidationRule(original.pattern);
+			PatternValidationRule copy = fieldSerializer.copy(kryo, original);
+			copy.pattern = original.pattern;
+			return copy;
 		}
 	}
 	@Immutable
