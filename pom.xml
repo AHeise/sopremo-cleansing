@@ -44,12 +44,36 @@
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-server</artifactId>
+			<version>0.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-server</artifactId>
+			<version>0.3</version>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-client</artifactId>
+			<version>0.3</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
 			<version>0.3</version>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
+			<artifactId>meteor-meteor</artifactId>
+			<version>0.3</version>
+			<scope>test</scope>
+		</dependency>
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
