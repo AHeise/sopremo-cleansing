@@ -36,7 +36,11 @@ import eu.stratosphere.sopremo.type.TextNode;
  * 
  */
 public class MeteorScrubTest extends MeteorTest {
-
+@Override
+public SopremoPlan parseScript(String script) {
+	// TODO Auto-generated method stub
+	return super.parseScript(script);
+}
 	@Test
 	public void testFullScrub() {
 		final SopremoPlan actualPlan = this.parseScript("using cleansing;\n" +
