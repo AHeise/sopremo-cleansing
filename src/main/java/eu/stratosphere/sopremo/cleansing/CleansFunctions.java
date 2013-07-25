@@ -11,10 +11,10 @@ import java.util.regex.Pattern;
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
+import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RangeRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.TypeValidationExpression;
 import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
@@ -59,6 +59,8 @@ public class CleansFunctions implements BuiltinProvider,
 		constantRegistry.put("required", new NonNullRule());
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
+		constantRegistry.put("removeIllegalCharacters",
+				REMOVE_ILLEGAL_CHARACTERS);
 	}
 
 	/*
@@ -78,6 +80,7 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("default", new DefaultValueCorrectionMacro());
 		registry.put("containedIn", new WhiteListRuleMacro());
 		registry.put("notContainedIn", new BlackListRuleMacro());
+		registry.put("illegalCharacters", new IllegalCharacterRuleMacro());
 
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
@@ -308,6 +311,29 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	}
 
+	private static class IllegalCharacterRuleMacro extends MacroBase {
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+
+		}
+
+		@Override
+		public EvaluationExpression call(EvaluationExpression[] params) {
+			if (params.length > 0) {
+				TextNode illegalCharacters = TextNode.valueOf("");
+				for (EvaluationExpression expr : params) {
+					illegalCharacters.append((TextNode) expr.evaluate(NullNode
+							.getInstance()));
+				}
+				return new IllegalCharacterRule(illegalCharacters);
+			} else {
+				throw new IllegalArgumentException("Wrong number of arguments.");
+			}
+		}
+	}
+
 	private static class DefaultValueCorrectionMacro extends MacroBase {
 
 		@Override
@@ -410,6 +436,36 @@ public class CleansFunctions implements BuiltinProvider,
 			if (violatedRule instanceof WhiteListRule) {
 				final WhiteListRule that = (WhiteListRule) violatedRule;
 				return that.getPossibleValues().get(0);
+			} else {
+				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
+			}
+		}
+	};
+
+	private static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
+		private Object readResolve() {
+			return REMOVE_ILLEGAL_CHARACTERS;
+		}
+
+		@Override
+		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+			if (violatedRule instanceof IllegalCharacterRule) {
+				final IllegalCharacterRule that = (IllegalCharacterRule) violatedRule;
+				TextNode fixedValue = TextNode.valueOf("");
+				char[] illegalCharacters = that.getIllegalCharacters();
+				boolean append = true;
+				for (char c : value.toString().toCharArray()) {
+					for (char ic : illegalCharacters) {
+						if (c == ic) {
+							append = false;
+							break;
+						}
+					}
+					if (append)
+						fixedValue.append(c);
+					append = true;
+				}
+				return fixedValue;
 			} else {
 				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
