@@ -10,11 +10,11 @@ import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.CorrectTypeRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RangeRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.TypeValidationExpression;
 import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
@@ -78,7 +78,6 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("default", new DefaultValueCorrectionMacro());
 		registry.put("containedIn", new WhiteListRuleMacro());
 		registry.put("notContainedIn", new BlackListRuleMacro());
-		registry.put("ofType", new CorrectTypeRuleMacro());
 
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
@@ -307,29 +306,6 @@ public class CleansFunctions implements BuiltinProvider,
 				forbiddenValues.add(value.evaluate(NullNode.getInstance()));
 			}
 		}
-	}
-
-	private static class CorrectTypeRuleMacro extends MacroBase {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length == 1) {
-				Class<? extends IJsonNode> expectedType = CorrectTypeRule.types
-						.get(((TextNode) params[0].evaluate(NullNode
-								.getInstance())).toString());
-				return new CorrectTypeRule(
-						(expectedType == null) ? NullNode.class : expectedType);
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
 	}
 
 	private static class DefaultValueCorrectionMacro extends MacroBase {
