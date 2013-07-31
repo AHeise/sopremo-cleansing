@@ -32,8 +32,7 @@ public class ScrubbingIT extends MeteorIT {
 
 	@Override
 	protected SopremoPlan getPlan() throws IOException {
-		final SopremoPlan plan = this.parseScript("using cleansing;\n using govwild;" +
-
+		final SopremoPlan plan = parseScript(
 		"$persons = read from 'input/input.json';" +
 
 		"$persons_scrubbed = scrub $persons_sample with rules {name: required};" +

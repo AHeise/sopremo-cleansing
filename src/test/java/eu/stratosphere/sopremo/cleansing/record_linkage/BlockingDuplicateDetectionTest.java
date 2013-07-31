@@ -54,7 +54,7 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 	}
 
 	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere.sopremo.testing.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere.sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
 	protected void generateExpectedPairs(Input input, CandidateComparison comparison) {
