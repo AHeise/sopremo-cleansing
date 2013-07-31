@@ -60,7 +60,7 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	 * (non-Javadoc)
 	 * @see
 	 * eu.stratosphere.sopremo.cleansing.record_linkage.RecordLinkageTestBase#generateExpectedPairs(eu.stratosphere.
-	 * sopremo.testing.SopremoTestPlan.Input, eu.stratosphere.sopremo.testing.SopremoTestPlan.Input,
+	 * sopremo.testing.SopremoTestPlan.Input, eu.stratosphere.sopremo.SopremoTestPlan.Input,
 	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override

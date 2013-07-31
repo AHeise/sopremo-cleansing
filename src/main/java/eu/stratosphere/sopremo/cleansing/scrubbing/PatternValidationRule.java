@@ -9,11 +9,11 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
-import eu.stratosphere.sopremo.Immutable;
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
+import eu.stratosphere.util.Immutable;
 
 @DefaultSerializer(value = PatternValidationRule.PatternValidationRuleSerializer.class)
 public class PatternValidationRule extends ValidationRule {
