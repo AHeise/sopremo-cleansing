@@ -13,14 +13,15 @@ public class WhiteListRule extends ValidationRule {
 	}
 
 	@SuppressWarnings("unchecked")
-	public WhiteListRule(List<? extends IJsonNode> possibleValues, IJsonNode defaultValue) {
+	public WhiteListRule(List<? extends IJsonNode> possibleValues,
+			IJsonNode defaultValue) {
 		this.possibleValues = (List<IJsonNode>) possibleValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
-	
+
 	/**
 	 * Initializes WhiteListRule.
-	 *
+	 * 
 	 */
 	WhiteListRule() {
 		this.possibleValues = null;
@@ -29,5 +30,9 @@ public class WhiteListRule extends ValidationRule {
 	@Override
 	public boolean validate(IJsonNode value) {
 		return this.possibleValues.contains(value);
+	}
+
+	public List<IJsonNode> getPossibleValues() {
+		return this.possibleValues;
 	}
 }
