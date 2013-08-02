@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
@@ -322,7 +323,7 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length > 0) {
-				TextNode illegalCharacters = TextNode.valueOf("");
+				TextNode illegalCharacters = new TextNode();
 				for (EvaluationExpression expr : params) {
 					illegalCharacters.append((TextNode) expr.evaluate(NullNode
 							.getInstance()));
@@ -442,7 +443,7 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	private static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
+	public static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
 		private Object readResolve() {
 			return REMOVE_ILLEGAL_CHARACTERS;
 		}
@@ -451,7 +452,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
 			if (violatedRule instanceof IllegalCharacterRule) {
 				final IllegalCharacterRule that = (IllegalCharacterRule) violatedRule;
-				TextNode fixedValue = TextNode.valueOf("");
+				TextNode fixedValue = new TextNode();
 				char[] illegalCharacters = that.getIllegalCharacters();
 				boolean append = true;
 				for (char c : value.toString().toCharArray()) {
