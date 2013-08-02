@@ -89,7 +89,7 @@
 
 	<repositories>
 		<repository>
-			<id>maven.mse.jhu.edu/m2repository</id>
+			<id>maven.mse.jhu.edu</id>
 			<name>JHU Maven Repository</name>
 			<url>http://maven.mse.jhu.edu/m2repository</url>
 		</repository>

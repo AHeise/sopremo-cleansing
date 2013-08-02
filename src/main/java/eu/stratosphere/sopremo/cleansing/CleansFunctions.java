@@ -409,7 +409,7 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	}
 
-	private static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
+	public static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_NEAREST_BOUND;
 		}
@@ -427,7 +427,7 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	private static final ValueCorrection CHOOSE_FIRST_FROM_LIST = new ValueCorrection() {
+	public static final ValueCorrection CHOOSE_FIRST_FROM_LIST = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_FIRST_FROM_LIST;
 		}
