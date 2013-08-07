@@ -2,6 +2,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import java.util.List;
 
+import eu.stratosphere.sopremo.cleansing.CleansFunctions;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -19,6 +20,9 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * };
  * ...
  * </pre></code>
+ * 
+ * implemented corrections: <br/>
+ * 	- {@link CleansFunctions#CHOOSE_FIRST_FROM_LIST}
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */

@@ -409,6 +409,23 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	}
 
+	/**
+	 * This correction is a fix for {@link RangeRule}. To solve a violation this
+	 * correction simply chooses the nearest bound (lower bound if the actual
+	 * value was lower than the lower bound, upper bound if the actual value was
+	 * higher than the upper bound). To specify this correction for a
+	 * {@link RangeRule} use the following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	age: range(0, 100) ?: chooseNearestBound,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
 	public static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_NEAREST_BOUND;
@@ -427,6 +444,22 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
+	/**
+	 * This correction is a fix for {@link WhiteListRule}. To solve a violation
+	 * this correction simply chooses the first allowed value from the white
+	 * list. To specify this correction for a {@link WhiteListRule} use the
+	 * following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	person_type: containedIn(["customer", "employee", "founder"]) ?: chooseFirstFromList,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
 	public static final ValueCorrection CHOOSE_FIRST_FROM_LIST = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_FIRST_FROM_LIST;
@@ -443,6 +476,22 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
+	/**
+	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
+	 * violation this correction simply removes all violating characters from
+	 * the value. To specify this correction for a {@link IllegalCharacterRule} use the
+	 * following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	name: illegalCharacters("%", "$", "!", "[", "]") ?: removeIllegalCharacters,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
 	public static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
 		private Object readResolve() {
 			return REMOVE_ILLEGAL_CHARACTERS;

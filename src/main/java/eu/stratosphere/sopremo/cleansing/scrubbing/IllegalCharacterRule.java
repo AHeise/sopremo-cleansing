@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import eu.stratosphere.sopremo.cleansing.CleansFunctions;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
@@ -17,6 +18,9 @@ import eu.stratosphere.sopremo.type.TextNode;
  * };
  * ...
  * </pre></code>
+ * 
+ * implemented corrections: <br/>
+ * 	- {@link CleansFunctions#REMOVE_ILLEGAL_CHARACTERS}
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */

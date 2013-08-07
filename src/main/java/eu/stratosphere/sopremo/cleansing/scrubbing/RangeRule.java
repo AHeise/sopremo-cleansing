@@ -1,5 +1,8 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import org.apache.jasper.tagplugins.jstl.core.Choose;
+
+import eu.stratosphere.sopremo.cleansing.CleansFunctions;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -19,6 +22,9 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * };
  * ...
  * </pre></code>
+ * 
+ * implemented corrections: <br/>
+ * - {@link CleansFunctions#CHOOSE_NEAREST_BOUND}
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
