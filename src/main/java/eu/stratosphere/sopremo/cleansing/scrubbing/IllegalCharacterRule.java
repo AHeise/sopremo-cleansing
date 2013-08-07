@@ -3,6 +3,23 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
+/**
+ * This class provides the functionality to specify certain characters that are
+ * not allowed in the value of a record-field. The following example shows the
+ * usage of this rule in a meteor-script:
+ * 
+ * <code><pre>
+ * ...
+ * $persons_scrubbed = scrub $persons_sample with rules {
+ *	...
+ *	name: illegalCharacters("%", "$", "!", "[", "]"),
+ *	...
+ * };
+ * ...
+ * </pre></code>
+ * 
+ * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
+ */
 public class IllegalCharacterRule extends ValidationRule {
 
 	private TextNode illegalCharacters;
