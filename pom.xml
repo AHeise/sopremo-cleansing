@@ -35,21 +35,21 @@
 			<version>${sopremo.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-server</artifactId>
 			<version>${sopremo.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-client</artifactId>
 			<version>${sopremo.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
@@ -66,18 +66,24 @@
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
+			<artifactId>sopremo-common</artifactId>
+			<version>${sopremo.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-testing</artifactId>
 			<version>${meteor.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>meteor-meteor</artifactId>
 			<version>${meteor.version}</version>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
@@ -112,11 +118,18 @@
 					<target>1.7</target>
 				</configuration>
 			</plugin>
+			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-surefire-plugin</artifactId> 
+				<version>2.4.2</version> <configuration> <systemProperties> <property> <name>java.util.logging.config.file</name> 
+				<value>${project.build.directory}/test-classes/logging.properties</value> 
+				</property> </systemProperties> </configuration> </plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>2.4.2</version>
 				<configuration>
+					<excludes>
+						<exclude>**/*IT.java</exclude>
+					</excludes>
 					<systemProperties>
 						<property>
 							<name>java.util.logging.config.file</name>
@@ -124,6 +137,23 @@
 						</property>
 					</systemProperties>
 				</configuration>
+				<executions>
+					<execution>
+						<id>integration-test</id>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<phase>integration-test</phase>
+						<configuration>
+							<excludes>
+								<exclude>none</exclude>
+							</excludes>
+							<includes>
+								<include>**/*IT.java</include>
+							</includes>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>

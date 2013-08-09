@@ -36,7 +36,7 @@ import eu.stratosphere.sopremo.type.TextNode;
  * 
  */
 public class MeteorScrubTest extends MeteorParseTest {
-	@Test
+	@Test @org.junit.Ignore
 	public void testFullScrub() {
 		final SopremoPlan actualPlan = parseScript(
 			"normalizeName = javaudf('" + MeteorScrubTest.class.getName() +  ".normalizeName');\n" +
