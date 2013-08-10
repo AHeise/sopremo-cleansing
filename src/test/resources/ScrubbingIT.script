@@ -4,8 +4,8 @@ $persons = read from 'TestData.json';
 
 $persons_scrubbed = scrub $persons with rules {
 	_id: required,
-	format: patternValidation("\d{4}-\d{4}"),
-	number: range(500, 1500),
+	format: hasPattern("\d{4}-\d{4}"),
+	number: inRange(500, 1500),
 	whitelist: containedIn(["A", "B", "C"]),
 	blacklist: notContainedIn(["D", "E", "F"]),
 	illChar: illegalCharacters("%", "$", "&")?: removeIllegalCharacters,

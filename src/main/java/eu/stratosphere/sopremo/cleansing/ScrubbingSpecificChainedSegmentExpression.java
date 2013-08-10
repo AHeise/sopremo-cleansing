@@ -8,13 +8,13 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class CleansingSpecificChainedSegmentExpression extends
+public class ScrubbingSpecificChainedSegmentExpression extends
 		ChainedSegmentExpression {
-	public CleansingSpecificChainedSegmentExpression() {
+	public ScrubbingSpecificChainedSegmentExpression() {
 		super();
 	}
 
-	public CleansingSpecificChainedSegmentExpression(
+	public ScrubbingSpecificChainedSegmentExpression(
 			Collection<EvaluationExpression> values) {
 		super(values);
 	}

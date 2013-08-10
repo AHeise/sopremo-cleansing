@@ -38,6 +38,7 @@ public abstract class RecordResolution extends ConflictResolution {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void fuse(IArrayNode<IJsonNode> values, double[] weights) {
+		fusedRecord.clear();
 		for (IJsonNode value : values) {
 			IObjectNode object = (IObjectNode) value;
 			for (Entry<String, IJsonNode> field : object) {

@@ -8,8 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
+import eu.stratosphere.sopremo.cleansing.fusion.RecordResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterRule;
@@ -45,8 +46,7 @@ import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
 //import eu.stratosphere.sopremo.SopremoEnvironment;
 
-public class CleansFunctions implements BuiltinProvider,
-		ConstantRegistryCallback, FunctionRegistryCallback {
+public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallback, FunctionRegistryCallback {
 
 	/*
 	 * (non-Javadoc)
@@ -60,8 +60,9 @@ public class CleansFunctions implements BuiltinProvider,
 		constantRegistry.put("required", new NonNullRule());
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
-		constantRegistry.put("removeIllegalCharacters",
-				REMOVE_ILLEGAL_CHARACTERS);
+		constantRegistry.put("removeIllegalCharacters", REMOVE_ILLEGAL_CHARACTERS);
+
+		constantRegistry.put("mostFrequent", new MostFrequentResolution());
 	}
 
 	/*
@@ -74,10 +75,9 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
-		registry.put("jaroWinkler", new SimilarityMacro(
-				new JaroWinklerSimilarity()));
-		registry.put("patternValidation", new PatternValidationRuleMacro());
-		registry.put("range", new RangeRuleMacro());
+		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
+		registry.put("hasPattern", new PatternValidationRuleMacro());
+		registry.put("inRange", new RangeRuleMacro());
 		registry.put("default", new DefaultValueCorrectionMacro());
 		registry.put("containedIn", new WhiteListRuleMacro());
 		registry.put("notContainedIn", new BlackListRuleMacro());
@@ -136,8 +136,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.blocking.SoundEx
-						.generateSoundExInto(input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.blocking.SoundEx.generateSoundExInto(input, this.soundex);
 			} catch (IOException e) {
 			}
 			return this.soundex;
@@ -184,8 +183,7 @@ public class CleansFunctions implements BuiltinProvider,
 
 			this.sizes.clear();
 			for (IJsonNode value : values)
-				this.sizes.add(TypeCoercer.INSTANCE.coerce(value,
-						this.nodeCache, TextNode.class).length());
+				this.sizes.add(TypeCoercer.INSTANCE.coerce(value, this.nodeCache, TextNode.class).length());
 			int maxSize = this.sizes.getInt(0);
 			for (int index = 1; index < this.sizes.size(); index++)
 				maxSize = Math.max(index, maxSize);
@@ -207,8 +205,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public PatternValidationRule call(EvaluationExpression[] params) {
 
 			if (params.length == 1)
-				return new PatternValidationRule(Pattern.compile(params[0]
-						.evaluate(NullNode.getInstance()).toString()));
+				return new PatternValidationRule(Pattern.compile(params[0].evaluate(NullNode.getInstance()).toString()));
 			else
 				throw new IllegalArgumentException("Wrong number of arguments.");
 
@@ -232,9 +229,7 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 2) {
-				return new RangeRule(
-						params[0].evaluate(NullNode.getInstance()),
-						params[1].evaluate(NullNode.getInstance()));
+				return new RangeRule(params[0].evaluate(NullNode.getInstance()), params[1].evaluate(NullNode.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -264,11 +259,9 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@SuppressWarnings("unchecked")
-		private void convertToList(EvaluationExpression value,
-				List<IJsonNode> possibleValues) {
+		private void convertToList(EvaluationExpression value, List<IJsonNode> possibleValues) {
 			if (value.evaluate(NullNode.getInstance()) instanceof IArrayNode) {
-				for (IJsonNode node : (IArrayNode<IJsonNode>) value
-						.evaluate(NullNode.getInstance())) {
+				for (IJsonNode node : (IArrayNode<IJsonNode>) value.evaluate(NullNode.getInstance())) {
 					possibleValues.add(node);
 				}
 			} else {
@@ -299,11 +292,9 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@SuppressWarnings("unchecked")
-		private void convertToList(EvaluationExpression value,
-				List<IJsonNode> forbiddenValues) {
+		private void convertToList(EvaluationExpression value, List<IJsonNode> forbiddenValues) {
 			if (value.evaluate(NullNode.getInstance()) instanceof IArrayNode) {
-				for (IJsonNode node : (IArrayNode<IJsonNode>) value
-						.evaluate(NullNode.getInstance())) {
+				for (IJsonNode node : (IArrayNode<IJsonNode>) value.evaluate(NullNode.getInstance())) {
 					forbiddenValues.add(node);
 				}
 			} else {
@@ -325,8 +316,7 @@ public class CleansFunctions implements BuiltinProvider,
 			if (params.length > 0) {
 				TextNode illegalCharacters = new TextNode();
 				for (EvaluationExpression expr : params) {
-					illegalCharacters.append((TextNode) expr.evaluate(NullNode
-							.getInstance()));
+					illegalCharacters.append((TextNode) expr.evaluate(NullNode.getInstance()));
 				}
 				return new IllegalCharacterRule(illegalCharacters);
 			} else {
@@ -345,8 +335,7 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 1) {
-				return new DefaultValueCorrection(params[0].evaluate(NullNode
-						.getInstance()));
+				return new DefaultValueCorrection(params[0].evaluate(NullNode.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -391,20 +380,15 @@ public class CleansFunctions implements BuiltinProvider,
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			for (EvaluationExpression evaluationExpression : params)
 				if (!(evaluationExpression instanceof PathSegmentExpression))
-					throw new IllegalArgumentException(
-							"Can only expand simple path expressions");
+					throw new IllegalArgumentException("Can only expand simple path expressions");
 
 			Similarity<IJsonNode> similarity;
 			if (params.length > 1)
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[1], true);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
+						(PathSegmentExpression) params[1], true);
 			else
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[0], true);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, (PathSegmentExpression) params[0],
+						(PathSegmentExpression) params[0], true);
 			return new SimilarityExpression(similarity);
 		}
 	}
