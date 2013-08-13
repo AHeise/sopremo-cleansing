@@ -6,11 +6,11 @@ import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
-public class MergeRule extends ConflictResolution {
+public class MergeResolution extends ConflictResolution {
 	/**
 	 * The default, stateless instance.
 	 */
-	public final static MergeRule INSTANCE = new MergeRule();
+	public final static MergeResolution INSTANCE = new MergeResolution();
 
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {

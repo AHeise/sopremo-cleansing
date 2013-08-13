@@ -9,6 +9,10 @@ public class FusionContext extends EvaluationContext {
 	private int[] sourceIndexes;
 
 	private double[] weights;
+	
+	public FusionContext(){
+		
+	}
 
 	public FusionContext(final EvaluationContext context) {
 		super(context);
