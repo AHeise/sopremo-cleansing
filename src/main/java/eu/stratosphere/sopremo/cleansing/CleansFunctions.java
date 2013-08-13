@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
@@ -81,6 +82,7 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 		registry.put("containedIn", new WhiteListRuleMacro());
 		registry.put("notContainedIn", new BlackListRuleMacro());
 		registry.put("illegalCharacters", new IllegalCharacterRuleMacro());
+		registry.put("defaultResolution", new DefaultValueResolutionMacro());
 
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
@@ -335,6 +337,24 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 1) {
 				return new DefaultValueCorrection(params[0].evaluate(NullNode.getInstance()));
+			} else {
+				throw new IllegalArgumentException("Wrong number of arguments.");
+			}
+		}
+
+	}
+	
+	private static class DefaultValueResolutionMacro extends MacroBase {
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public EvaluationExpression call(EvaluationExpression[] params) {
+			if (params.length == 1) {
+				return new DefaultValueResolution(params[0].evaluate(NullNode.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}

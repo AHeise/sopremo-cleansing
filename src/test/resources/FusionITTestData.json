@@ -2,6 +2,7 @@
 	[
 	{"name":"foo", "source": "nsa"},
 	{"name":"f.", "source": "bnd"},
-	{"name":"foo", "source": "mossad"}
+	{"name":"foo", "source": "mossad"},
+	{"name":"f.", "source": "bnd"}
 	]
 ]
