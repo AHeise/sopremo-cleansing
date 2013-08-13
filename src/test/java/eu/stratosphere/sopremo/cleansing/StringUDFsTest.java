@@ -14,8 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
 import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
+import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
 
 import org.junit.Test;
 

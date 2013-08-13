@@ -69,7 +69,8 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((resolutions == null) ? 0 : resolutions.hashCode());
+		result = prime * result
+				+ ((resolutions == null) ? 0 : resolutions.hashCode());
 		return result;
 	}
 
@@ -90,7 +91,8 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		return true;
 	}
 
-	public static class RuleBasedFusionSerializer extends Serializer<RuleBasedFusion> {
+	public static class RuleBasedFusionSerializer extends
+			Serializer<RuleBasedFusion> {
 		FieldSerializer<RuleBasedFusion> fieldSerializer;
 
 		public RuleBasedFusionSerializer(Kryo kryo, Class<RuleBasedFusion> type) {
@@ -98,10 +100,13 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		}
 
 		@Override
-		public void write(Kryo kryo, com.esotericsoftware.kryo.io.Output output, RuleBasedFusion object) {
+		public void write(Kryo kryo,
+				com.esotericsoftware.kryo.io.Output output,
+				RuleBasedFusion object) {
 			fieldSerializer.write(kryo, output, object);
 			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = new HashMap<PathSegmentExpression, Collection<EvaluationExpression>>();
-			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : object.resolutions.asMap().entrySet()) {
+			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : object.resolutions
+					.asMap().entrySet()) {
 				Collection<EvaluationExpression> tempList = new ArrayList<EvaluationExpression>();
 				tempList.addAll(entry.getValue());
 				backingMapCopy.put(entry.getKey(), tempList);
@@ -111,14 +116,17 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		}
 
 		@Override
-		public RuleBasedFusion read(Kryo kryo, Input input, Class<RuleBasedFusion> type) {
+		public RuleBasedFusion read(Kryo kryo, Input input,
+				Class<RuleBasedFusion> type) {
 			RuleBasedFusion object = fieldSerializer.read(kryo, input, type);
 			MapSerializer mapSerializer = new MapSerializer();
 			mapSerializer.setKeyClass(PathSegmentExpression.class, null);
 			mapSerializer.setValueClass(Collection.class, null);
 			@SuppressWarnings("unchecked")
-			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = kryo.readObject(input, HashMap.class, mapSerializer);
-			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : backingMapCopy.entrySet()) {
+			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = kryo
+					.readObject(input, HashMap.class, mapSerializer);
+			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : backingMapCopy
+					.entrySet()) {
 
 				object.resolutions.putAll(entry.getKey(), entry.getValue());
 			}
@@ -129,14 +137,17 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		@Override
 		public RuleBasedFusion copy(Kryo kryo, RuleBasedFusion original) {
 			RuleBasedFusion copy = this.fieldSerializer.copy(kryo, original);
-			for (Entry<PathSegmentExpression, EvaluationExpression> rule : original.resolutions.entries()) {
-				copy.addResolution((EvaluationExpression) rule.getValue().copy(), (PathSegmentExpression) rule.getKey().copy());
+			for (Entry<PathSegmentExpression, EvaluationExpression> rule : original.resolutions
+					.entries()) {
+				copy.addResolution((EvaluationExpression) rule.getValue()
+						.copy(), (PathSegmentExpression) rule.getKey().copy());
 			}
 			return copy;
 		}
 	}
 
-	private Multimap<PathSegmentExpression, EvaluationExpression> resolutions = ArrayListMultimap.create();
+	private Multimap<PathSegmentExpression, EvaluationExpression> resolutions = ArrayListMultimap
+			.create();
 
 	// @Override
 	// public void addImplementation(SopremoModule module, EvaluationContext
@@ -163,81 +174,111 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 	// }
 
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module,
+			EvaluationContext context) {
 		if (this.resolutions.isEmpty()) {
 			// short circuit
 			module.getOutput(0).setInput(0, module.getInput(0));
 			return;
 		}
 
-		FusionProjection preProceccingProjection = new FusionProjection().withInputs(module.getInput(0));
-		Projection normalization = new Projection().withResultProjection(this.createResultProjection()).withInputs(preProceccingProjection);
-		Selection filterInvalid = new Selection().withCondition(new UnaryExpression(new ValueTreeContains(FilterRecord.Instance), true)).withInputs(
-				normalization);
-		module.getOutput(0).setInput(0, filterInvalid);
+		FusionProjection preProceccingProjection = new FusionProjection()
+				.withInputs(module.getInput(0));
+		Projection normalization = new Projection().withResultProjection(
+				this.createResultProjection()).withInputs(
+				preProceccingProjection);
+		Selection filterInvalid = new Selection().withCondition(
+				new UnaryExpression(
+						new ValueTreeContains(FilterRecord.Instance), true))
+				.withInputs(normalization);
+		FusionMergeProjection mergeProjection = new FusionMergeProjection()
+				.withInputs(filterInvalid);
+		module.getOutput(0).setInput(0, mergeProjection);
 	}
 
 	private EvaluationExpression createResultProjection() {
 		// no nested rule
-		if (this.resolutions.size() == 1 && this.resolutions.containsKey(EvaluationExpression.VALUE))
+		if (this.resolutions.size() == 1
+				&& this.resolutions.containsKey(EvaluationExpression.VALUE))
 			return new ChainedSegmentExpression(this.resolutions.values());
 
-		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(this.resolutions.keySet());
+		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(
+				this.resolutions.keySet());
 
 		final ObjectCreation objectCreation = new ObjectCreation();
 		// objectCreation.addMapping(new
 		// ObjectCreation.CopyFields(EvaluationExpression.VALUE));
 		while (!uncoveredPaths.isEmpty()) {
 			final PathSegmentExpression path = uncoveredPaths.remove();
-			this.addToObjectCreation(objectCreation, path, path, new ChainedSegmentExpression(this.resolutions.get(path)).withTail(path));
+			this.addToObjectCreation(objectCreation, path, path,
+					new ChainedSegmentExpression(this.resolutions.get(path))
+							.withTail(path));
 		}
 		return objectCreation;
 	}
 
-	private void addToObjectCreation(ObjectCreation objectCreation, PathSegmentExpression remainingPath, PathSegmentExpression completePath,
+	private void addToObjectCreation(ObjectCreation objectCreation,
+			PathSegmentExpression remainingPath,
+			PathSegmentExpression completePath,
 			PathSegmentExpression chainedSegmentExpression) {
 
 		final String field = ((ObjectAccess) remainingPath).getField();
 
 		for (int index = 0, size = objectCreation.getMappingSize(); index < size; index++) {
 			final Mapping<?> mapping = objectCreation.getMapping(index);
-			final PathSegmentExpression targetExpression = mapping.getTargetExpression();
+			final PathSegmentExpression targetExpression = mapping
+					.getTargetExpression();
 			if (targetExpression.equalsThisSeqment(targetExpression)) {
 				if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
-					objectCreation.addMapping(new ObjectCreation.FieldAssignment(field, chainedSegmentExpression));
+					objectCreation
+							.addMapping(new ObjectCreation.FieldAssignment(
+									field, chainedSegmentExpression));
 				else
-					this.addToObjectCreation((ObjectCreation) mapping.getExpression(), (PathSegmentExpression) remainingPath.getInputExpression(),
-							completePath, chainedSegmentExpression);
+					this.addToObjectCreation((ObjectCreation) mapping
+							.getExpression(),
+							(PathSegmentExpression) remainingPath
+									.getInputExpression(), completePath,
+							chainedSegmentExpression);
 				return;
 			}
 		}
 
 		if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
-			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field, chainedSegmentExpression));
+			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
+					chainedSegmentExpression));
 		else {
 			final ObjectCreation subObject = new ObjectCreation();
 			PathSegmentExpression processedPath = EvaluationExpression.VALUE;
-			for (PathSegmentExpression segment = completePath; remainingPath != segment; segment = (PathSegmentExpression) segment.getInputExpression())
+			for (PathSegmentExpression segment = completePath; remainingPath != segment; segment = (PathSegmentExpression) segment
+					.getInputExpression())
 				processedPath = segment.cloneSegment().withTail(processedPath);
 			subObject.addMapping(new ObjectCreation.CopyFields(processedPath));
-			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field, subObject));
-			this.addToObjectCreation(subObject, (PathSegmentExpression) remainingPath.getInputExpression(), completePath, chainedSegmentExpression);
+			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
+					subObject));
+			this.addToObjectCreation(subObject,
+					(PathSegmentExpression) remainingPath.getInputExpression(),
+					completePath, chainedSegmentExpression);
 		}
 
 	}
 
-	public void addResolution(EvaluationExpression ruleExpression, PathSegmentExpression target) {
+	public void addResolution(EvaluationExpression ruleExpression,
+			PathSegmentExpression target) {
 		this.resolutions.put(target, ruleExpression);
 	}
 
-	public void removeResolution(EvaluationExpression ruleExpression, PathSegmentExpression target) {
+	public void removeResolution(EvaluationExpression ruleExpression,
+			PathSegmentExpression target) {
 		this.resolutions.remove(target, ruleExpression);
 	}
 
 	@InputCardinality(1)
-	public static class FusionProjection extends ElementaryOperator<FusionProjection> {
-		
-		public PactModule asPactModule(EvaluationContext context, SopremoRecordLayout layout) {
+	public static class FusionProjection extends
+			ElementaryOperator<FusionProjection> {
+
+		@Override
+		public PactModule asPactModule(EvaluationContext context,
+				SopremoRecordLayout layout) {
 			return super.asPactModule(new FusionContext(context), layout);
 		}
 
@@ -252,11 +293,46 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 					for (Entry<String, IJsonNode> field : object) {
 						IJsonNode fieldValues = fusedRecord.get(field.getKey());
 						if (fieldValues == MissingNode.getInstance())
-							fusedRecord.put(field.getKey(), fieldValues = new ArrayNode<IJsonNode>());
-						((IArrayNode<IJsonNode>) fieldValues).add(field.getValue());
+							fusedRecord.put(field.getKey(),
+									fieldValues = new ArrayNode<IJsonNode>());
+						((IArrayNode<IJsonNode>) fieldValues).add(field
+								.getValue());
 					}
 				}
 				out.collect(fusedRecord);
+			}
+		}
+	}
+
+	@InputCardinality(1)
+	public static class FusionMergeProjection extends
+			ElementaryOperator<FusionMergeProjection> {
+
+		@Override
+		public PactModule asPactModule(EvaluationContext context,
+				SopremoRecordLayout layout) {
+			return super.asPactModule(context, layout);
+		}
+
+		public static class ProjectionStub extends SopremoMap {
+			@SuppressWarnings("unchecked")
+			@Override
+			protected void map(final IJsonNode values, final JsonCollector out) {
+				IObjectNode object = (IObjectNode) values;
+				IObjectNode mergedObject = new ObjectNode();
+				for (Entry<String, IJsonNode> field : object) {
+					IJsonNode mergedValue;
+					if (field.getValue() instanceof IArrayNode
+							&& ((IArrayNode<IJsonNode>) field.getValue())
+									.size() == 1) {
+						mergedValue = ((IArrayNode<IJsonNode>) field.getValue())
+								.get(0);
+					} else {
+						mergedValue = field.getValue();
+					}
+					mergedObject.put(field.getKey(), mergedValue);
+				}
+				out.collect(mergedObject);
 			}
 		}
 	}

@@ -29,12 +29,6 @@
 			<version>${sopremo.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>eu.stratosphere</groupId>
-			<artifactId>sopremo-server</artifactId>
-			<version>${sopremo.version}</version>
-			<scope>test</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
@@ -50,12 +44,6 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>eu.stratosphere</groupId>
-			<artifactId>meteor-meteor</artifactId>
-			<version>${meteor.version}</version>
-			<scope>test</scope>
-		</dependency>
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>

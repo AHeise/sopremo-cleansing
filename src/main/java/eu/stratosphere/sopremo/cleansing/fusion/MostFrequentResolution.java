@@ -62,12 +62,12 @@ public class MostFrequentResolution extends ConflictResolution {
 	}
 
 	private transient final Object2DoubleMap<IJsonNode> histogram = new Object2DoubleOpenHashMap<IJsonNode>();
-
+	
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
 		this.histogram.clear();
 		for (int index = 0; index < values.size(); index++)
-			this.histogram.put(values.get(index), this.histogram.get(values.get(index)) + weights[index]);
+			this.histogram.put(values.get(index), (this.histogram.get(values.get(index)) != null)? this.histogram.get(values.get(index)) : 0 + weights[index]);
 
 		final ObjectSet<Object2DoubleMap.Entry<IJsonNode>> entrySet = this.histogram.object2DoubleEntrySet();
 		double max = 0;

@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
-import eu.stratosphere.sopremo.cleansing.fusion.RecordResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterRule;
@@ -61,7 +60,7 @@ public class CleansFunctions implements BuiltinProvider, ConstantRegistryCallbac
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters", REMOVE_ILLEGAL_CHARACTERS);
-
+		
 		constantRegistry.put("mostFrequent", new MostFrequentResolution());
 	}
 
