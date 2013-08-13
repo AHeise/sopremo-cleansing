@@ -10,7 +10,7 @@ public class DefaultValueResolution extends ConflictResolution {
 	public DefaultValueResolution() {
 		defaultValue = NullNode.getInstance();
 	}
-	
+
 	public DefaultValueResolution(final IJsonNode defaultValue) {
 		this.defaultValue = defaultValue;
 	}

@@ -36,6 +36,7 @@ import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
+import eu.stratosphere.sopremo.cleansing.FusionSpecificChainedSegmentExpression;
 import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -200,7 +201,8 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		// no nested rule
 		if (this.resolutions.size() == 1
 				&& this.resolutions.containsKey(EvaluationExpression.VALUE))
-			return new ChainedSegmentExpression(this.resolutions.values());
+			return new FusionSpecificChainedSegmentExpression(
+					this.resolutions.values());
 
 		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(
 				this.resolutions.keySet());
@@ -210,9 +212,12 @@ public class RuleBasedFusion extends CompositeOperator<RuleBasedFusion> {
 		// ObjectCreation.CopyFields(EvaluationExpression.VALUE));
 		while (!uncoveredPaths.isEmpty()) {
 			final PathSegmentExpression path = uncoveredPaths.remove();
-			this.addToObjectCreation(objectCreation, path, path,
-					new ChainedSegmentExpression(this.resolutions.get(path))
-							.withTail(path));
+			this.addToObjectCreation(
+					objectCreation,
+					path,
+					path,
+					new FusionSpecificChainedSegmentExpression(this.resolutions
+							.get(path)).withTail(path));
 		}
 		return objectCreation;
 	}
