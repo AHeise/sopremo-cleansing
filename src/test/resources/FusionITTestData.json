@@ -1,7 +1,7 @@
 [
 	[
-	{"name":"foo", "source": "nsa"},
-	{"name":"f.", "source": "bnd"},
-	{"name":"foo", "source": "mossad"}
+	{"name":"foo", "age":25, "source": "nsa"},
+	{"name":"f.", "age":24, "source": "bnd"},
+	{"name":"foo", "age":25, "source": "mossad"}
 	]
 ]

@@ -37,7 +37,6 @@ import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.cleansing.FusionSpecificChainedSegmentExpression;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;

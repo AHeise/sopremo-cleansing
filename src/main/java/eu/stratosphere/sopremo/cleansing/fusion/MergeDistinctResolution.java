@@ -6,20 +6,19 @@ import java.util.Set;
 
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.NullNode;
 
-public class MergeDistinctRule extends ConflictResolution {
+public class MergeDistinctResolution extends ConflictResolution {
 	/**
 	 * The default, stateless instance.
 	 */
-	public final static MergeDistinctRule INSTANCE = new MergeDistinctRule();
+	public final static MergeDistinctResolution INSTANCE = new MergeDistinctResolution();
 
 	private transient final Set<IJsonNode> distinctValues = new HashSet<IJsonNode>();
 
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
 		this.distinctValues.clear();
-		this.distinctValues.add(NullNode.getInstance());
+		//this.distinctValues.add(NullNode.getInstance());
 
 		Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext()) {
@@ -29,5 +28,7 @@ public class MergeDistinctRule extends ConflictResolution {
 			else
 				this.distinctValues.add(element);
 		}
+		values.clear();
+		values.addAll(this.distinctValues);
 	}
 }

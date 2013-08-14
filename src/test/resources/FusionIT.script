@@ -3,9 +3,11 @@ using cleansing;
 $persons_duplicate_pairs = read from 'FusionITTestData.json';
 
 $persons_fused = fuse $p in $persons_duplicate_pairs with resolutions {
-	//name: [mostFrequent, defaultResolution("default")]
-	name: mostFrequent
-	//name: [defaultResolution("default")]
+	//name: [mostFrequent, defaultResolution("default")],
+	name: mostFrequent,
+	//name: [defaultResolution("default")],
+	
+	age: mergeDistinct
 };
 
 write $persons_fused to 'file:///tmp/FusionITTestOutput.json';

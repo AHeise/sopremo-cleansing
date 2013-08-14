@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
+import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
@@ -65,6 +66,7 @@ public class CleansFunctions implements BuiltinProvider,
 				REMOVE_ILLEGAL_CHARACTERS);
 
 		constantRegistry.put("mostFrequent", new MostFrequentResolution());
+		constantRegistry.put("mergeDistinct", MergeDistinctResolution.INSTANCE);
 	}
 
 	/*
