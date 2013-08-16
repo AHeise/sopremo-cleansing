@@ -2,12 +2,19 @@ using cleansing;
 
 $persons_duplicate_pairs = read from 'FusionITTestData.json';
 
-$persons_fused = fuse $p in $persons_duplicate_pairs with resolutions {
-	name: [mostFrequent, defaultResolution("default")],
-	//name: mostFrequent,
-	//name: [defaultResolution("default")],
-	
-	age: mergeDistinct
+$persons_fused = fuse $p in $persons_duplicate_pairs
+	with weights {
+		nsa: 0.9,
+		bnd: 0.2,
+		mossad: 0.2,
+		cia : 0.7*{addresses: 0.8*{street:0.7, zipcode: 0.9}, name: 0.3}
+	}
+	with resolutions {
+		name: [mostFrequent, defaultResolution("default")],
+		//name: mostFrequent,
+		//name: [defaultResolution("default")],
+		
+		age: mergeDistinct
 };
 
 write $persons_fused to 'file:///tmp/FusionITTestOutput.json';

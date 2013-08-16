@@ -1,5 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.fusion;
 
+import java.util.Map;
+
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.NullNode;
@@ -16,7 +18,7 @@ public class DefaultValueResolution extends ConflictResolution {
 	}
 
 	@Override
-	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
+	public void fuse(final IArrayNode<IJsonNode> values, Map<String, CompositeEvidence> weights) {
 		values.clear();
 		values.add(this.defaultValue);
 	}

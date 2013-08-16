@@ -1,4 +1,1 @@
-[{"_id":1,"blacklist":"A","comment":"NOT filtered, whitespace -> _bar, substr -> aa","format":"1000-2000","illChar":"foo","number":1000,"substr":"aa","whitelist":"A","whitespace":" bar"},
-{"_id":"5","blacklist":"C","comment":"NOT filtered, illChar -> foo, whitespace -> _bar, substr -> ee","format":"1000-2000","illChar":"foo","number":1000,"substr":"ee","whitelist":"B","whitespace":"   bar"},
-{"_id":"6","blacklist":"C","comment":"NOT filtered, whitespace -> _bar, substr -> ff","format":"1000-2000","illChar":"bar","number":1000,"substr":"ff","whitelist":"B","whitespace":" bar"},
-{"_id":"7","blacklist":"C","comment":"NOT filtered, whitespace -> _bar, substr -> gg","format":"1000-2000","illChar":"bar","number":1000,"substr":"gg","whitelist":"B","whitespace":"   bar"}]
+[{"age":[25,24],"name":"foo"}]

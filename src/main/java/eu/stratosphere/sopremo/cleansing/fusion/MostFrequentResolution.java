@@ -1,10 +1,11 @@
 package eu.stratosphere.sopremo.cleansing.fusion;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import com.esotericsoftware.kryo.DefaultSerializer;
 import com.esotericsoftware.kryo.Kryo;
@@ -13,15 +14,11 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 import com.esotericsoftware.kryo.serializers.MapSerializer;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
-import eu.stratosphere.sopremo.cleansing.scrubbing.RuleBasedScrubbing;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.MissingNode;
+import eu.stratosphere.sopremo.type.ObjectNode;
+import eu.stratosphere.sopremo.type.TextNode;
 
 @DefaultSerializer(value = MostFrequentResolution.MostFrequentResolutionSerializer.class)
 public class MostFrequentResolution extends ConflictResolution {
@@ -64,10 +61,10 @@ public class MostFrequentResolution extends ConflictResolution {
 	private transient final Object2DoubleMap<IJsonNode> histogram = new Object2DoubleOpenHashMap<IJsonNode>();
 	
 	@Override
-	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
+	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
 		this.histogram.clear();
 		for (int index = 0; index < values.size(); index++)
-			this.histogram.put(values.get(index), (this.histogram.get(values.get(index)) != null)? this.histogram.get(values.get(index)) : 0 + weights[index]);
+			this.histogram.put(getValueFromSourceTaggedObject(values.get(index)), (this.histogram.get(values.get(index)) != null)? this.histogram.get(values.get(index)) : 0 + getWeightForValue(values.get(index), weights));
 
 		final ObjectSet<Object2DoubleMap.Entry<IJsonNode>> entrySet = this.histogram.object2DoubleEntrySet();
 		double max = 0;

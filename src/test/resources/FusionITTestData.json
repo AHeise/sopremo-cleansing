@@ -1,7 +1,11 @@
 [
 	[
-	{"name":"foo", "age":25, "source": "nsa"},
-	{"name":"f.", "age":24, "source": "bnd"},
-	{"name":"foo", "age":25, "source": "mossad"}
+	{"name":"foo", "age":25, "_source": "nsa"},
+	{"name":"bill", "age":24, "_source": "bnd"},
+	{"name":"foo", "age":25, "_source": "mossad"}
+	],
+	[
+	{"name":"boo", "age":25, "_source": "nsa"},
+	{"name":"f.", "age":24, "_source": "bnd"}
 	]
 ]

@@ -2,10 +2,12 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.ObjectNode;
 
 public class MergeDistinctResolution extends ConflictResolution {
 	/**
@@ -16,13 +18,13 @@ public class MergeDistinctResolution extends ConflictResolution {
 	private transient final Set<IJsonNode> distinctValues = new HashSet<IJsonNode>();
 
 	@Override
-	public void fuse(final IArrayNode<IJsonNode> values, final double[] weights) {
+	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
 		this.distinctValues.clear();
 		//this.distinctValues.add(NullNode.getInstance());
 
 		Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext()) {
-			IJsonNode element = iterator.next();
+			IJsonNode element = getValueFromSourceTaggedObject(iterator.next());
 			if (this.distinctValues.contains(element))
 				iterator.remove();
 			else

@@ -50,5 +50,14 @@ public class FusionContext extends EvaluationContext {
 
 		this.weights = weights;
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#clone()
+	 */
+	@Override
+	public FusionContext clone() {
+		return (FusionContext) super.clone();
+	}
 
 }

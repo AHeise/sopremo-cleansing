@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -13,7 +12,7 @@ import eu.stratosphere.sopremo.operator.SopremoPlan;
 
 public class FusionIT extends MeteorIT {
 
-	@Test @Ignore
+	@Test
 	public void testSuccessfulExecution() throws IOException {
 		final SopremoPlan plan = getPlan();
 
@@ -23,7 +22,7 @@ public class FusionIT extends MeteorIT {
 		File outputFile = new File("/tmp/FusionITTestOutput.json");
 		this.testServer.checkContentsOf(outputFile.getName(), parser.readValueAsTree());
 		//TODO improve this
-		//outputFile.delete();
+		outputFile.delete();
 	}
 
 	@Override
