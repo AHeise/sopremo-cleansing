@@ -17,8 +17,6 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.MissingNode;
-import eu.stratosphere.sopremo.type.ObjectNode;
-import eu.stratosphere.sopremo.type.TextNode;
 
 @DefaultSerializer(value = MostFrequentResolution.MostFrequentResolutionSerializer.class)
 public class MostFrequentResolution extends ConflictResolution {
@@ -63,8 +61,10 @@ public class MostFrequentResolution extends ConflictResolution {
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
 		this.histogram.clear();
-		for (int index = 0; index < values.size(); index++)
-			this.histogram.put(getValueFromSourceTaggedObject(values.get(index)), (this.histogram.get(values.get(index)) != null)? this.histogram.get(values.get(index)) : 0 + getWeightForValue(values.get(index), weights));
+		for (int index = 0; index < values.size(); index++){
+			IJsonNode value = getValueFromSourceTaggedObject(values.get(index));
+			this.histogram.put(value, (this.histogram.get(value) != null)? this.histogram.get(value)+getWeightForValue(values.get(index), weights) : getWeightForValue(values.get(index), weights));
+		}
 
 		final ObjectSet<Object2DoubleMap.Entry<IJsonNode>> entrySet = this.histogram.object2DoubleEntrySet();
 		double max = 0;

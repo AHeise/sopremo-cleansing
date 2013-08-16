@@ -44,7 +44,11 @@ public abstract class ConflictResolution extends CleansingRule<FusionContext> {
 	
 	protected double getWeightForValue(IJsonNode value, Map<String, CompositeEvidence> weights) {
 		String sourceKey = ((TextNode)((ObjectNode)value).get("_source")).toString();
-		double evidence = weights.get(sourceKey).getBaseEvidence().getDoubleValue();
+		CompositeEvidence weight = weights.get(sourceKey);
+		double evidence = 1;
+		if(weight!=null){
+			evidence = weights.get(sourceKey).getBaseEvidence().getDoubleValue();
+		}
 		return evidence;
 	}
 	

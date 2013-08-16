@@ -7,7 +7,6 @@ import java.util.Set;
 
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.ObjectNode;
 
 public class MergeDistinctResolution extends ConflictResolution {
 	/**
