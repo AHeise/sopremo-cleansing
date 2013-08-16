@@ -15,40 +15,64 @@ import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 import eu.stratosphere.util.Immutable;
 
+/**
+ * This class provides the functionality to validate the structure of values.
+ * The desired structure is specified via a regular expression.
+ * The following example shows the usage of this rule in a meteor-script:
+ * 
+ * <code><pre>
+ * ...
+ * $persons_scrubbed = scrub $persons_sample with rules {
+ *	...
+ *	format: patternValidation("\d{4}-\d{4}"),
+ *	...
+ * };
+ * ...
+ * </pre></code>
+ * 
+ * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
+ */
 @DefaultSerializer(value = PatternValidationRule.PatternValidationRuleSerializer.class)
 public class PatternValidationRule extends ValidationRule {
-	public static class PatternValidationRuleSerializer extends Serializer<PatternValidationRule>{
-		
+	public static class PatternValidationRuleSerializer extends
+			Serializer<PatternValidationRule> {
+
 		FieldSerializer<PatternValidationRule> fieldSerializer;
-		
-		public PatternValidationRuleSerializer(Kryo kryo, Class<PatternValidationRuleSerializer> type) {
-			fieldSerializer = new FieldSerializer<PatternValidationRule>(kryo, type);
+
+		public PatternValidationRuleSerializer(Kryo kryo,
+				Class<PatternValidationRuleSerializer> type) {
+			fieldSerializer = new FieldSerializer<PatternValidationRule>(kryo,
+					type);
 		}
-		
+
 		@Override
-		public void write(Kryo kryo,Output output, PatternValidationRule object) {
+		public void write(Kryo kryo, Output output, PatternValidationRule object) {
 			fieldSerializer.write(kryo, output, object);
 			kryo.writeObject(output, object.pattern.pattern());
 		}
 
 		@Override
-		public PatternValidationRule read(Kryo kryo, Input input, Class<PatternValidationRule> type) {
-			PatternValidationRule object =  fieldSerializer.read(kryo, input, type);
+		public PatternValidationRule read(Kryo kryo, Input input,
+				Class<PatternValidationRule> type) {
+			PatternValidationRule object = fieldSerializer.read(kryo, input,
+					type);
 			String pattern = kryo.readObject(input, String.class);
 			object.pattern = Pattern.compile(pattern);
 			return object;
 		}
 
 		@Override
-		public PatternValidationRule copy(Kryo kryo, PatternValidationRule original) {
+		public PatternValidationRule copy(Kryo kryo,
+				PatternValidationRule original) {
 			PatternValidationRule copy = fieldSerializer.copy(kryo, original);
 			copy.pattern = original.pattern;
 			return copy;
 		}
 	}
+
 	@Immutable
 	private transient Pattern pattern;
-	
+
 	public PatternValidationRule(final Pattern pattern) {
 		this.pattern = pattern;
 	}
@@ -64,9 +88,11 @@ public class PatternValidationRule extends ValidationRule {
 
 	@Override
 	public boolean validate(final IJsonNode node) {
-		return this.pattern.matcher(TypeCoercer.INSTANCE.coerce(node, this.nodeCache, TextNode.class)).matches();
+		return this.pattern.matcher(
+				TypeCoercer.INSTANCE.coerce(node, this.nodeCache,
+						TextNode.class)).matches();
 	}
-	
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;

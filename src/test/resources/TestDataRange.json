@@ -1,0 +1,14 @@
+[
+	{
+		"comment" : "NOT filtered",
+		"number" : 1000,
+	},
+	{
+		"comment" : "filtered (number too small)",
+		"number" : 499,
+	},
+	{
+		"comment" : "filtered (number too big)",
+		"number" : 1501,
+	}
+]
