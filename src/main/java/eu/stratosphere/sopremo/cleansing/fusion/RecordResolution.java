@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.fusion;
 
+import java.util.Map;
 import java.util.Map.Entry;
 
 import eu.stratosphere.sopremo.type.ArrayNode;
@@ -37,7 +38,8 @@ public abstract class RecordResolution extends ConflictResolution {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void fuse(IArrayNode<IJsonNode> values, double[] weights) {
+	public void fuse(IArrayNode<IJsonNode> values, Map<String, CompositeEvidence> weights) {
+		fusedRecord.clear();
 		for (IJsonNode value : values) {
 			IObjectNode object = (IObjectNode) value;
 			for (Entry<String, IJsonNode> field : object) {

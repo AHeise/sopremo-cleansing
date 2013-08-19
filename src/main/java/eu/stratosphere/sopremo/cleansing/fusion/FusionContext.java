@@ -9,6 +9,10 @@ public class FusionContext extends EvaluationContext {
 	private int[] sourceIndexes;
 
 	private double[] weights;
+	
+	public FusionContext(){
+		
+	}
 
 	public FusionContext(final EvaluationContext context) {
 		super(context);
@@ -45,6 +49,15 @@ public class FusionContext extends EvaluationContext {
 			throw new NullPointerException("weights must not be null");
 
 		this.weights = weights;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.AbstractSopremoType#clone()
+	 */
+	@Override
+	public FusionContext clone() {
+		return (FusionContext) super.clone();
 	}
 
 }
