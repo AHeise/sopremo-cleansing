@@ -39,13 +39,14 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	}
 
 	private CandidateComparison comparison = new CandidateComparison();
-	
+
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
 	/**
 	 * Sets the candidateSelection to the specified value.
-	 *
-	 * @param candidateSelection the candidateSelection to set
+	 * 
+	 * @param candidateSelection
+	 *        the candidateSelection to set
 	 */
 	public void setCandidateSelection(CandidateSelection candidateSelection) {
 		if (candidateSelection == null)
@@ -53,7 +54,7 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 
 		this.candidateSelection = candidateSelection;
 	}
-	
+
 	/**
 	 * Returns the candidateSelection.
 	 * 
@@ -62,7 +63,7 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	public CandidateSelection getCandidateSelection() {
 		return this.candidateSelection;
 	}
-	
+
 	/**
 	 * Returns the value of comparison.
 	 * 
@@ -118,6 +119,6 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison, context));
 	}
 
-	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection, CandidateComparison comparison2,
-			EvaluationContext context);
+	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
+			CandidateComparison comparison, EvaluationContext context);
 }

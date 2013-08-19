@@ -26,7 +26,7 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.cleansing.blocking.SoundEx;
+import eu.stratosphere.sopremo.cleansing.SoundEx;
 
 /**
  * <code>SoundExSimilarity</code> compares two {@link IJsonNode}s based on a phonetic algorithm for indexing names by

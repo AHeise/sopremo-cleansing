@@ -21,7 +21,7 @@
  * 
  */
 
-package eu.stratosphere.sopremo.cleansing.blocking;
+package eu.stratosphere.sopremo.cleansing;
 
 import java.io.IOException;
 

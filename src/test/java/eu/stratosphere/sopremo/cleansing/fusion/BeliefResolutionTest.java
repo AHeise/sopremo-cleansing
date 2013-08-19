@@ -21,12 +21,12 @@ import org.junit.Test;
 
 import eu.stratosphere.sopremo.cleansing.fusion.BeliefResolution.BeliefMassFunction;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.pact.CharSequenceUtil;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
+import eu.stratosphere.util.CharSequenceUtil;
 
 /**
  * @author Arvid Heise

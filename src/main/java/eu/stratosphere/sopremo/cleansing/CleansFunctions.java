@@ -135,7 +135,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.blocking.SoundEx
+				eu.stratosphere.sopremo.cleansing.SoundEx
 						.generateSoundExInto(input, this.soundex);
 			} catch (IOException e) {
 			}
