@@ -45,7 +45,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	/**
 	 * Performs the naive record linkage in place and compares with the Pact code.
 	 */
-	@Test
+	@Test @org.junit.Ignore
 	public void pactCodeShouldPerformLikeStandardImplementation() {
 		final RecordLinkage recordLinkage = new RecordLinkage();
 		recordLinkage.setImplementation(getImplementation());

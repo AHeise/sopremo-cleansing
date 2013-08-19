@@ -16,6 +16,10 @@ package eu.stratosphere.sopremo.cleansing.fusion;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -23,8 +27,10 @@ import eu.stratosphere.sopremo.cleansing.fusion.BeliefResolution.BeliefMassFunct
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
+import eu.stratosphere.sopremo.type.DecimalNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.ObjectNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.util.CharSequenceUtil;
 
@@ -55,11 +61,21 @@ public class BeliefResolutionTest {
 	@Test
 	public void testMassCombination() {
 		BeliefResolution beliefResolution = new BeliefResolution(new AbbrExpression());
-
+		ObjectNode johnNode = new ObjectNode(), jNode = new ObjectNode(), billNode = new ObjectNode();
+		johnNode.put("_source", TextNode.valueOf("1"));
+		jNode.put("_source", TextNode.valueOf("2"));
+		billNode.put("_source", TextNode.valueOf("3"));
 		TextNode john = new TextNode("John"), j = new TextNode("J."), bill = new TextNode("Bill");
+		johnNode.put("_value", john);
+		jNode.put("_value", j);
+		billNode.put("_value", bill);
+		Map<String, CompositeEvidence> weights = new HashMap<String, CompositeEvidence>();
+		weights.put("1", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.8))));
+		weights.put("2", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.7))));
+		weights.put("3", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.9))));
 		BeliefMassFunction massFunction = beliefResolution.getFinalMassFunction(
-			new ArrayNode<IJsonNode>(john, j, bill),
-			new double[] { 0.8, 0.7, 0.9 });
+			new ArrayNode<IJsonNode>(johnNode, jNode, billNode),
+			weights);
 
 		Object2DoubleMap<IJsonNode> valueMasses = massFunction.getValueMasses();
 		Assert.assertEquals(0.52, valueMasses.getDouble(john), 0.01);
@@ -71,9 +87,20 @@ public class BeliefResolutionTest {
 	public void testBeliefResolution() {
 		BeliefResolution beliefResolution = new BeliefResolution(new AbbrExpression());
 
+		ObjectNode johnNode = new ObjectNode(), jNode = new ObjectNode(), billNode = new ObjectNode();
+		johnNode.put("_source", TextNode.valueOf("1"));
+		jNode.put("_source", TextNode.valueOf("2"));
+		billNode.put("_source", TextNode.valueOf("3"));
 		TextNode john = new TextNode("John"), j = new TextNode("J."), bill = new TextNode("Bill");
-		ArrayNode<IJsonNode> choices = new ArrayNode<IJsonNode>(john, j, bill);
-		beliefResolution.fuse(choices, new double[] { 0.8, 0.7, 0.9 });
+		johnNode.put("_value", john);
+		jNode.put("_value", j);
+		billNode.put("_value", bill);
+		ArrayNode<IJsonNode> choices = new ArrayNode<IJsonNode>(johnNode, jNode, billNode);
+		Map<String, CompositeEvidence> weights = new HashMap<String, CompositeEvidence>();
+		weights.put("1", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.8))));
+		weights.put("2", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.7))));
+		weights.put("3", new CompositeEvidence(DecimalNode.valueOf(BigDecimal.valueOf(0.9))));
+		beliefResolution.fuse(choices, weights);
 
 		Assert.assertEquals(new ArrayNode<TextNode>(john), choices);
 	}

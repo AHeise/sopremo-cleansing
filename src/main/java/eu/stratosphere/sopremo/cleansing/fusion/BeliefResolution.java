@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
@@ -52,19 +53,19 @@ public class BeliefResolution extends ConflictResolution {
 	 * eu.stratosphere.sopremo.cleansing.fusion.FusionContext)
 	 */
 	@Override
-	public void fuse(IArrayNode<IJsonNode> values, double[] weights) {
+	public void fuse(IArrayNode<IJsonNode> values, Map<String, CompositeEvidence> weights) {
 		List<IJsonNode> mostProbableValues = this.getFinalMassFunction(values, weights).getMostProbableValues();
 		values.clear();
 		values.addAll(mostProbableValues);
 	}
 
-	protected BeliefMassFunction getFinalMassFunction(IArrayNode<IJsonNode> values, double[] weights) {
+	protected BeliefMassFunction getFinalMassFunction(IArrayNode<IJsonNode> values, Map<String, CompositeEvidence> weights) {
 		Deque<BeliefMassFunction> massFunctions = new LinkedList<BeliefMassFunction>();
 
 		// TODO: add support for arrays
 		for (int index = 0, size = values.size(); index < size; index++)
 			if (values.get(index) != NullNode.getInstance())
-				massFunctions.add(new BeliefMassFunction(values.get(index), weights[index]));
+				massFunctions.add(new BeliefMassFunction(getValueFromSourceTaggedObject(values.get(index)), getWeightForValue(values.get(index), weights)));
 
 		while (massFunctions.size() > 1)
 			massFunctions.addFirst(massFunctions.removeFirst().combine(massFunctions.removeFirst(), this.evidences));

@@ -11,6 +11,7 @@ import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ExpressionUtil;
+import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
@@ -35,15 +36,21 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 		this.parseRuleExpression(ruleExpression, EvaluationExpression.VALUE);
 	}
 
-	private void parseRuleExpression(ObjectCreation ruleExpression, PathSegmentExpression value) {
+	private void parseRuleExpression(ObjectCreation ruleExpression,
+			PathSegmentExpression value) {
 		final List<Mapping<?>> mappings = ruleExpression.getMappings();
 		for (Mapping<?> mapping : mappings) {
 			final EvaluationExpression expression = mapping.getExpression();
-			final PathSegmentExpression path = ExpressionUtil.makePath(value, mapping.getTargetExpression());
-			if (expression instanceof ObjectCreation)
+			final PathSegmentExpression path = ExpressionUtil.makePath(value,
+					mapping.getTargetExpression());
+			if (expression instanceof ObjectCreation) {
 				this.parseRuleExpression((ObjectCreation) expression, path);
-			else {
-				for (EvaluationExpression expr : this.setFixesOnRules(expression)) {
+			} else if (expression instanceof FunctionCall) {
+				this.ruleBasedScrubbing.addRule(
+						this.handleFunctionCalls(expression), path);
+			} else {
+				for (EvaluationExpression expr : this
+						.setFixesOnRules(expression)) {
 					this.ruleBasedScrubbing.addRule(expr, path);
 				}
 			}
@@ -52,73 +59,101 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 
 	private ArrayCreation setFixesOnRules(EvaluationExpression expression) {
 		ArrayCreation rulesWithFixes = new ArrayCreation();
-		if(expression instanceof TernaryExpression){
-			if(((TernaryExpression)expression).getIfExpression() instanceof ArrayCreation){
-				ValueCorrection generalFix = (ValueCorrection) ((TernaryExpression)expression).getThenExpression();
-				for (EvaluationExpression partial : ((TernaryExpression)expression).getIfExpression()){
-					if(partial instanceof TernaryExpression){
-						ValidationRule rule = (ValidationRule) ((TernaryExpression)partial).getIfExpression();
+		if (expression instanceof TernaryExpression) {
+			if (((TernaryExpression) expression).getIfExpression() instanceof ArrayCreation) {
+				ValueCorrection generalFix = (ValueCorrection) ((TernaryExpression) expression)
+						.getThenExpression();
+				for (EvaluationExpression partial : ((TernaryExpression) expression)
+						.getIfExpression()) {
+					if (partial instanceof TernaryExpression) {
+						ValidationRule rule = (ValidationRule) ((TernaryExpression) partial)
+								.getIfExpression();
 						rule = checkForStatefulConstantAndCopy(rule);
-						ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression)partial).getThenExpression();
+						ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression) partial)
+								.getThenExpression();
 						rule.setValueCorrection(explicitFix);
 						rulesWithFixes.add(rule);
-					}else if(partial instanceof ValidationRule){
+					} else if (partial instanceof ValidationRule) {
 						partial = checkForStatefulConstantAndCopy((ValidationRule) partial);
-						((ValidationRule) partial).setValueCorrection(generalFix);
+						((ValidationRule) partial)
+								.setValueCorrection(generalFix);
 						rulesWithFixes.add(partial);
-					}else{
-						throw new IllegalArgumentException("No rules for validation provided.");
+					} else if (partial instanceof FunctionCall) {
+						rulesWithFixes.add(this.handleFunctionCalls(partial));
+					} else {
+						throw new IllegalArgumentException(
+								"No rules for validation provided.");
 					}
 				}
-				
-			}else {
-			ValidationRule rule = (ValidationRule) ((TernaryExpression)expression).getIfExpression();
-			ValueCorrection fix = (ValueCorrection) ((TernaryExpression)expression).getThenExpression();
-			rule = checkForStatefulConstantAndCopy(rule);
-			rule.setValueCorrection(fix);
-			rulesWithFixes.add(rule);
+
+			} else {
+				ValidationRule rule = (ValidationRule) ((TernaryExpression) expression)
+						.getIfExpression();
+				ValueCorrection fix = (ValueCorrection) ((TernaryExpression) expression)
+						.getThenExpression();
+				rule = checkForStatefulConstantAndCopy(rule);
+				rule.setValueCorrection(fix);
+				rulesWithFixes.add(rule);
 			}
-		}else if(expression instanceof ArrayCreation){
-			for (EvaluationExpression partial : expression){
-				if(partial instanceof TernaryExpression){
-					ValidationRule rule = (ValidationRule) ((TernaryExpression)partial).getIfExpression();
-					ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression)partial).getThenExpression();
+		} else if (expression instanceof ArrayCreation) {
+			for (EvaluationExpression partial : expression) {
+				if (partial instanceof TernaryExpression) {
+					ValidationRule rule = (ValidationRule) ((TernaryExpression) partial)
+							.getIfExpression();
+					ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression) partial)
+							.getThenExpression();
 					rule = checkForStatefulConstantAndCopy(rule);
 					rule.setValueCorrection(explicitFix);
 					rulesWithFixes.add(rule);
-				}else if(partial instanceof ValidationRule){
+				} else if (partial instanceof ValidationRule) {
 					rulesWithFixes.add(partial);
-				}else{
-					throw new IllegalArgumentException("No rules for validation provided.");
+				} else if (partial instanceof FunctionCall) {
+					rulesWithFixes.add(this.handleFunctionCalls(partial));
+				} else {
+					throw new IllegalArgumentException(
+							"No rules for validation provided.");
 				}
 			}
-		}else{
+		} else {
 			expression = checkForStatefulConstantAndCopy((ValidationRule) expression);
 			rulesWithFixes.add(expression);
 		}
 		return rulesWithFixes;
 	}
 
-	private ValidationRule checkForStatefulConstantAndCopy(ValidationRule rule) {
-		return (ValidationRule) ((rule instanceof StatefulConstant)?rule.clone():rule);
+	private EvaluationExpression handleFunctionCalls(
+			EvaluationExpression function) {
+		FunctionCall fct = (FunctionCall) function.copy();
+		fct.getParameters().add(0, EvaluationExpression.VALUE);
+		return fct;
 	}
 
-	public void addRule(EvaluationExpression ruleExpression, PathSegmentExpression target) {
+	private ValidationRule checkForStatefulConstantAndCopy(ValidationRule rule) {
+		return (ValidationRule) ((rule instanceof StatefulConstant) ? rule
+				.clone() : rule);
+	}
+
+	public void addRule(EvaluationExpression ruleExpression,
+			PathSegmentExpression target) {
 		this.ruleBasedScrubbing.addRule(ruleExpression, target);
 	}
 
-	public void removeRule(EvaluationExpression ruleExpression, PathSegmentExpression target) {
+	public void removeRule(EvaluationExpression ruleExpression,
+			PathSegmentExpression target) {
 		this.ruleBasedScrubbing.removeRule(ruleExpression, target);
 	}
 
 	/*
 	 * (non-Javadoc)
+	 * 
 	 * @see
-	 * eu.stratosphere.sopremo.operator.CompositeOperator#addImplementation(eu.stratosphere.sopremo.operator.SopremoModule
-	 * , eu.stratosphere.sopremo.EvaluationContext)
+	 * eu.stratosphere.sopremo.operator.CompositeOperator#addImplementation(
+	 * eu.stratosphere.sopremo.operator.SopremoModule ,
+	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module,
+			EvaluationContext context) {
 		this.ruleBasedScrubbing.addImplementation(module, context);
 	}
 
@@ -147,7 +182,10 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.operator.ElementaryOperator#appendAsString(java.lang.Appendable)
+	 * 
+	 * @see
+	 * eu.stratosphere.sopremo.operator.ElementaryOperator#appendAsString(java
+	 * .lang.Appendable)
 	 */
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {

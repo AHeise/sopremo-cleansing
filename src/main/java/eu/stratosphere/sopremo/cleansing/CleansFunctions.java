@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
+import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
+import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterRule;
@@ -61,6 +64,9 @@ public class CleansFunctions implements BuiltinProvider,
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
 				REMOVE_ILLEGAL_CHARACTERS);
+
+		constantRegistry.put("mostFrequent", new MostFrequentResolution());
+		constantRegistry.put("mergeDistinct", MergeDistinctResolution.INSTANCE);
 	}
 
 	/*
@@ -75,12 +81,13 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
-		registry.put("patternValidation", new PatternValidationRuleMacro());
-		registry.put("range", new RangeRuleMacro());
+		registry.put("hasPattern", new PatternValidationRuleMacro());
+		registry.put("inRange", new RangeRuleMacro());
 		registry.put("default", new DefaultValueCorrectionMacro());
 		registry.put("containedIn", new WhiteListRuleMacro());
 		registry.put("notContainedIn", new BlackListRuleMacro());
 		registry.put("illegalCharacters", new IllegalCharacterRuleMacro());
+		registry.put("defaultResolution", new DefaultValueResolutionMacro());
 
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
@@ -322,7 +329,7 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length > 0) {
-				TextNode illegalCharacters = TextNode.valueOf("");
+				TextNode illegalCharacters = new TextNode();
 				for (EvaluationExpression expr : params) {
 					illegalCharacters.append((TextNode) expr.evaluate(NullNode
 							.getInstance()));
@@ -345,6 +352,25 @@ public class CleansFunctions implements BuiltinProvider,
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 1) {
 				return new DefaultValueCorrection(params[0].evaluate(NullNode
+						.getInstance()));
+			} else {
+				throw new IllegalArgumentException("Wrong number of arguments.");
+			}
+		}
+
+	}
+
+	private static class DefaultValueResolutionMacro extends MacroBase {
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public EvaluationExpression call(EvaluationExpression[] params) {
+			if (params.length == 1) {
+				return new DefaultValueResolution(params[0].evaluate(NullNode
 						.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
@@ -408,7 +434,24 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	}
 
-	private static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
+	/**
+	 * This correction is a fix for {@link RangeRule}. To solve a violation this
+	 * correction simply chooses the nearest bound (lower bound if the actual
+	 * value was lower than the lower bound, upper bound if the actual value was
+	 * higher than the upper bound). To specify this correction for a
+	 * {@link RangeRule} use the following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	age: range(0, 100) ?: chooseNearestBound,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
+	public static final ValueCorrection CHOOSE_NEAREST_BOUND = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_NEAREST_BOUND;
 		}
@@ -426,7 +469,23 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	private static final ValueCorrection CHOOSE_FIRST_FROM_LIST = new ValueCorrection() {
+	/**
+	 * This correction is a fix for {@link WhiteListRule}. To solve a violation
+	 * this correction simply chooses the first allowed value from the white
+	 * list. To specify this correction for a {@link WhiteListRule} use the
+	 * following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	person_type: containedIn(["customer", "employee", "founder"]) ?: chooseFirstFromList,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
+	public static final ValueCorrection CHOOSE_FIRST_FROM_LIST = new ValueCorrection() {
 		private Object readResolve() {
 			return CHOOSE_FIRST_FROM_LIST;
 		}
@@ -442,7 +501,23 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	private static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
+	/**
+	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
+	 * violation this correction simply removes all violating characters from
+	 * the value. To specify this correction for a {@link IllegalCharacterRule}
+	 * use the following syntax:
+	 * 
+	 * <code><pre>
+	 * ...
+	 * $persons_scrubbed = scrub $persons_sample with rules {
+	 * 	...
+	 * 	name: illegalCharacters("%", "$", "!", "[", "]") ?: removeIllegalCharacters,
+	 * 	...
+	 * };
+	 * ...
+	 * </pre></code>
+	 */
+	public static final ValueCorrection REMOVE_ILLEGAL_CHARACTERS = new ValueCorrection() {
 		private Object readResolve() {
 			return REMOVE_ILLEGAL_CHARACTERS;
 		}
@@ -451,7 +526,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
 			if (violatedRule instanceof IllegalCharacterRule) {
 				final IllegalCharacterRule that = (IllegalCharacterRule) violatedRule;
-				TextNode fixedValue = TextNode.valueOf("");
+				TextNode fixedValue = new TextNode();
 				char[] illegalCharacters = that.getIllegalCharacters();
 				boolean append = true;
 				for (char c : value.toString().toCharArray()) {
