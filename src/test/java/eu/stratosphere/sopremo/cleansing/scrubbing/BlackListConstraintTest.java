@@ -11,7 +11,7 @@ import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IntNode;
 
-public class BlackListRuleTest extends EqualCloneTest<BlackListRule> {
+public class BlackListConstraintTest extends EqualCloneTest<BlackListConstraint> {
 
 	private final IJsonNode V1 = IntNode.valueOf(100);
 	private final IJsonNode V2 = IntNode.valueOf(200);
@@ -31,40 +31,40 @@ public class BlackListRuleTest extends EqualCloneTest<BlackListRule> {
 		}
 	};
 
-	private BlackListRule createRule(List<IJsonNode> list,
+	private BlackListConstraint createRule(List<IJsonNode> list,
 			ValueCorrection correction) {
-		BlackListRule rule = new BlackListRule(list);
+		BlackListConstraint rule = new BlackListConstraint(list);
 		rule.setValueCorrection(correction);
 		return rule;
 	}
 
-	private BlackListRule createRule(List<IJsonNode> list) {
+	private BlackListConstraint createRule(List<IJsonNode> list) {
 		return this.createRule(list, ValidationRule.DEFAULT_CORRECTION);
 	}
 
 	@Override
-	protected BlackListRule createDefaultInstance(int index) {
+	protected BlackListConstraint createDefaultInstance(int index) {
 		List<IJsonNode> list = new ArrayList<IJsonNode>();
 		list.add(IntNode.valueOf(index));
-		BlackListRule rule = this.createRule(list);
+		BlackListConstraint rule = this.createRule(list);
 		return rule;
 	}
 
 	@Test
 	public void shouldValidateCorrectValue() {
-		BlackListRule rule = this.createRule(this.blacklist);
+		BlackListConstraint rule = this.createRule(this.blacklist);
 		Assert.assertTrue(rule.validate(V_CORRECT));
 	}
 
 	@Test
 	public void shouldNotValidateWrongValue() {
-		BlackListRule rule = this.createRule(this.blacklist);
+		BlackListConstraint rule = this.createRule(this.blacklist);
 		Assert.assertFalse(rule.validate(V2));
 	}
 
 	@Test
 	public void shouldRemoveWrongValue() {
-		BlackListRule rule = this.createRule(this.blacklist);
+		BlackListConstraint rule = this.createRule(this.blacklist);
 		Assert.assertEquals(FilterRecord.Instance, rule.fix(V3));
 	}
 }

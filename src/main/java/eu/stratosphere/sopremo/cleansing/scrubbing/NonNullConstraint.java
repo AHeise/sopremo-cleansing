@@ -21,12 +21,12 @@ import eu.stratosphere.sopremo.type.NullNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class NonNullRule extends ValidationRule implements StatefulConstant {
+public class NonNullConstraint extends ValidationRule implements StatefulConstant {
 
-	public NonNullRule() {
+	public NonNullConstraint() {
 	}
 
-	public NonNullRule(IJsonNode defaultValue) {
+	public NonNullConstraint(IJsonNode defaultValue) {
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
 

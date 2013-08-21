@@ -22,22 +22,22 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class BlackListRule extends ValidationRule {
+public class BlackListConstraint extends ValidationRule {
 	private final List<IJsonNode> blacklistedValues;
 
 	@SuppressWarnings("unchecked")
-	public BlackListRule(List<? extends IJsonNode> blacklistedValues) {
+	public BlackListConstraint(List<? extends IJsonNode> blacklistedValues) {
 		this.blacklistedValues = (List<IJsonNode>) blacklistedValues;
 	}
 
 	@SuppressWarnings("unchecked")
-	public BlackListRule(List<? extends IJsonNode> blacklistedValues,
+	public BlackListConstraint(List<? extends IJsonNode> blacklistedValues,
 			IJsonNode defaultValue) {
 		this.blacklistedValues = (List<IJsonNode>) blacklistedValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
 
-	BlackListRule() {
+	BlackListConstraint() {
 		this.blacklistedValues = null;
 	}
 

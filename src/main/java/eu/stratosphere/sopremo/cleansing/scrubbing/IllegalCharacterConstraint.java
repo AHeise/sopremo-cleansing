@@ -24,15 +24,15 @@ import eu.stratosphere.sopremo.type.TextNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class IllegalCharacterRule extends ValidationRule {
+public class IllegalCharacterConstraint extends ValidationRule {
 
 	private TextNode illegalCharacters;
 
-	public IllegalCharacterRule(TextNode illegalCharacters) {
+	public IllegalCharacterConstraint(TextNode illegalCharacters) {
 		this.illegalCharacters = illegalCharacters;
 	}
 
-	public IllegalCharacterRule() {
+	public IllegalCharacterConstraint() {
 		this.illegalCharacters = null;
 	}
 
@@ -70,7 +70,7 @@ public class IllegalCharacterRule extends ValidationRule {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		IllegalCharacterRule other = (IllegalCharacterRule) obj;
+		IllegalCharacterConstraint other = (IllegalCharacterConstraint) obj;
 		if (illegalCharacters == null) {
 			if (other.illegalCharacters != null)
 				return false;

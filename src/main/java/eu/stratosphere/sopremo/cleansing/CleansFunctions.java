@@ -12,16 +12,16 @@ import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
-import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
-import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.RangeRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.RangeConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
-import eu.stratosphere.sopremo.cleansing.scrubbing.WhiteListRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.WhiteListConstraint;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
@@ -59,7 +59,7 @@ public class CleansFunctions implements BuiltinProvider,
 	 */
 	@Override
 	public void registerConstants(IConstantRegistry constantRegistry) {
-		constantRegistry.put("required", new NonNullRule());
+		constantRegistry.put("required", new NonNullConstraint());
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
@@ -210,10 +210,10 @@ public class CleansFunctions implements BuiltinProvider,
 		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object)
 		 */
 		@Override
-		public PatternValidationRule call(EvaluationExpression[] params) {
+		public PatternValidationConstraint call(EvaluationExpression[] params) {
 
 			if (params.length == 1)
-				return new PatternValidationRule(Pattern.compile(params[0]
+				return new PatternValidationConstraint(Pattern.compile(params[0]
 						.evaluate(NullNode.getInstance()).toString()));
 			else
 				throw new IllegalArgumentException("Wrong number of arguments.");
@@ -238,7 +238,7 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 2) {
-				return new RangeRule(
+				return new RangeConstraint(
 						params[0].evaluate(NullNode.getInstance()),
 						params[1].evaluate(NullNode.getInstance()));
 			} else {
@@ -263,7 +263,7 @@ public class CleansFunctions implements BuiltinProvider,
 				for (EvaluationExpression expr : params) {
 					convertToList(expr, possibleValues);
 				}
-				return new WhiteListRule(possibleValues);
+				return new WhiteListConstraint(possibleValues);
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -298,7 +298,7 @@ public class CleansFunctions implements BuiltinProvider,
 				for (EvaluationExpression expr : params) {
 					convertToList(expr, forbiddenValues);
 				}
-				return new BlackListRule(forbiddenValues);
+				return new BlackListConstraint(forbiddenValues);
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -334,7 +334,7 @@ public class CleansFunctions implements BuiltinProvider,
 					illegalCharacters.append((TextNode) expr.evaluate(NullNode
 							.getInstance()));
 				}
-				return new IllegalCharacterRule(illegalCharacters);
+				return new IllegalCharacterConstraint(illegalCharacters);
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
@@ -435,11 +435,11 @@ public class CleansFunctions implements BuiltinProvider,
 	}
 
 	/**
-	 * This correction is a fix for {@link RangeRule}. To solve a violation this
+	 * This correction is a fix for {@link RangeConstraint}. To solve a violation this
 	 * correction simply chooses the nearest bound (lower bound if the actual
 	 * value was lower than the lower bound, upper bound if the actual value was
 	 * higher than the upper bound). To specify this correction for a
-	 * {@link RangeRule} use the following syntax:
+	 * {@link RangeConstraint} use the following syntax:
 	 * 
 	 * <code><pre>
 	 * ...
@@ -458,8 +458,8 @@ public class CleansFunctions implements BuiltinProvider,
 
 		@Override
 		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
-			if (violatedRule instanceof RangeRule) {
-				final RangeRule that = (RangeRule) violatedRule;
+			if (violatedRule instanceof RangeConstraint) {
+				final RangeConstraint that = (RangeConstraint) violatedRule;
 				if (that.getMin().compareTo(value) > 0)
 					return that.getMin();
 				return that.getMax();
@@ -470,9 +470,9 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link WhiteListRule}. To solve a violation
+	 * This correction is a fix for {@link WhiteListConstraint}. To solve a violation
 	 * this correction simply chooses the first allowed value from the white
-	 * list. To specify this correction for a {@link WhiteListRule} use the
+	 * list. To specify this correction for a {@link WhiteListConstraint} use the
 	 * following syntax:
 	 * 
 	 * <code><pre>
@@ -492,8 +492,8 @@ public class CleansFunctions implements BuiltinProvider,
 
 		@Override
 		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
-			if (violatedRule instanceof WhiteListRule) {
-				final WhiteListRule that = (WhiteListRule) violatedRule;
+			if (violatedRule instanceof WhiteListConstraint) {
+				final WhiteListConstraint that = (WhiteListConstraint) violatedRule;
 				return that.getPossibleValues().get(0);
 			} else {
 				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
@@ -502,9 +502,9 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
+	 * This correction is a fix for {@link IllegalCharacterConstraint}. To solve a
 	 * violation this correction simply removes all violating characters from
-	 * the value. To specify this correction for a {@link IllegalCharacterRule}
+	 * the value. To specify this correction for a {@link IllegalCharacterConstraint}
 	 * use the following syntax:
 	 * 
 	 * <code><pre>
@@ -524,8 +524,8 @@ public class CleansFunctions implements BuiltinProvider,
 
 		@Override
 		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
-			if (violatedRule instanceof IllegalCharacterRule) {
-				final IllegalCharacterRule that = (IllegalCharacterRule) violatedRule;
+			if (violatedRule instanceof IllegalCharacterConstraint) {
+				final IllegalCharacterConstraint that = (IllegalCharacterConstraint) violatedRule;
 				TextNode fixedValue = new TextNode();
 				char[] illegalCharacters = that.getIllegalCharacters();
 				boolean append = true;

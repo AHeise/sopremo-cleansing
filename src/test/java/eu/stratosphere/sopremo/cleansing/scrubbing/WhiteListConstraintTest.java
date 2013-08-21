@@ -12,7 +12,7 @@ import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IntNode;
 
-public class WhiteListRuleTest extends EqualCloneTest<WhiteListRule> {
+public class WhiteListConstraintTest extends EqualCloneTest<WhiteListConstraint> {
 
 	private final IJsonNode V1 = IntNode.valueOf(100);
 	private final IJsonNode V2 = IntNode.valueOf(200);
@@ -32,46 +32,46 @@ public class WhiteListRuleTest extends EqualCloneTest<WhiteListRule> {
 		}
 	};
 
-	private WhiteListRule createRule(List<IJsonNode> list,
+	private WhiteListConstraint createRule(List<IJsonNode> list,
 			ValueCorrection correction) {
-		WhiteListRule rule = new WhiteListRule(list);
+		WhiteListConstraint rule = new WhiteListConstraint(list);
 		rule.setValueCorrection(correction);
 		return rule;
 	}
 
-	private WhiteListRule createRule(List<IJsonNode> list) {
+	private WhiteListConstraint createRule(List<IJsonNode> list) {
 		return this.createRule(list, ValidationRule.DEFAULT_CORRECTION);
 	}
 
 	@Override
-	protected WhiteListRule createDefaultInstance(int index) {
+	protected WhiteListConstraint createDefaultInstance(int index) {
 		List<IJsonNode> list = new ArrayList<IJsonNode>();
 		list.add(IntNode.valueOf(index));
-		WhiteListRule rule = this.createRule(list);
+		WhiteListConstraint rule = this.createRule(list);
 		return rule;
 	}
 
 	@Test
 	public void shouldValidateCorrectValue() {
-		WhiteListRule rule = this.createRule(this.whitelist);
+		WhiteListConstraint rule = this.createRule(this.whitelist);
 		Assert.assertTrue(rule.validate(V2));
 	}
 
 	@Test
 	public void shouldNotValidateWrongValue() {
-		WhiteListRule rule = this.createRule(this.whitelist);
+		WhiteListConstraint rule = this.createRule(this.whitelist);
 		Assert.assertFalse(rule.validate(V_WRONG));
 	}
 
 	@Test
 	public void shouldRemoveWrongValue() {
-		WhiteListRule rule = this.createRule(this.whitelist);
+		WhiteListConstraint rule = this.createRule(this.whitelist);
 		Assert.assertEquals(FilterRecord.Instance, rule.fix(V_WRONG));
 	}
 
 	@Test
 	public void shouldCorrectWrongValue() {
-		WhiteListRule rule = this.createRule(this.whitelist,
+		WhiteListConstraint rule = this.createRule(this.whitelist,
 				CleansFunctions.CHOOSE_FIRST_FROM_LIST);
 		Assert.assertEquals(V1, rule.fix(V_WRONG));
 	}

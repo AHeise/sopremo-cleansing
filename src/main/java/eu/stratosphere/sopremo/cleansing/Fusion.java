@@ -7,6 +7,7 @@ import java.util.Map;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.fusion.CompositeEvidence;
 import eu.stratosphere.sopremo.cleansing.fusion.ResolutionBasedFusion;
+import eu.stratosphere.sopremo.cleansing.fusion.SingleOutputResolution;
 import eu.stratosphere.sopremo.expressions.ArithmeticExpression;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
@@ -43,7 +44,10 @@ public class Fusion extends CompositeOperator<Fusion> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + ((resolutionBasedFusion == null) ? 0 : resolutionBasedFusion.hashCode());
+		result = prime
+				* result
+				+ ((resolutionBasedFusion == null) ? 0 : resolutionBasedFusion
+						.hashCode());
 		return result;
 	}
 
@@ -69,25 +73,31 @@ public class Fusion extends CompositeOperator<Fusion> {
 	@Property
 	@Name(preposition = "with weights")
 	public void setWeightsExpression(ObjectCreation weightsExpression) {
-		this.parseWeightsExpression(weightsExpression, EvaluationExpression.VALUE);
+		this.parseWeightsExpression(weightsExpression,
+				EvaluationExpression.VALUE);
 	}
 
 	@Property
 	@Name(preposition = "with resolutions")
 	public void setResolutionExpression(ObjectCreation ruleExpression) {
 		this.resolutionBasedFusion.clear();
-		this.parseResolutionExpression(ruleExpression, EvaluationExpression.VALUE);
+		this.parseResolutionExpression(ruleExpression,
+				EvaluationExpression.VALUE);
 	}
 
-	private void parseWeightsExpression(ObjectCreation weightsExpression, PathSegmentExpression value) {
+	private void parseWeightsExpression(ObjectCreation weightsExpression,
+			PathSegmentExpression value) {
 		Map<String, CompositeEvidence> weights = new HashMap<String, CompositeEvidence>();
 		this.traverseWeightExpressions(weights, weightsExpression);
 		this.resolutionBasedFusion.setWeights(weights);
 	}
 
-	private void traverseWeightExpressions(Map<String, CompositeEvidence> weights, ObjectCreation weightsExpression) {
+	private void traverseWeightExpressions(
+			Map<String, CompositeEvidence> weights,
+			ObjectCreation weightsExpression) {
 		for (Mapping<?> mapping : weightsExpression.getMappings()) {
-			weights.put(this.getFieldName(mapping), this.createEvidence(mapping.getExpression()));
+			weights.put(this.getFieldName(mapping),
+					this.createEvidence(mapping.getExpression()));
 		}
 	}
 
@@ -98,45 +108,73 @@ public class Fusion extends CompositeOperator<Fusion> {
 			ObjectCreation objectCreation;
 			EvaluationExpression evaluationExpression;
 			if (arithmeticExpr.getFirstOperand() instanceof ObjectCreation) {
-				objectCreation = (ObjectCreation) arithmeticExpr.getFirstOperand();
+				objectCreation = (ObjectCreation) arithmeticExpr
+						.getFirstOperand();
 				evaluationExpression = arithmeticExpr.getSecondOperand();
 			} else {
-				objectCreation = (ObjectCreation) arithmeticExpr.getSecondOperand();
+				objectCreation = (ObjectCreation) arithmeticExpr
+						.getSecondOperand();
 				evaluationExpression = arithmeticExpr.getFirstOperand();
 			}
-			DecimalNode baseEvidence = (DecimalNode) evaluationExpression.evaluate(NullNode.getInstance());
+			DecimalNode baseEvidence = (DecimalNode) evaluationExpression
+					.evaluate(NullNode.getInstance());
 			evidence = new CompositeEvidence(baseEvidence);
 			for (Mapping<?> mapping : objectCreation.getMappings()) {
-				evidence.putEvidence(this.getFieldName(mapping), this.createEvidence(mapping.getExpression()));
+				evidence.putEvidence(this.getFieldName(mapping),
+						this.createEvidence(mapping.getExpression()));
 			}
 			return evidence;
 		} else {
-			return new CompositeEvidence((DecimalNode) expr.evaluate(NullNode.getInstance()));
+			return new CompositeEvidence((DecimalNode) expr.evaluate(NullNode
+					.getInstance()));
 		}
 	}
 
 	private String getFieldName(Mapping<?> mapping) {
-		return ((ObjectAccess) mapping.getTargetExpression().getLast()).getField();
+		return ((ObjectAccess) mapping.getTargetExpression().getLast())
+				.getField();
 	}
 
-	private void parseResolutionExpression(ObjectCreation ruleExpression, PathSegmentExpression value) {
+	private void parseResolutionExpression(ObjectCreation ruleExpression,
+			PathSegmentExpression value) {
 		final List<Mapping<?>> mappings = ruleExpression.getMappings();
 		for (Mapping<?> mapping : mappings) {
 			final EvaluationExpression expression = mapping.getExpression();
-			final PathSegmentExpression path = ExpressionUtil.makePath(value, mapping.getTargetExpression());
+			final PathSegmentExpression path = ExpressionUtil.makePath(value,
+					mapping.getTargetExpression());
 
 			if (expression instanceof ArrayCreation) {
+				// int expressionSize = ((ArrayCreation)expression).size();
+				// int currentExpression = 0;
 				for (EvaluationExpression nestedExpression : expression) {
-					this.resolutionBasedFusion.addResolution(nestedExpression, path);
+					// if(expressionSize == ++currentExpression)
+					// this.checkAnnotationAndShowWarning(nestedExpression);
+					this.resolutionBasedFusion.addResolution(nestedExpression,
+							path);
 				}
 			} else {
+				// this.checkAnnotationAndShowWarning(expression);
 				this.resolutionBasedFusion.addResolution(expression, path);
 			}
 		}
 	}
 
+	private void checkAnnotationAndShowWarning(EvaluationExpression expr) {
+		SingleOutputResolution annotation = expr.getClass().getAnnotation(
+				SingleOutputResolution.class);
+		if (annotation == null) {
+			this.showWarning();
+		}
+	}
+
+	private void showWarning() {
+		System.out
+				.println("In conflict with the usualy expected semantics of a fusion, the last provided resolution can yield to multiple output-values. Either this is the expected behavior or the last provided resolution is not annotated with @SingleOutputResolution(true).");
+	}
+
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module,
+			EvaluationContext context) {
 		this.resolutionBasedFusion.addImplementation(module, context);
 	}
 

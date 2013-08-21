@@ -26,10 +26,10 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class RangeRule extends ValidationRule {
+public class RangeConstraint extends ValidationRule {
 	private IJsonNode min, max;
 
-	public RangeRule(final IJsonNode min, final IJsonNode max) {
+	public RangeConstraint(final IJsonNode min, final IJsonNode max) {
 		this.min = min;
 		this.max = max;
 	}
@@ -38,7 +38,7 @@ public class RangeRule extends ValidationRule {
 	 * Initializes RangeRule.
 	 * 
 	 */
-	RangeRule() {
+	RangeConstraint() {
 	}
 
 	@Override

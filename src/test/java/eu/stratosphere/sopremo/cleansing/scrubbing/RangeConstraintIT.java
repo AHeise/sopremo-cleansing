@@ -10,7 +10,7 @@ import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.io.JsonParser;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 
-public class RangeRuleIT extends MeteorIT {
+public class RangeConstraintIT extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {

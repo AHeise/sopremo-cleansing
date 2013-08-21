@@ -37,13 +37,13 @@ public class ScrubbingTest {
 
 			new Object[] {
 				new ObjectAccess("outsideMonthRange"),
-				new RangeRule(IntNode.valueOf(1), IntNode.valueOf(12)),
+				new RangeConstraint(IntNode.valueOf(1), IntNode.valueOf(12)),
 				JsonUtil.createObjectNode("stringInsteadOfInteger", "12", "outsideMonthRange", 12,
 					"shouldBeNonNull", null) },
 
 			new Object[] {
 				new ObjectAccess("shouldBeNonNull"),
-				new NonNullRule(),
+				new NonNullConstraint(),
 				ERROR });
 	}
 

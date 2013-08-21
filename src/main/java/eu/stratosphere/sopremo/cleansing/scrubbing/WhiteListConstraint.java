@@ -26,16 +26,16 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class WhiteListRule extends ValidationRule {
+public class WhiteListConstraint extends ValidationRule {
 	private final List<IJsonNode> possibleValues;
 
 	@SuppressWarnings("unchecked")
-	public WhiteListRule(List<? extends IJsonNode> possibleValues) {
+	public WhiteListConstraint(List<? extends IJsonNode> possibleValues) {
 		this.possibleValues = (List<IJsonNode>) possibleValues;
 	}
 
 	@SuppressWarnings("unchecked")
-	public WhiteListRule(List<? extends IJsonNode> possibleValues,
+	public WhiteListConstraint(List<? extends IJsonNode> possibleValues,
 			IJsonNode defaultValue) {
 		this.possibleValues = (List<IJsonNode>) possibleValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
@@ -45,7 +45,7 @@ public class WhiteListRule extends ValidationRule {
 	 * Initializes WhiteListRule.
 	 * 
 	 */
-	WhiteListRule() {
+	WhiteListConstraint() {
 		this.possibleValues = null;
 	}
 
