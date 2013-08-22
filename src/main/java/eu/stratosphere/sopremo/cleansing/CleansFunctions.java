@@ -60,13 +60,13 @@ public class CleansFunctions implements BuiltinProvider,
 	 */
 	@Override
 	public void registerConstants(IConstantRegistry constantRegistry) {
-		EvaluationExpression expr = new NonNullConstraint();
-		constantRegistry.put("required", new NonNullConstraint());
+
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
-		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
+		constantRegistry.put("chooseFirst", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
 				REMOVE_ILLEGAL_CHARACTERS);
 
+		this.registerConstant(new NonNullConstraint(), constantRegistry);
 		this.registerConstant(new MostFrequentResolution(), constantRegistry);
 		this.registerConstant(MergeDistinctResolution.INSTANCE,
 				constantRegistry);
@@ -84,7 +84,7 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
-		
+
 		this.registerMacro(new PatternValidationRuleMacro(), registry);
 		this.registerMacro(new RangeRuleMacro(), registry);
 		this.registerMacro(new DefaultValueCorrectionMacro(), registry);
