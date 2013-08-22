@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.fusion.ChooseRandomResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
@@ -70,6 +71,7 @@ public class CleansFunctions implements BuiltinProvider,
 		this.registerConstant(new MostFrequentResolution(), constantRegistry);
 		this.registerConstant(MergeDistinctResolution.INSTANCE,
 				constantRegistry);
+		this.registerConstant(ChooseRandomResolution.INSTANCE, constantRegistry);
 	}
 
 	/*
