@@ -49,7 +49,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	/**
 	 * Performs the naive record linkage in place and compares with the Pact code.
 	 */
-	@Test @org.junit.Ignore
+	@Test 
 	public void pactCodeShouldPerformLikeStandardImplementation() {
 
 		final DuplicateDetection dd = new DuplicateDetection();

@@ -1,6 +1,5 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -19,19 +18,15 @@ public class RangeRuleIT extends MeteorIT {
 		this.client.submit(plan, null, true);
 		final JsonParser parser = new JsonParser(new FileReader("src/test/resources/TestOutputRange.json"));
 		parser.setWrappingArraySkipping(true);
-		File outputFile = new File("/tmp/TestOutputRange.json");
-		this.testServer.checkContentsOf(outputFile.getName(), parser.readValueAsTree());
-		//TODO improve this
-		outputFile.delete();
+
+		this.testServer.checkContentsOf("TestOutputRange.json", parser.readValueAsTree());
 	}
 
-	@Override
-	protected SopremoPlan getPlan() throws IOException {
-		final SopremoPlan plan = parseScript("using cleansing;" +
-		"$data = read from 'src/test/resources/TestDataRange.json';" +
-		"$data_scrubbed = scrub $data with rules {" +
-		"number: inRange(500, 1500)," + "};" +
-		"write $data_scrubbed to 'file:///tmp/TestOutputRange.json';");
-		return plan;
+	protected SopremoPlan getPlan() {
+		return parseScript("using cleansing;" +
+			"$data = read from 'src/test/resources/TestDataRange.json';" +
+			"$data_scrubbed = scrub $data with rules {" +
+			"number: inRange(500, 1500)," + "};" +
+			"write $data_scrubbed to 'file:///tmp/TestOutputRange.json';");
 	}
 }

@@ -35,6 +35,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @InputCardinality(1)
 @OutputCardinality(1)
+@Name(verb = "detect duplicates")
 public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	private CandidateSelection candidateSelection = new CandidateSelection();

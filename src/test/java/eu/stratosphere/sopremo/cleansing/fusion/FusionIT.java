@@ -19,14 +19,10 @@ public class FusionIT extends MeteorIT {
 		this.client.submit(plan, null, true);
 		final JsonParser parser = new JsonParser(new FileReader("src/test/resources/FusionITTestOutput.json"));
 		parser.setWrappingArraySkipping(true);
-		File outputFile = new File("/tmp/FusionITTestOutput.json");
-		this.testServer.checkContentsOf(outputFile.getName(), parser.readValueAsTree());
-		//TODO improve this
-		outputFile.delete();
+		this.testServer.checkContentsOf("FusionITTestOutput.json", parser.readValueAsTree());
 	}
 
-	@Override
-	protected SopremoPlan getPlan() throws IOException {
+	protected SopremoPlan getPlan() {
 		File scriptFile = new File("src/test/resources/FusionIT.script");
 		final SopremoPlan plan = parseScript(scriptFile);
 		return plan;

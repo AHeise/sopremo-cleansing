@@ -14,21 +14,11 @@ public class ScrubbingIT extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {
-		final SopremoPlan plan = getPlan();
+		final SopremoPlan plan = parseScript(new File("src/test/resources/ScrubbingIT.script"));
 
 		this.client.submit(plan, null, true);
 		final JsonParser parser = new JsonParser(new FileReader("src/test/resources/TestOutput.json"));
 		parser.setWrappingArraySkipping(true);
-		File outputFile = new File("/tmp/TestOutput.json");
-		this.testServer.checkContentsOf(outputFile.getName(), parser.readValueAsTree());
-		//TODO improve this
-		outputFile.delete();
-	}
-
-	@Override
-	protected SopremoPlan getPlan() throws IOException {
-		File scriptFile = new File("src/test/resources/ScrubbingIT.script");
-		final SopremoPlan plan = parseScript(scriptFile);
-		return plan;
+		this.testServer.checkContentsOf("TestOutput.json", parser.readValueAsTree());
 	}
 }

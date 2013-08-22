@@ -4,9 +4,15 @@
 
 	<modelVersion>4.0.0</modelVersion>
 
+	<parent>
+		<groupId>org.sonatype.oss</groupId>
+		<artifactId>oss-parent</artifactId>
+		<version>7</version>
+	</parent>
+
 	<properties>
-		<sopremo.version>0.3</sopremo.version>
-		<meteor.version>0.3</meteor.version>
+		<sopremo.version>0.3-SNAPSHOT</sopremo.version>
+		<meteor.version>0.3-SNAPSHOT</meteor.version>
 	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>
@@ -142,6 +148,14 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>
