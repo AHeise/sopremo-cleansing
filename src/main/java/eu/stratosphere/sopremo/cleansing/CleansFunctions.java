@@ -38,6 +38,7 @@ import eu.stratosphere.sopremo.packages.ConstantRegistryCallback;
 import eu.stratosphere.sopremo.packages.FunctionRegistryCallback;
 import eu.stratosphere.sopremo.packages.IConstantRegistry;
 import eu.stratosphere.sopremo.packages.IFunctionRegistry;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -59,14 +60,16 @@ public class CleansFunctions implements BuiltinProvider,
 	 */
 	@Override
 	public void registerConstants(IConstantRegistry constantRegistry) {
+		EvaluationExpression expr = new NonNullConstraint();
 		constantRegistry.put("required", new NonNullConstraint());
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirstFromList", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
 				REMOVE_ILLEGAL_CHARACTERS);
 
-		constantRegistry.put("mostFrequent", new MostFrequentResolution());
-		constantRegistry.put("mergeDistinct", MergeDistinctResolution.INSTANCE);
+		this.registerConstant(new MostFrequentResolution(), constantRegistry);
+		this.registerConstant(MergeDistinctResolution.INSTANCE,
+				constantRegistry);
 	}
 
 	/*
@@ -81,16 +84,49 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
-		registry.put("hasPattern", new PatternValidationRuleMacro());
-		registry.put("inRange", new RangeRuleMacro());
-		registry.put("default", new DefaultValueCorrectionMacro());
-		registry.put("containedIn", new WhiteListRuleMacro());
-		registry.put("notContainedIn", new BlackListRuleMacro());
-		registry.put("illegalCharacters", new IllegalCharacterRuleMacro());
-		registry.put("defaultResolution", new DefaultValueResolutionMacro());
+		
+		this.registerMacro(new PatternValidationRuleMacro(), registry);
+		this.registerMacro(new RangeRuleMacro(), registry);
+		this.registerMacro(new DefaultValueCorrectionMacro(), registry);
+		this.registerMacro(new WhiteListRuleMacro(), registry);
+		this.registerMacro(new BlackListRuleMacro(), registry);
+		this.registerMacro(new IllegalCharacterRuleMacro(), registry);
+
+		this.registerMacro(new DefaultValueResolutionMacro(), registry);
 
 		// 0.2compability
 		// registry.put("vote", new VoteMacro());
+	}
+
+	private void registerMacro(MacroBase macro, IFunctionRegistry registry) {
+		registry.put(this.getScriptName(((CleansingMacro) macro)
+				.getWrappedExpressionClass()), macro);
+	}
+
+	private void registerConstant(EvaluationExpression constant,
+			IConstantRegistry registry) {
+		registry.put(this.getScriptName(constant.getClass()), constant);
+	}
+
+	private String getScriptName(Class<? extends EvaluationExpression> expr) {
+		Name name = expr.getAnnotation(Name.class);
+		if (name == null) {
+			SopremoUtil.LOG.warn("No name for " + expr + " found, using '"
+					+ expr.getSimpleName() + "'.");
+			return expr.getSimpleName();
+		}
+		if (name.noun().length != 0)
+			return name.noun()[0];
+		if (name.verb().length != 0)
+			return name.verb()[0];
+		if (name.adjective().length != 0)
+			return name.adjective()[0];
+		if (name.preposition().length != 0)
+			return name.preposition()[0];
+		SopremoUtil.LOG.warn("Name found for " + expr
+				+ " but non of the properties are set, using '"
+				+ expr.getSimpleName() + "'");
+		return expr.getSimpleName();
 	}
 
 	public static final SopremoFunction GENERATE_ID = new GenerateId();
@@ -142,8 +178,8 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.SoundEx
-						.generateSoundExInto(input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(
+						input, this.soundex);
 			} catch (IOException e) {
 			}
 			return this.soundex;
@@ -202,7 +238,7 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	private static class PatternValidationRuleMacro extends MacroBase {
+	private static class PatternValidationRuleMacro extends CleansingMacro {
 
 		/*
 		 * (non-Javadoc)
@@ -213,8 +249,9 @@ public class CleansFunctions implements BuiltinProvider,
 		public PatternValidationConstraint call(EvaluationExpression[] params) {
 
 			if (params.length == 1)
-				return new PatternValidationConstraint(Pattern.compile(params[0]
-						.evaluate(NullNode.getInstance()).toString()));
+				return new PatternValidationConstraint(
+						Pattern.compile(params[0].evaluate(
+								NullNode.getInstance()).toString()));
 			else
 				throw new IllegalArgumentException("Wrong number of arguments.");
 
@@ -225,9 +262,14 @@ public class CleansFunctions implements BuiltinProvider,
 			// TODO Auto-generated method stub
 
 		}
+
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return PatternValidationConstraint.class;
+		}
 	}
 
-	private static class RangeRuleMacro extends MacroBase {
+	private static class RangeRuleMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -238,17 +280,22 @@ public class CleansFunctions implements BuiltinProvider,
 		@Override
 		public EvaluationExpression call(EvaluationExpression[] params) {
 			if (params.length == 2) {
-				return new RangeConstraint(
-						params[0].evaluate(NullNode.getInstance()),
-						params[1].evaluate(NullNode.getInstance()));
+				return new RangeConstraint(params[0].evaluate(NullNode
+						.getInstance()), params[1].evaluate(NullNode
+						.getInstance()));
 			} else {
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
 		}
 
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return RangeConstraint.class;
+		}
+
 	}
 
-	private static class WhiteListRuleMacro extends MacroBase {
+	private static class WhiteListRuleMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -281,9 +328,14 @@ public class CleansFunctions implements BuiltinProvider,
 				possibleValues.add(value.evaluate(NullNode.getInstance()));
 			}
 		}
+
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return WhiteListConstraint.class;
+		}
 	}
 
-	private static class BlackListRuleMacro extends MacroBase {
+	private static class BlackListRuleMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -316,9 +368,14 @@ public class CleansFunctions implements BuiltinProvider,
 				forbiddenValues.add(value.evaluate(NullNode.getInstance()));
 			}
 		}
+
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return BlackListConstraint.class;
+		}
 	}
 
-	private static class IllegalCharacterRuleMacro extends MacroBase {
+	private static class IllegalCharacterRuleMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -339,9 +396,14 @@ public class CleansFunctions implements BuiltinProvider,
 				throw new IllegalArgumentException("Wrong number of arguments.");
 			}
 		}
+
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return IllegalCharacterConstraint.class;
+		}
 	}
 
-	private static class DefaultValueCorrectionMacro extends MacroBase {
+	private static class DefaultValueCorrectionMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -358,9 +420,14 @@ public class CleansFunctions implements BuiltinProvider,
 			}
 		}
 
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return DefaultValueCorrection.class;
+		}
+
 	}
 
-	private static class DefaultValueResolutionMacro extends MacroBase {
+	private static class DefaultValueResolutionMacro extends CleansingMacro {
 
 		@Override
 		public void appendAsString(Appendable appendable) throws IOException {
@@ -377,6 +444,10 @@ public class CleansFunctions implements BuiltinProvider,
 			}
 		}
 
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return DefaultValueResolution.class;
+		}
 	}
 
 	/**
@@ -435,11 +506,11 @@ public class CleansFunctions implements BuiltinProvider,
 	}
 
 	/**
-	 * This correction is a fix for {@link RangeConstraint}. To solve a violation this
-	 * correction simply chooses the nearest bound (lower bound if the actual
-	 * value was lower than the lower bound, upper bound if the actual value was
-	 * higher than the upper bound). To specify this correction for a
-	 * {@link RangeConstraint} use the following syntax:
+	 * This correction is a fix for {@link RangeConstraint}. To solve a
+	 * violation this correction simply chooses the nearest bound (lower bound
+	 * if the actual value was lower than the lower bound, upper bound if the
+	 * actual value was higher than the upper bound). To specify this correction
+	 * for a {@link RangeConstraint} use the following syntax:
 	 * 
 	 * <code><pre>
 	 * ...
@@ -470,10 +541,10 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link WhiteListConstraint}. To solve a violation
-	 * this correction simply chooses the first allowed value from the white
-	 * list. To specify this correction for a {@link WhiteListConstraint} use the
-	 * following syntax:
+	 * This correction is a fix for {@link WhiteListConstraint}. To solve a
+	 * violation this correction simply chooses the first allowed value from the
+	 * white list. To specify this correction for a {@link WhiteListConstraint}
+	 * use the following syntax:
 	 * 
 	 * <code><pre>
 	 * ...
@@ -502,10 +573,10 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link IllegalCharacterConstraint}. To solve a
-	 * violation this correction simply removes all violating characters from
-	 * the value. To specify this correction for a {@link IllegalCharacterConstraint}
-	 * use the following syntax:
+	 * This correction is a fix for {@link IllegalCharacterConstraint}. To solve
+	 * a violation this correction simply removes all violating characters from
+	 * the value. To specify this correction for a
+	 * {@link IllegalCharacterConstraint} use the following syntax:
 	 * 
 	 * <code><pre>
 	 * ...

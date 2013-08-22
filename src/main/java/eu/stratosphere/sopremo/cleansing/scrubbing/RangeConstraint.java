@@ -1,6 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.cleansing.CleansFunctions;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -26,6 +27,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
+@Name(adjective="range")
 public class RangeConstraint extends ValidationRule {
 	private IJsonNode min, max;
 

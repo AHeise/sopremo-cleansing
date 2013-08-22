@@ -5,8 +5,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<properties>
-		<sopremo.version>0.3</sopremo.version>
-		<meteor.version>0.3</meteor.version>
+		<sopremo.version>0.3-SNAPSHOT</sopremo.version>
+		<meteor.version>0.3-SNAPSHOT</meteor.version>
 	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>

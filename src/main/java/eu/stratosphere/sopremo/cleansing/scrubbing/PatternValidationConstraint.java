@@ -10,6 +10,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
@@ -32,6 +33,7 @@ import eu.stratosphere.util.Immutable;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
+@Name(verb="hasPattern")
 @DefaultSerializer(value = PatternValidationConstraint.PatternValidationRuleSerializer.class)
 public class PatternValidationConstraint extends ValidationRule {
 	public static class PatternValidationRuleSerializer extends

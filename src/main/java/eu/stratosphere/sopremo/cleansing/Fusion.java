@@ -22,6 +22,7 @@ import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.DecimalNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
@@ -40,6 +41,9 @@ import eu.stratosphere.sopremo.type.NullNode;
 @InputCardinality(1)
 @OutputCardinality(1)
 public class Fusion extends CompositeOperator<Fusion> {
+
+	private static String SINGLE_OUTPUT_WARNING = "Last resolution of field '%s' (%s) can yield to multiple outputs.\nEither you've chosen this behavior explicitly or you should choose an additional resolution that enforces a single output value.";
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -144,32 +148,35 @@ public class Fusion extends CompositeOperator<Fusion> {
 					mapping.getTargetExpression());
 
 			if (expression instanceof ArrayCreation) {
-				// int expressionSize = ((ArrayCreation)expression).size();
-				// int currentExpression = 0;
+				int expressionSize = ((ArrayCreation) expression).size();
+				int currentExpression = 0;
 				for (EvaluationExpression nestedExpression : expression) {
-					// if(expressionSize == ++currentExpression)
-					// this.checkAnnotationAndShowWarning(nestedExpression);
+					if (expressionSize == ++currentExpression)
+						this.checkAnnotationAndShowWarning(path,
+								nestedExpression);
 					this.resolutionBasedFusion.addResolution(nestedExpression,
 							path);
 				}
 			} else {
-				// this.checkAnnotationAndShowWarning(expression);
+				this.checkAnnotationAndShowWarning(path, expression);
 				this.resolutionBasedFusion.addResolution(expression, path);
 			}
 		}
 	}
 
-	private void checkAnnotationAndShowWarning(EvaluationExpression expr) {
+	private void checkAnnotationAndShowWarning(PathSegmentExpression path,
+			EvaluationExpression expr) {
 		SingleOutputResolution annotation = expr.getClass().getAnnotation(
 				SingleOutputResolution.class);
 		if (annotation == null) {
-			this.showWarning();
+			this.showWarning(path, expr);
 		}
 	}
 
-	private void showWarning() {
-		System.out
-				.println("In conflict with the usualy expected semantics of a fusion, the last provided resolution can yield to multiple output-values. Either this is the expected behavior or the last provided resolution is not annotated with @SingleOutputResolution(true).");
+	private void showWarning(PathSegmentExpression path,
+			EvaluationExpression expr) {
+		SopremoUtil.LOG.warn(String.format(Fusion.SINGLE_OUTPUT_WARNING,
+				path.toString(), expr.toString()));
 	}
 
 	@Override

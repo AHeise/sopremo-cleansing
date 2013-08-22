@@ -3,6 +3,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 import java.util.List;
 
 import eu.stratosphere.sopremo.cleansing.CleansFunctions;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -26,6 +27,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
+@Name(verb="containedIn")
 public class WhiteListConstraint extends ValidationRule {
 	private final List<IJsonNode> possibleValues;
 

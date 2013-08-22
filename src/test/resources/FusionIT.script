@@ -10,7 +10,7 @@ $persons_fused = fuse $p in $persons_duplicate_pairs
 		cia : 0.7*{addresses: 0.8*{street:0.7, zipcode: 0.9}, name: 0.3}
 	}
 	with resolutions {
-		name: [mostFrequent, defaultResolution("default")],
+		name: [mostFrequent, DefaultValueResolution("default")],
 		//name: mostFrequent,
 		//name: [defaultResolution("default")],
 		
