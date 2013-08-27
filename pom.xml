@@ -28,11 +28,21 @@
 			<artifactId>simmetrics</artifactId>
 			<version>1.6.2</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>jep</groupId>
+			<artifactId>jep</artifactId>
+			<version>2.24</version>
+		</dependency>
+
+		<!-- <dependency> <groupId>it.unibas</groupId> <artifactId>spicyEngine</artifactId> 
+			<version>1.0</version> <scope>provided</scope> </dependency> -->
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-base</artifactId>
 			<version>${sopremo.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 
@@ -93,6 +103,10 @@
 			<name>JHU Maven Repository</name>
 			<url>http://maven.mse.jhu.edu/m2repository</url>
 		</repository>
+		<repository>
+			<id>localRepo</id>
+			<url>file://${basedir}/localRepo</url>
+		</repository>
 	</repositories>
 
 
@@ -108,14 +122,10 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.1</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.6</source>
+					<target>1.6</target>
 				</configuration>
 			</plugin>
-			<!-- <plugin> <groupId>org.apache.maven.plugins</groupId> <artifactId>maven-surefire-plugin</artifactId> 
-				<version>2.4.2</version> <configuration> <systemProperties> <property> <name>java.util.logging.config.file</name> 
-				<value>${project.build.directory}/test-classes/logging.properties</value> 
-				</property> </systemProperties> </configuration> </plugin> -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
@@ -158,5 +168,36 @@
 				</configuration>
 			</plugin>
 		</plugins>
+
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<!-- get rid of m2e warning -->
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>org.apache.maven.plugins</groupId>
+										<artifactId>maven-enforcer-plugin</artifactId>
+										<versionRange>[1.0.0,)</versionRange>
+										<goals>
+											<goal>enforce</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<ignore />
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 	</build>
 </project>
