@@ -30,17 +30,4 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
 			withInputs(inputs);
 	}
-	//
-	// @InputCardinality(2)
-	// public static class DirectNaiveDuplicateDetection extends
-	// ElementaryDuplicateDetectionAlgorithm<DirectNaiveDuplicateDetection> {
-	// public static class Implementation extends SopremoCross {
-	// private CandidateComparison comparison;
-	//
-	// @Override
-	// protected void cross(IJsonNode left, IJsonNode right, JsonCollector collector) {
-	// this.comparison.process(left, right, collector);
-	// }
-	// }
-	// }
 }

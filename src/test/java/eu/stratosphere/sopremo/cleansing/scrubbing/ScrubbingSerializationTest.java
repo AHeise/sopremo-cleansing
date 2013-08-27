@@ -2,7 +2,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.cleansing.Scrubbing;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.operator.SopremoOperatorTestBase;
+import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 
 public class ScrubbingSerializationTest extends SopremoOperatorTestBase<Scrubbing>{
 

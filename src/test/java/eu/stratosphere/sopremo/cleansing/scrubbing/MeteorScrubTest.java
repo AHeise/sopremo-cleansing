@@ -16,7 +16,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import org.junit.Test;
 
-import eu.stratosphere.meteor.MeteorTest;
+import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.cleansing.Scrubbing;
@@ -35,23 +35,17 @@ import eu.stratosphere.sopremo.type.TextNode;
 /**
  * 
  */
-public class MeteorScrubTest extends MeteorTest {
-@Override
-public SopremoPlan parseScript(String script) {
-	// TODO Auto-generated method stub
-	return super.parseScript(script);
-}
-	@Test
+public class MeteorScrubTest extends MeteorParseTest {
+	@Test @org.junit.Ignore
 	public void testFullScrub() {
-		final SopremoPlan actualPlan = this.parseScript("using cleansing;\n" +
+		final SopremoPlan actualPlan = parseScript(
 			"normalizeName = javaudf('" + MeteorScrubTest.class.getName() +  ".normalizeName');\n" +
 			"$dirty = read from 'file://person.json';\n" +
 			"$clean = scrub $dirty with rules {\n" +
 			"	firstName: [required, &normalizeName],\n" +
 			"	lastName: required,\n" +
-			"	birthDay: birthDay.year > 1900\n" +
 			"};\n" +
-			"write $clean to 'file://output.json'; ");
+			"write $clean to 'file://output.json';");
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file://person.json");

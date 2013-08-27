@@ -1,0 +1,17 @@
+language: java
+jdk: 
+- oraclejdk7
+- openjdk6
+
+script: mvn verify
+
+# deploy if the first job is successful; should be replaced by an after_all_success if travis finally supports it
+after_success: 
+- if [[ $TRAVIS_JOB_NUMBER == *1 ]]; then mvn -DskipTests deploy --settings deploysettings.xml; fi
+
+env: 
+  global: 
+  - secure: ZFbOJJI7Gz4wNwkA4EZ9oGNQ04qF3ami3EsmVrFyU41QesRE1VTxavlQC2UBZrZwhnlhUeO/SdyUsk3yOUvTUxui8XSKhEH7SeW050OsYYkMu3zWmVyCXK565Het3vdDcdtEGiTn4o0gnichtie6Xy1QyS/aMGLGKe5zo7Y8b+Y=
+  - secure: Q6W0KKjx4gQcYRVW72f5qa5i8rUbNy3o3q0kq7UnHB3aTsydHNmnGkWo1oFdIIIcAGFgqJto8OQCq0M9nTlwNaR2Lc/67uKjdV4FTx0U75RDFnzDr6aSSzvqy0LSOVOxV4FKUUAg92svhoCaLoSm5Mb+gNuBT2x9Tq/cnLc/vig=
+
+

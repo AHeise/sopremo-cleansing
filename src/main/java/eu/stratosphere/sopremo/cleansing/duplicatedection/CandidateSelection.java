@@ -19,9 +19,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.stringtemplate.v4.compiler.CodeGenerator.includeExpr_return;
+
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -121,7 +124,7 @@ public class CandidateSelection extends AbstractSopremoType {
 				throw new NullPointerException("blockingKey must not be null");
 
 			this.blockingKeys.clear();
-			this.blockingKeys.addAll( blockingKeys);
+			this.blockingKeys.addAll(blockingKeys);
 		}
 
 		/**
@@ -173,14 +176,16 @@ public class CandidateSelection extends AbstractSopremoType {
 			return;
 		}
 
-		for (EvaluationExpression subExpression : expression) {
+		List<EvaluationExpression> passes = expression instanceof ArrayCreation ?
+			((ArrayCreation) expression).getElements() : Arrays.asList(expression);
+		for (EvaluationExpression passExpression : passes) {
 			Pass pass = new Pass();
 			if (numSources == 1)
-				pass.setBlockingKeys(subExpression);
+				pass.setBlockingKeys(passExpression.remove(InputSelection.class));
 			else
 				pass.setBlockingKeys(
-					subExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(0)),
-					subExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(1)));
+					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(0)),
+					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(1)));
 			this.passes.add(pass);
 		}
 	}
