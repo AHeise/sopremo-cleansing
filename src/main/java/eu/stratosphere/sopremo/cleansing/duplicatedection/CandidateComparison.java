@@ -21,6 +21,7 @@ import java.util.List;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
+import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.expressions.AndExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
@@ -514,9 +515,8 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 	 * @param expr2
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
 	private Similarity<IJsonNode> parseSimilarity(EvaluationExpression similarityExpression) {
-		return (Similarity<IJsonNode>) similarityExpression;
+		return ((SimilarityExpression) similarityExpression).getSimilarity();
 	}
 
 	/**

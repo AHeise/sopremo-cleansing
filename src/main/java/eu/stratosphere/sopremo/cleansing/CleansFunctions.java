@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -28,7 +29,9 @@ import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
 import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.function.MacroBase;
 import eu.stratosphere.sopremo.function.SopremoFunction;
@@ -84,6 +87,7 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
+		registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
 
@@ -180,8 +184,8 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(
-						input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.SoundEx
+					.generateSoundExInto(input, this.soundex);
 			} catch (IOException e) {
 			}
 			return this.soundex;
@@ -493,27 +497,36 @@ public class CleansFunctions implements BuiltinProvider,
 							"Can only expand simple path expressions");
 
 			Similarity<IJsonNode> similarity;
-			if (params.length > 1)
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[1], true);
-			else
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity,
-								(PathSegmentExpression) params[0],
-								(PathSegmentExpression) params[0], true);
+			if (params.length > 1) {
+				final InputSelection input0 = params[0].findFirst(InputSelection.class);
+				final InputSelection input1 = params[1].findFirst(InputSelection.class);
+				if (input0 == null || input1 == null)
+					throw new IllegalArgumentException("Paths are incomplete (source is unknown) " +
+						Arrays.asList(params));
+				if (input0.getIndex() == input1.getIndex())
+					throw new IllegalArgumentException("Paths are using the same source " + Arrays.asList(params));
+				PathSegmentExpression left =
+					(PathSegmentExpression) (input0.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
+				PathSegmentExpression right =
+					(PathSegmentExpression) (input1.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
+
+				similarity =
+					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, left, right, true);
+			}
+			else {
+				final PathSegmentExpression path = (PathSegmentExpression) params[0].remove(InputSelection.class);
+				similarity =
+					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, path, path, true);
+			}
 			return new SimilarityExpression(similarity);
 		}
 	}
 
 	/**
-	 * This correction is a fix for {@link RangeConstraint}. To solve a
-	 * violation this correction simply chooses the nearest bound (lower bound
-	 * if the actual value was lower than the lower bound, upper bound if the
-	 * actual value was higher than the upper bound). To specify this correction
-	 * for a {@link RangeConstraint} use the following syntax:
-	 * 
+	 * This correction is a fix for {@link RangeRule}. To solve a violation this
+	 * correction simply chooses the nearest bound (lower bound if the actual
+	 * value was lower than the lower bound, upper bound if the actual value was
+	 * higher than the upper bound). To specify this correction for a {@link RangeRule} use the following syntax:
 	 * <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
@@ -543,12 +556,10 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link WhiteListConstraint}. To solve a
-	 * violation this correction simply chooses the first allowed value from the
-	 * white list. To specify this correction for a {@link WhiteListConstraint}
-	 * use the following syntax:
-	 * 
-	 * <code><pre>
+	 * This correction is a fix for {@link WhiteListRule}. To solve a violation
+	 * this correction simply chooses the first allowed value from the white
+	 * list. To specify this correction for a {@link WhiteListRule} use the
+	 * following syntax: <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
@@ -575,12 +586,9 @@ public class CleansFunctions implements BuiltinProvider,
 	};
 
 	/**
-	 * This correction is a fix for {@link IllegalCharacterConstraint}. To solve
-	 * a violation this correction simply removes all violating characters from
-	 * the value. To specify this correction for a
-	 * {@link IllegalCharacterConstraint} use the following syntax:
-	 * 
-	 * <code><pre>
+	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
+	 * violation this correction simply removes all violating characters from
+	 * the value. To specify this correction for a {@link IllegalCharacterRule} use the following syntax: <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
