@@ -14,8 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
 import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
+import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
 
 import org.junit.Test;
 
@@ -32,5 +32,4 @@ public class StringUDFsTest {
 				StringUDFs.REMOVE_ALL_STRINGS, "Foobar Corporation",
 				createArrayNode("Corporation", "Corp", "Co"));
 	}
-
 }

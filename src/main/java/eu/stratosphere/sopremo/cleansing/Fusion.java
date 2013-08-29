@@ -175,8 +175,10 @@ public class Fusion extends CompositeOperator<Fusion> {
 
 	private void showWarning(PathSegmentExpression path,
 			EvaluationExpression expr) {
+		String scriptName = CleansFunctions.getScriptName(expr.getClass());
+
 		SopremoUtil.LOG.warn(String.format(Fusion.SINGLE_OUTPUT_WARNING,
-				path.toString(), expr.toString()));
+				path.toString(), scriptName));
 	}
 
 	@Override

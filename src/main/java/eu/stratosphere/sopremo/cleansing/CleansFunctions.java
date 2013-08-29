@@ -87,7 +87,7 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
-		registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
+		//registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
 
@@ -105,16 +105,16 @@ public class CleansFunctions implements BuiltinProvider,
 	}
 
 	private void registerMacro(MacroBase macro, IFunctionRegistry registry) {
-		registry.put(this.getScriptName(((CleansingMacro) macro)
+		registry.put(getScriptName(((CleansingMacro) macro)
 				.getWrappedExpressionClass()), macro);
 	}
 
 	private void registerConstant(EvaluationExpression constant,
 			IConstantRegistry registry) {
-		registry.put(this.getScriptName(constant.getClass()), constant);
+		registry.put(getScriptName(constant.getClass()), constant);
 	}
 
-	private String getScriptName(Class<? extends EvaluationExpression> expr) {
+	public static String getScriptName(Class<? extends EvaluationExpression> expr) {
 		Name name = expr.getAnnotation(Name.class);
 		if (name == null) {
 			SopremoUtil.LOG.warn("No name for " + expr + " found, using '"
