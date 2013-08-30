@@ -31,7 +31,7 @@ public class ScrubbingTest {
 
 			new Object[] {
 				new ObjectAccess("stringInsteadOfInteger"),
-				new TypeValidationExpression(IntNode.class),
+				new TypeConstraint(IntNode.class),
 				JsonUtil.createObjectNode("stringInsteadOfInteger", 12, "outsideMonthRange", 14,
 					"shouldBeNonNull", null) },
 
