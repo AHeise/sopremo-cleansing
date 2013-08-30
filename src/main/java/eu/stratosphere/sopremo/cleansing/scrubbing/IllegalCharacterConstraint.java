@@ -1,6 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import eu.stratosphere.sopremo.cleansing.CleansFunctions;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
@@ -24,15 +25,16 @@ import eu.stratosphere.sopremo.type.TextNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class IllegalCharacterRule extends ValidationRule {
+@Name(noun="illegalCharacters")
+public class IllegalCharacterConstraint extends ValidationRule {
 
 	private TextNode illegalCharacters;
 
-	public IllegalCharacterRule(TextNode illegalCharacters) {
+	public IllegalCharacterConstraint(TextNode illegalCharacters) {
 		this.illegalCharacters = illegalCharacters;
 	}
 
-	public IllegalCharacterRule() {
+	public IllegalCharacterConstraint() {
 		this.illegalCharacters = null;
 	}
 
@@ -70,7 +72,7 @@ public class IllegalCharacterRule extends ValidationRule {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		IllegalCharacterRule other = (IllegalCharacterRule) obj;
+		IllegalCharacterConstraint other = (IllegalCharacterConstraint) obj;
 		if (illegalCharacters == null) {
 			if (other.illegalCharacters != null)
 				return false;

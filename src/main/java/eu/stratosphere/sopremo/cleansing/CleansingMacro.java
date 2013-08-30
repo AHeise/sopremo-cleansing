@@ -14,22 +14,14 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
-import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
-
-import org.junit.Test;
-
-import eu.stratosphere.sopremo.type.TextNode;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.function.MacroBase;
 
 /**
- * Tests for StringUDFs
+ * @author Tommy Neubert
  */
-public class StringUDFsTest {
+public abstract class CleansingMacro extends MacroBase {
 
-	@Test
-	public void shouldRemoveAllStringOccurences() {
-		assertReturn(TextNode.valueOf("Foobar "),
-				StringUDFs.REMOVE_ALL_STRINGS, "Foobar Corporation",
-				createArrayNode("Corporation", "Corp", "Co"));
-	}
+	public abstract Class<? extends EvaluationExpression> getWrappedExpressionClass();
+
 }

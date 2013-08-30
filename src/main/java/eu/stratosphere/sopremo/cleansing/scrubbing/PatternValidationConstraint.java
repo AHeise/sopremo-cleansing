@@ -10,6 +10,7 @@ import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
@@ -24,7 +25,7 @@ import eu.stratosphere.util.Immutable;
  * ...
  * $persons_scrubbed = scrub $persons_sample with rules {
  *	...
- *	format: patternValidation("\d{4}-\d{4}"),
+ *	format: hasPattern("\d{4}-\d{4}"),
  *	...
  * };
  * ...
@@ -32,29 +33,30 @@ import eu.stratosphere.util.Immutable;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-@DefaultSerializer(value = PatternValidationRule.PatternValidationRuleSerializer.class)
-public class PatternValidationRule extends ValidationRule {
+@Name(verb="hasPattern")
+@DefaultSerializer(value = PatternValidationConstraint.PatternValidationRuleSerializer.class)
+public class PatternValidationConstraint extends ValidationRule {
 	public static class PatternValidationRuleSerializer extends
-			Serializer<PatternValidationRule> {
+			Serializer<PatternValidationConstraint> {
 
-		FieldSerializer<PatternValidationRule> fieldSerializer;
+		FieldSerializer<PatternValidationConstraint> fieldSerializer;
 
 		public PatternValidationRuleSerializer(Kryo kryo,
 				Class<PatternValidationRuleSerializer> type) {
-			fieldSerializer = new FieldSerializer<PatternValidationRule>(kryo,
+			fieldSerializer = new FieldSerializer<PatternValidationConstraint>(kryo,
 					type);
 		}
 
 		@Override
-		public void write(Kryo kryo, Output output, PatternValidationRule object) {
+		public void write(Kryo kryo, Output output, PatternValidationConstraint object) {
 			fieldSerializer.write(kryo, output, object);
 			kryo.writeObject(output, object.pattern.pattern());
 		}
 
 		@Override
-		public PatternValidationRule read(Kryo kryo, Input input,
-				Class<PatternValidationRule> type) {
-			PatternValidationRule object = fieldSerializer.read(kryo, input,
+		public PatternValidationConstraint read(Kryo kryo, Input input,
+				Class<PatternValidationConstraint> type) {
+			PatternValidationConstraint object = fieldSerializer.read(kryo, input,
 					type);
 			String pattern = kryo.readObject(input, String.class);
 			object.pattern = Pattern.compile(pattern);
@@ -62,9 +64,9 @@ public class PatternValidationRule extends ValidationRule {
 		}
 
 		@Override
-		public PatternValidationRule copy(Kryo kryo,
-				PatternValidationRule original) {
-			PatternValidationRule copy = fieldSerializer.copy(kryo, original);
+		public PatternValidationConstraint copy(Kryo kryo,
+				PatternValidationConstraint original) {
+			PatternValidationConstraint copy = fieldSerializer.copy(kryo, original);
 			copy.pattern = original.pattern;
 			return copy;
 		}
@@ -73,14 +75,14 @@ public class PatternValidationRule extends ValidationRule {
 	@Immutable
 	private transient Pattern pattern;
 
-	public PatternValidationRule(final Pattern pattern) {
+	public PatternValidationConstraint(final Pattern pattern) {
 		this.pattern = pattern;
 	}
 
 	/**
 	 * Initializes PatternValidationRule.
 	 */
-	PatternValidationRule() {
+	PatternValidationConstraint() {
 		this.pattern = null;
 	}
 
@@ -109,7 +111,7 @@ public class PatternValidationRule extends ValidationRule {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		PatternValidationRule other = (PatternValidationRule) obj;
+		PatternValidationConstraint other = (PatternValidationConstraint) obj;
 		if (pattern == null) {
 			if (other.pattern != null)
 				return false;

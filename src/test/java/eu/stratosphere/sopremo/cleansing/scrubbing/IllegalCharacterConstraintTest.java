@@ -12,41 +12,41 @@ import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
-public class IllegalCharacterRuleTest extends
-		EqualCloneTest<IllegalCharacterRule> {
+public class IllegalCharacterConstraintTest extends
+		EqualCloneTest<IllegalCharacterConstraint> {
 
-	private IllegalCharacterRule createRule(String ic,
+	private IllegalCharacterConstraint createRule(String ic,
 			ValueCorrection correction) {
-		IllegalCharacterRule rule = new IllegalCharacterRule(
+		IllegalCharacterConstraint rule = new IllegalCharacterConstraint(
 				TextNode.valueOf(ic));
 		rule.setValueCorrection(correction);
 		return rule;
 	}
 
-	private IllegalCharacterRule createRule(String ic) {
+	private IllegalCharacterConstraint createRule(String ic) {
 		return this.createRule(ic, ValidationRule.DEFAULT_CORRECTION);
 	}
 
 	@Override
-	protected IllegalCharacterRule createDefaultInstance(int index) {
+	protected IllegalCharacterConstraint createDefaultInstance(int index) {
 		return createRule(String.valueOf(index));
 	}
 
 	@Test
 	public void shouldFindIllegalCharacters() {
-		IllegalCharacterRule rule = createRule("fo");
+		IllegalCharacterConstraint rule = createRule("fo");
 		Assert.assertFalse(rule.validate(TextNode.valueOf("barfoo")));
 	}
 
 	@Test
 	public void shouldNotFindIllegalCharacters() {
-		IllegalCharacterRule rule = createRule("fo");
+		IllegalCharacterConstraint rule = createRule("fo");
 		Assert.assertTrue(rule.validate(TextNode.valueOf("barbar")));
 	}
 
 	@Test
 	public void shouldFixViolatingValues() {
-		IllegalCharacterRule rule = createRule("fo",
+		IllegalCharacterConstraint rule = createRule("fo",
 				CleansFunctions.REMOVE_ILLEGAL_CHARACTERS);
 		TextNode node = TextNode.valueOf("foobar");
 		Assert.assertEquals(TextNode.valueOf("bar"), rule.fix(node));
@@ -54,7 +54,7 @@ public class IllegalCharacterRuleTest extends
 
 	@Test
 	public void shouldFixViolatingValuesMultipleTimes() {
-		IllegalCharacterRule rule = createRule("fo",
+		IllegalCharacterConstraint rule = createRule("fo",
 				CleansFunctions.REMOVE_ILLEGAL_CHARACTERS);
 		IArrayNode<IJsonNode> nodes = new ArrayNode<IJsonNode>(
 				TextNode.valueOf("foobar"), TextNode.valueOf("barfoo"),
@@ -65,7 +65,7 @@ public class IllegalCharacterRuleTest extends
 
 	@Test
 	public void shouldRemoveRecordWithDefaultCorrection() {
-		IllegalCharacterRule rule = createRule("fo");
+		IllegalCharacterConstraint rule = createRule("fo");
 		TextNode node = TextNode.valueOf("foobar");
 		Assert.assertEquals(FilterRecord.Instance, rule.fix(node));
 	}
