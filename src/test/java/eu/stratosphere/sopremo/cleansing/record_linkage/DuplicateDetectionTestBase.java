@@ -1,9 +1,14 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
@@ -46,10 +51,20 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		this.useId = useId;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return String.format("%s with %s to %s", getClass().getSimpleName(), getCandidateSelection(),
+			this.resultProjection);
+	}
+
 	/**
 	 * Performs the naive record linkage in place and compares with the Pact code.
 	 */
-	@Test 
+	@Test
 	public void pactCodeShouldPerformLikeStandardImplementation() {
 
 		final DuplicateDetection dd = new DuplicateDetection();
@@ -60,12 +75,13 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		}
 		if (this.resultProjection != null)
 			dd.getComparison().setResultProjection(this.resultProjection);
-		
+
 		this.sopremoTestPlan = createTestPlan(dd);
 
-		this.generateExpectedPairs(this.sopremoTestPlan.getInput(0), dd.getComparison());
+		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)), (CandidateComparison) dd.getComparison().clone());
 
 		try {
+			// this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
@@ -84,7 +100,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	 * 
 	 * @param input
 	 */
-	protected abstract void generateExpectedPairs(Input input, CandidateComparison comparison);
+	protected abstract void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison);
 
 	/**
 	 * Emit the candidate.
@@ -129,13 +145,13 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(dd);
 		sopremoTestPlan.getInput(0).
 			addObject("id", 0, "first name", "albert", "last name", "perfect duplicate", "age", 80).
-			addObject("id", 1, "first name", "berta", "last name", "typo", "age", 70).
-			addObject("id", 2, "first name", "charles", "last name", "age inaccurate", "age", 70).
-			addObject("id", 3, "first name", "dagmar", "last name", "unmatched", "age", 75).
-			addObject("id", 4, "first name", "elma", "last name", "first nameDiffers", "age", 60).
-			addObject("id", 5, "first name", "albert", "last name", "perfect duplicate", "age", 80).
-			addObject("id", 6, "first name", "berta", "last name", "tpyo", "age", 70).
-			addObject("id", 7, "first name", "charles", "last name", "age inaccurate", "age", 69).
+			// addObject("id", 1, "first name", "berta", "last name", "typo", "age", 70).
+			// addObject("id", 2, "first name", "charles", "last name", "age inaccurate", "age", 70).
+			// addObject("id", 3, "first name", "dagmar", "last name", "unmatched", "age", 75).
+			// addObject("id", 4, "first name", "elma", "last name", "first nameDiffers", "age", 60).
+			// addObject("id", 5, "first name", "albert", "last name", "perfect duplicate", "age", 80).
+			// addObject("id", 6, "first name", "berta", "last name", "tpyo", "age", 70).
+			// addObject("id", 7, "first name", "charles", "last name", "age inaccurate", "age", 69).
 			addObject("id", 8, "first name", "elmar", "last name", "first nameDiffers", "age", 60);
 		return sopremoTestPlan;
 	}

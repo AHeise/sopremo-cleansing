@@ -2,6 +2,7 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
@@ -10,7 +11,6 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImpl
 import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -38,9 +38,9 @@ public class NaiveDuplicateDetectionTest extends DuplicateDetectionTestBase<Naiv
 	}
 
 	@Override
-	protected void generateExpectedPairs(Input input, CandidateComparison comparison) {
+	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
 		if (comparison.getIdProjection() == null) {
-			comparison.setPreselect(new NodeOrderSelector());
+			comparison.setPreselect(new NodeOrderSelector(input));
 		}
 		
 		final BooleanExpression condition = comparison.asCondition();
