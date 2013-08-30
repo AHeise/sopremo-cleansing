@@ -10,40 +10,40 @@ import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
-public class NonNullRuleTest extends EqualCloneTest<NonNullRule> {
+public class NonNullConstraintTest extends EqualCloneTest<NonNullConstraint> {
 
 	private final IJsonNode NON_NULL = IntNode.ONE;
 	private final IJsonNode NULL = NullNode.getInstance();
 	private final IJsonNode MISSING = MissingNode.getInstance();
 
 	@Override
-	protected NonNullRule createDefaultInstance(int index) {
-		return new NonNullRule(IntNode.valueOf(index));
+	protected NonNullConstraint createDefaultInstance(int index) {
+		return new NonNullConstraint(IntNode.valueOf(index));
 	}
 
 	@Test
 	public void shouldValidateNonNullValues() {
-		Assert.assertTrue(new NonNullRule().validate(NON_NULL));
+		Assert.assertTrue(new NonNullConstraint().validate(NON_NULL));
 	}
 
 	@Test
 	public void shouldNotValidateNullValues() {
-		Assert.assertFalse(new NonNullRule().validate(NULL));
+		Assert.assertFalse(new NonNullConstraint().validate(NULL));
 	}
 
 	@Test
 	public void shouldNotValidateMissingValues() {
-		Assert.assertFalse(new NonNullRule().validate(MISSING));
+		Assert.assertFalse(new NonNullConstraint().validate(MISSING));
 	}
 
 	@Test
 	public void shouldRemoveNullValues() {
-		Assert.assertEquals(FilterRecord.Instance, new NonNullRule().fix(NULL));
+		Assert.assertEquals(FilterRecord.Instance, new NonNullConstraint().fix(NULL));
 	}
 
 	@Test
 	public void shouldReplaceNullValuesWithDefault() {
-		Assert.assertEquals(NON_NULL, new NonNullRule(NON_NULL).fix(NULL));
+		Assert.assertEquals(NON_NULL, new NonNullConstraint(NON_NULL).fix(NULL));
 	}
 
 }

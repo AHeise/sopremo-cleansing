@@ -1,8 +1,10 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.NullNode;
 
+@Name(preposition="default")
 public class DefaultValueCorrection extends ValueCorrection {
 	/**
 	 * The default, stateless instance.

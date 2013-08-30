@@ -5,9 +5,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
+@Name(noun="mergeDistinct")
 public class MergeDistinctResolution extends ConflictResolution {
 	/**
 	 * The default, stateless instance.

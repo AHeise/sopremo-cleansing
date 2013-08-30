@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.NullNode;
@@ -21,12 +22,15 @@ import eu.stratosphere.sopremo.type.NullNode;
  * 
  * @author Arvid Heise, Tommy Neubert, Fabian Tschirschnitz
  */
-public class NonNullRule extends ValidationRule implements StatefulConstant {
 
-	public NonNullRule() {
+@Name(adjective = "required")
+public class NonNullConstraint extends ValidationRule implements
+		StatefulConstant {
+
+	public NonNullConstraint() {
 	}
 
-	public NonNullRule(IJsonNode defaultValue) {
+	public NonNullConstraint(IJsonNode defaultValue) {
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
 	}
 
