@@ -14,15 +14,24 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
+import java.util.List;
+
 import eu.stratosphere.sopremo.cleansing.duplicatedection.AbstractPreselection;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.util.IdentityList;
 
 /**
  * 
  */
 final class NodeOrderSelector extends AbstractPreselection {
+	private final List<IJsonNode> nodes = new IdentityList<IJsonNode>();
+
+	NodeOrderSelector(List<IJsonNode> nodes) {
+		this.nodes.addAll(nodes);
+	}
+
 	@Override
 	public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-		return left.compareTo(right) < 0;
+		return this.nodes.indexOf(left) < this.nodes.indexOf(right);
 	}
 }

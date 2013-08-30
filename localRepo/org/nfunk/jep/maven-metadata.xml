@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata modelVersion="1.1.0">
+  <groupId>org.nfunk</groupId>
+  <artifactId>jep</artifactId>
+  <versioning>
+    <latest>2.4.0</latest>
+    <release>2.4.0</release>
+    <versions>
+      <version>2.4.0</version>
+    </versions>
+    <lastUpdated>20130529231849</lastUpdated>
+  </versioning>
+</metadata>

@@ -19,8 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.stringtemplate.v4.compiler.CodeGenerator.includeExpr_return;
-
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
