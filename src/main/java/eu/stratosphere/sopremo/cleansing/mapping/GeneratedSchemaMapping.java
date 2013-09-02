@@ -20,6 +20,7 @@ import it.unibas.spicy.model.algebra.IAlgebraOperator;
 import it.unibas.spicy.model.algebra.Merge;
 import it.unibas.spicy.model.algebra.Nest;
 import it.unibas.spicy.model.algebra.Project;
+import it.unibas.spicy.model.algebra.SelectOnTargetValues;
 import it.unibas.spicy.model.algebra.Unnest;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
@@ -43,6 +44,7 @@ import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.TwoSourceJoin;
 import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.base.UnionAll;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression;
@@ -164,11 +166,24 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		} else if(treeElement instanceof it.unibas.spicy.model.algebra.DifferenceOnTargetValues) {
 			return processDifferenceOnTargetV(treeElement);	
 		} else if(treeElement instanceof it.unibas.spicy.model.algebra.Join) {
-			return processJoin(treeElement);			
+			return processJoin(treeElement);	
+		} else if(treeElement instanceof it.unibas.spicy.model.algebra.JoinOnTargetValues) {
+			return processJoinOnTargetV(treeElement);
 		} else if(treeElement instanceof Unnest) {
 			return processUnnest(treeElement);
-		} //TODO spicy Selection
-		return null;
+		} else if(treeElement instanceof SelectOnTargetValues) {
+			return processSelectOnTargetV(treeElement);
+		} else {
+			throw new IllegalArgumentException("Schema is too complex and cannot be parsed. Spicy tree element cannot be processed " + treeElement);
+		}
+	}
+
+	private Operator<?> processSelectOnTargetV(IAlgebraOperator treeElement) {
+		SelectOnTargetValues spicySelect = (SelectOnTargetValues) treeElement;
+		Operator<?> child = processChild(treeElement.getChildren().get(0));
+		
+//		System.out.println(spicySelect);
+		return child;
 	}
 
 	private void processTree(IAlgebraOperator treeRoot) {
@@ -292,26 +307,23 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		
 		Operator<?> child0 = processChild( difference.getChildren().get(0) );
 		Operator<?> child1 = processChild( difference.getChildren().get(1) );
-		
-		VariableCorrespondence corr = difference.getLeftCorrespondences().get(0); 
-		
-		if(difference.getLeftCorrespondences().size() > 1 || difference.getRightCorrespondences().size() > 1) {
-			SopremoUtil.LOG.warn("Spicy Algebra Tree generated more left or right correspondences than expected (>1), "
-					+ "the final mapping might be wrong (using:\n " + difference.toString() + ")");
-		}  
-		if(corr != difference.getRightCorrespondences().get(0)) {
-			SopremoUtil.LOG.warn("Spicy Algebra Tree did not generate 2 equal VariableCorrespondences, "
-					+ "the final mapping might be wrong (using:\n " + difference.toString() + ")");
+
+		ArrayCreation arrayLeft = new ArrayCreation();
+		for(VariableCorrespondence varCor : difference.getLeftCorrespondences()) {
+			for(VariablePathExpression path : varCor.getSourcePaths()) {
+				arrayLeft.add( SchemaMappingUtil.convertSpicyPath("0", path) ); 
+			}
 		}
-		VariablePathExpression varExp = corr.getFirstSourcePath(); //TODO multiple? and multiple join conditions?
-//		Expression function = corr.getTransformationFunction(); //TODO needed here again or is Nest enough?
+		ArrayCreation arrayRight = new ArrayCreation();
+		for(VariableCorrespondence varCor : difference.getRightCorrespondences()) {
+			for(VariablePathExpression path : varCor.getSourcePaths()) {
+				arrayRight.add( SchemaMappingUtil.convertSpicyPath("1", path) ); 
+			}			
+		}
 		
 		TwoSourceJoin antiJoin = new TwoSourceJoin().
 				withInputs(child0, child1).	
-				withCondition( new ElementInSetExpression(
-						SchemaMappingUtil.convertSpicyPath("0", varExp) , 
-						Quantor.EXISTS_NOT_IN, 
-						SchemaMappingUtil.convertSpicyPath("1", varExp) ));
+				withCondition( new ElementInSetExpression( arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight ));
 		
 		reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -338,6 +350,40 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		return sopremoJoin;
 	}
 
+	private Operator<?> processJoinOnTargetV(IAlgebraOperator treeElement) {
+		it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin = (it.unibas.spicy.model.algebra.JoinOnTargetValues) treeElement;
+		
+		if(reuseProjections.containsKey(spicyJoin.getId()))
+			return reuseProjections.get(spicyJoin.getId());	
+		
+		Operator<?> child0 = processChild( spicyJoin.getChildren().get(0) );
+		Operator<?> child1 = processChild( spicyJoin.getChildren().get(1) );
+		
+		//just correspondences
+//		ArrayCreation arrayLeft = new ArrayCreation();
+//		for(VariableCorrespondence varCor : spicyJoin.getLeftCorrespondences()) {
+//			for(VariablePathExpression path : varCor.getSourcePaths()) {
+//				arrayLeft.add( SchemaMappingUtil.convertSpicyPath("0", path) ); 
+//			}
+//		}
+//		ArrayCreation arrayRight = new ArrayCreation();
+//		for(VariableCorrespondence varCor : spicyJoin.getRightCorrespondences()) {
+//			for(VariablePathExpression path : varCor.getSourcePaths()) {
+//				arrayRight.add( SchemaMappingUtil.convertSpicyPath("1", path) ); 
+//			}			
+//		}
+		
+		//TODO use join on target
+//		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
+//				withInputs(child0, child1). 
+//				withCondition(new ComparativeExpression( arrayLeft, BinaryOperator.EQUAL, arrayRight)
+//				);
+//		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
+		
+		
+		return child0;
+	}
+	
 	private Operator<?> processUnnest(IAlgebraOperator treeElement) {
 		Unnest unnest = (Unnest) treeElement; //e.g. "unnest v0 in usCongress.usCongressMembers"
 		SetAlias sourceAlias = unnest.getVariable(); 
