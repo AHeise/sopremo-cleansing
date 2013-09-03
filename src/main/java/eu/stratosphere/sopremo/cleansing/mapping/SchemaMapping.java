@@ -138,11 +138,13 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 
 	JoinCondition sourceJoinCondition;
 	JoinCondition targetJoinCondition;
+	List<JoinCondition> targetJoinConditions  = new ArrayList<JoinCondition>();
 
 	List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
 	ValueCorrespondence corr;
 
 	KeyConstraint targetKey;
+	HashMap<String, String> foreignKeys = new HashMap<String, String>();
 
 	@Property
 	@Name(preposition = "where")
@@ -225,7 +227,11 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 
 					// create join condition for foreign keys, but no value correspondence
 					this.targetJoinCondition = this.createJoinCondition(targetNesting, targetExpr, sourceNesting, sourceExpr);
-
+					targetJoinConditions.add(targetJoinCondition);
+					
+					// store foreign keys to add missing (transitive) value correspondences later
+					this.foreignKeys.put(targetJoinCondition.getFromPaths().get(0).toString(), targetJoinCondition.getToPaths().get(0).toString());
+					
 				} else { // no foreign key
 
 					// add source attribute to source schema
@@ -255,13 +261,21 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 			}
 		}
 
-		// TODO: still hard coded
-		this.corr = this.createValueCorrespondence("source.entities_in1.entity_in1", "worksFor", "target.entities_in0.entity_in0", "worksFor");
-		this.valueCorrespondences.add(this.corr);
-		
+		// create transitive value correspondences from foreign keys
+		List<ValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences();
+			
+		for (ValueCorrespondence cond : transitiveValueCorrespondences) {
+			valueCorrespondences.add(cond);
+		}
+			
+		// create mapping task
 		this.mappingTask = new MappingTask(this.source, this.target, this.valueCorrespondences);
 		if (this.sourceJoinCondition != null) this.mappingTask.getSourceProxy().addJoinCondition(this.sourceJoinCondition);
-		if (this.targetJoinCondition != null) this.mappingTask.getTargetProxy().addJoinCondition(this.targetJoinCondition);
+		
+		for (JoinCondition cond : targetJoinConditions) {
+			this.mappingTask.getTargetProxy().addJoinCondition(cond);
+		}
+		
 		if (DEBUG) System.out.println("mapping task:\n" + this.mappingTask);
 	}
 
@@ -346,8 +360,7 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		return builder.toString();
 	}
 
-	private ValueCorrespondence createValueCorrespondence(final String sourceNesting, final String sourceAttr, final String targetNesting,
-			final String targetAttr) {
+	private ValueCorrespondence createValueCorrespondence(final String sourceNesting, final String sourceAttr, final String targetNesting, final String targetAttr) {
 
 		final List<String> sourceSteps = new ArrayList<String>();
 		final List<String> targetSteps = new ArrayList<String>();
@@ -356,6 +369,20 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		sourceSteps.add(sourceAttr);
 		targetSteps.add(targetNesting);
 		targetSteps.add(targetAttr);
+
+		final PathExpression sourcePath = new PathExpression(sourceSteps);
+		final PathExpression targetPath = new PathExpression(targetSteps);
+
+		return new ValueCorrespondence(sourcePath, targetPath);
+	}
+	
+	private ValueCorrespondence createValueCorrespondence(final String source, final String target) {
+
+		final List<String> sourceSteps = new ArrayList<String>();
+		final List<String> targetSteps = new ArrayList<String>();
+
+		sourceSteps.add(source);
+		targetSteps.add(target);
 
 		final PathExpression sourcePath = new PathExpression(sourceSteps);
 		final PathExpression targetPath = new PathExpression(targetSteps);
@@ -403,6 +430,26 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		return pathList;
 	}
 
+	private List<ValueCorrespondence> createTransitiveValueCorrespondences() {
+		
+		List<ValueCorrespondence> transitiveValueCorrespondences = new ArrayList<ValueCorrespondence>();
+		for (String fk : this.foreignKeys.keySet()) {
+			String value = foreignKeys.get(fk).toString();
+			
+			for (ValueCorrespondence vc : this.valueCorrespondences) {
+				if (vc.getTargetPath().toString().equals(value)) {
+					
+					for (PathExpression pe : vc.getSourcePaths()) {
+						this.corr = this.createValueCorrespondence(pe.toString(), fk);
+						transitiveValueCorrespondences.add(this.corr);
+					}
+				}
+			}
+		}
+		
+		return transitiveValueCorrespondences;
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 

@@ -40,12 +40,24 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 		super.initParser(queryParser);
 	}
 	
-	private SopremoPlan getExpectedPlan() {
+	private SopremoPlan getExpectedPlanForTwoInputsAndTwoOutputs() {
 		
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
 		final SchemaMapping extract = new SchemaMapping().withInputs(input1, input2);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		expectedPlan.setSinks(output1, output2);
+		
+		return expectedPlan;
+	}
+	
+	private SopremoPlan getExpectedPlanForOneInputAndTwoOutputs() {
+		
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input = new Source("file://usCongressMembers.json");
+		final SchemaMapping extract = new SchemaMapping().withInputs(input);
 		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
 		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
@@ -71,7 +83,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForTwoInputsAndTwoOutputs();
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -94,7 +106,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForTwoInputsAndTwoOutputs();
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -118,7 +130,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForTwoInputsAndTwoOutputs();
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -142,7 +154,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForTwoInputsAndTwoOutputs();
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -164,7 +176,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForOneInputAndTwoOutputs();
 		
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -189,7 +201,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlan();
+		final SopremoPlan expectedPlan = getExpectedPlanForTwoInputsAndTwoOutputs();
 		
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
