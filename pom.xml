@@ -28,15 +28,18 @@
 			<artifactId>simmetrics</artifactId>
 			<version>1.6.2</version>
 		</dependency>
-		
+
 		<dependency>
-			<groupId>jep</groupId>
+			<groupId>org.nfunk</groupId>
 			<artifactId>jep</artifactId>
-			<version>2.24</version>
+			<version>2.4.0</version>
 		</dependency>
 
-		<!-- <dependency> <groupId>it.unibas</groupId> <artifactId>spicyEngine</artifactId> 
-			<version>1.0</version> <scope>provided</scope> </dependency> -->
+		<dependency>
+			<groupId>it.unibas</groupId>
+			<artifactId>spicyEngine</artifactId>
+			<version>1.0</version>
+		</dependency>
 
 		<dependency>
 			<groupId>eu.stratosphere</groupId>
@@ -72,6 +75,7 @@
 			<groupId>eu.stratosphere</groupId>
 			<artifactId>sopremo-common</artifactId>
 			<version>${sopremo.version}</version>
+			<scope>provided</scope>
 		</dependency>
 
 		<dependency>
@@ -92,20 +96,40 @@
 			<groupId>nl.jqno.equalsverifier</groupId>
 			<artifactId>equalsverifier</artifactId>
 			<version>1.3.1</version>
-			<type>jar</type>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
 	<repositories>
 		<repository>
-			<id>maven.mse.jhu.edu</id>
-			<name>JHU Maven Repository</name>
+			<id>jhu</id>
 			<url>http://maven.mse.jhu.edu/m2repository</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 		<repository>
 			<id>localRepo</id>
 			<url>file://${basedir}/localRepo</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>freehep</id>
+			<url>http://java.freehep.org/maven2</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
 		</repository>
 	</repositories>
 
@@ -125,6 +149,29 @@
 					<source>1.6</source>
 					<target>1.6</target>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.4</version>
+				<configuration>
+					<descriptors>
+						<descriptor>src/assemblies/jar-with-jars.xml</descriptor>
+					</descriptors>
+					<appendAssemblyId>false</appendAssemblyId>
+
+					<!-- <archive> <manifest> <mainClass>my.package.to.my.MainClass</mainClass> 
+						<addClasspath>true</addClasspath> </manifest> </archive> -->
+				</configuration>
+
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

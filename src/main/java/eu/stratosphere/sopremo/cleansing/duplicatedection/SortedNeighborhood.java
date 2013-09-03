@@ -14,10 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
-import java.util.List;
-
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking.DirectBlocking;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -61,7 +57,7 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 			 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void match(IJsonNode left, IJsonNode right, JsonCollector collector) {
+			protected void match(IJsonNode left, IJsonNode right, JsonCollector<IJsonNode> collector) {
 				this.pair.set(0, left);
 				this.pair.set(1, right);
 				if (this.condition.evaluate(this.pair) == BooleanNode.TRUE)

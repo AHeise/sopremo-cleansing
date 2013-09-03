@@ -12,24 +12,17 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing;
+package eu.stratosphere.sopremo.cleansing.fusion;
 
-import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
-import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
-
-import org.junit.Test;
-
-import eu.stratosphere.sopremo.type.TextNode;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Tests for StringUDFs
+ * @author Tommy Neubert
  */
-public class StringUDFsTest {
-
-	@Test
-	public void shouldRemoveAllStringOccurences() {
-		assertReturn(TextNode.valueOf("Foobar "),
-				StringUDFs.REMOVE_ALL_STRINGS, "Foobar Corporation",
-				createArrayNode("Corporation", "Corp", "Co"));
-	}
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface SingleOutputResolution {
 }

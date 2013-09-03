@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -51,6 +52,7 @@ public class DuplicateDetectionIT extends MeteorIT {
 		this.output = this.testServer.getOutputFile("output.json");
 	}
 
+	@Ignore
 	@Test
 	public void testNaive() throws IOException {
 

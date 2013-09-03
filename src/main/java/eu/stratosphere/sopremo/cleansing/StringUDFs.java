@@ -270,5 +270,4 @@ public class StringUDFs implements BuiltinProvider {
 			return TextNode.valueOf(inputString.toString().toUpperCase());
 		}
 	};
-
 }

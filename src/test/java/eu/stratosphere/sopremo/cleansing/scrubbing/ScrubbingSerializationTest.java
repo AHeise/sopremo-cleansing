@@ -8,7 +8,7 @@ public class ScrubbingSerializationTest extends SopremoOperatorTestBase<Scrubbin
 
 	@Override
 	protected Scrubbing createDefaultInstance(int index) {
-		ObjectCreation foovar = new ObjectCreation().addMapping("foobar"+index, new NonNullRule());
+		ObjectCreation foovar = new ObjectCreation().addMapping("foobar"+index, new NonNullConstraint());
 		Scrubbing scrubbingMock = new Scrubbing();
 		scrubbingMock.setRuleExpression(foovar);
 		return scrubbingMock;
