@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
@@ -27,7 +28,7 @@ import eu.stratosphere.sopremo.query.IConfObjectRegistry;
 /**
  * 
  */
-public class MeteorSchemaMappingTest extends MeteorParseTest {
+public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	
 	/*
 	 * (non-Javadoc)
@@ -36,7 +37,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 	@Override
 	protected void initParser(QueryParser queryParser) {
 		final IConfObjectRegistry<Operator<?>> operatorRegistry = queryParser.getPackageManager().getOperatorRegistry();
-		operatorRegistry.put(SchemaMapping.class);
+		operatorRegistry.put(EntityMapping.class);
 		super.initParser(queryParser);
 	}
 	
@@ -45,7 +46,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
-		final SchemaMapping extract = new SchemaMapping().withInputs(input1, input2);
+		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
 		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
 		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
@@ -57,7 +58,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 		
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file://usCongressMembers.json");
-		final SchemaMapping extract = new SchemaMapping().withInputs(input);
+		final EntityMapping extract = new EntityMapping().withInputs(input);
 		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
 		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
@@ -159,7 +160,8 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-//	@Test
+	@Ignore
+	@Test
 	public void testOneInputMultipleOutput() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
 			"$person, $legalEntity = map entities from $usCongressMembers\n" +

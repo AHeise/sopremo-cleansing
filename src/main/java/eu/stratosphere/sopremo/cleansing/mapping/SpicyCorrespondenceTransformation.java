@@ -14,7 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.createPath;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.FunctionGenerator;
 import it.unibas.spicy.model.generators.IValueGenerator;
@@ -45,10 +44,13 @@ import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
 /**
+ * Reads Spicy Correspondence, i.e. source attribute to target attribute and creates Sopremo transformation.
+ * Attributes can be nested (no arrays yet) and transformations can include functions.
+ * 
  * @author Andrina Mascher, Arvid Heise
  *
  */
-public class NestedProjectionFromTGD {
+public class SpicyCorrespondenceTransformation {
 	
 	private transient EvaluationContext context;
 
@@ -95,8 +97,10 @@ public class NestedProjectionFromTGD {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
-					sopremoSourcePath = skolemWorksFor();
+//					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					sopremoSourcePath = ConstantExpression.NULL;
+					
+					
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
 				}
@@ -165,24 +169,25 @@ public class NestedProjectionFromTGD {
 		}
 
 	private PathSegmentExpression createFunctionSourcePath(String pathFromFunction, List<VariablePathExpression> sourcePaths) {
-			//path = usCongress.usCongressBiographies.usCongressBiography.worksFor;
+			//e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;
 			String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
-	//		String[] pathFromFunctionStepsTrunc = Arrays.copyOfRange(pathFromFunctionSteps, 2, pathFromFunctionSteps.length);
-			
+	
 			//chose suitable sourcePath that matches pathFromFunction
-			//sourcePath[0] = v1.usCongressBiography.worksFor;
+			//e.g. sourcePath[0] = v1.usCongressBiography.worksFor;
 			for(VariablePathExpression exp : sourcePaths) {
-				if(exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length-1])) //TODO check!!!
-					return SchemaMappingUtil.convertSpicyPath("0", exp);
+				if(exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length-1])) 
+					return EntityMappingUtil.convertSpicyPath("0", exp);
 			}
 			return null;
 		}
-	
-	private EvaluationExpression skolemWorksFor() {
-		return createPath("v1", "biographyId"); //TODO //"v1", "biographyId_o"
-	}
 }
 
+/**
+ * used in nested attributes: path to target and how target is calculated
+ * 
+ * @author Andrina
+ *
+ */
 class TargetAttributeCreation {
 	List<String> targetPath;
 	IValueGenerator value;

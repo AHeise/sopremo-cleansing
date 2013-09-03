@@ -15,20 +15,31 @@ import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.mapping.MappingData;
 import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.PathExpression;
-import it.unibas.spicy.persistence.DAOException;
-import it.unibas.spicy.persistence.DAOMappingTaskTgds;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import eu.stratosphere.sopremo.cleansing.mapping.GeneratedSchemaMapping;
-import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
-public class MappingTaskFactory {
+public class SpicyMappingFactory {
 
 	boolean createConcat = false;
+	boolean createNesting = false;
 	
+	public static void main(String[] args) {
+		SpicyMappingFactory factory = new SpicyMappingFactory();
+		factory.setCreateConcat(true);
+		factory.create();
+	}
+	
+	public boolean isCreateNesting() {
+		return createNesting;
+	}
+
+	public void setCreateNesting(boolean createNesting) {
+		this.createNesting = createNesting;
+	}
+
 	public boolean isCreateConcat() {
 		return createConcat;
 	}
@@ -37,19 +48,15 @@ public class MappingTaskFactory {
 		this.createConcat = createConcat;
 	}
 
-	public static void main(String[] args) {
-		new MappingTaskFactory().create();
-	}
-
 	public MappingTask create() {
 
 		MappingTask task = createMappingTaskFromMeteorScript();
-		System.out.println(task);
+//		System.out.println(task);
 		
 		MappingData data = task.getMappingData();
-		System.out.println(data);
+//		System.out.println(data);
 		IAlgebraOperator tree = task.getMappingData().getAlgebraTree();
-		System.out.println(tree);	
+		SopremoUtil.LOG.debug("Generated Spicy Tree:\n" + tree);
 		
 		return task;
 	}
@@ -59,7 +66,7 @@ public class MappingTaskFactory {
 //		### soure and target
 		
 		INode sourceSchema = createSourceSchema();
-		INode targetSchema = createTargetSchema();
+		INode targetSchema = createNesting ? createNestedTargetSchema() : createTargetSchema();
 		String type = null; // "XML";
 		
 		DataSource source = new DataSource(type, sourceSchema);
@@ -134,10 +141,10 @@ public class MappingTaskFactory {
 		task.getSourceProxy().addJoinCondition(sourceJoinCondition);
 		task.getTargetProxy().addJoinCondition(targetJoinCondition);
 		
-		System.out.println("###\n" + sourceSchema.toShortString());
-		System.out.println("###\n" + targetSchema.toShortString());
-		System.out.println("###\n" + valueCorrespondences);
-		System.out.println("###\n" + task);
+//		System.out.println("###\n" + sourceSchema.toShortString());
+//		System.out.println("###\n" + targetSchema.toShortString());
+//		System.out.println("###\n" + valueCorrespondences);
+//		System.out.println("###\n" + task);
 		
 		return task;
 	}
@@ -195,7 +202,54 @@ public class MappingTaskFactory {
 		id.addChild(dummy);
 		id.setRequired(true); //TODO new
 		
-		INode name = new AttributeNode("nestedName"); //TODO nesting
+		INode name = new AttributeNode("name"); 
+		name.addChild(dummy);
+		
+		INode worksFor = new AttributeNode("worksFor");
+		worksFor.addChild(dummy);
+		 
+		INode person = new TupleNode("person");
+		person.addChild(id);
+		person.addChild(name); 
+		person.addChild(worksFor);
+		
+		INode persons = new SetNode("persons");
+		persons.addChild(person);
+		
+//		legalEntity
+		
+		INode id2 = new AttributeNode("id");
+		id2.addChild(dummy);
+		id2.setRequired(true);
+		INode name2 = new AttributeNode("name");
+		name2.addChild(dummy);
+		
+		INode legalEntity = new TupleNode("legalEntity");
+		legalEntity.addChild(id2);
+		legalEntity.addChild(name2);
+		
+		INode legalEntities = new SetNode("legalEntities");
+		legalEntities.addChild(legalEntity);
+		
+		INode usCongress = new TupleNode("usCongress");
+		usCongress.addChild(persons);
+		usCongress.addChild(legalEntities);
+		usCongress.setRoot(true);
+		
+		return usCongress;
+	}
+	
+	private INode createNestedTargetSchema() {
+		
+		INode dummy = new LeafNode("string");
+		
+//		person
+		
+		INode id = new AttributeNode("id");
+		id.addChild(dummy);
+		id.setRequired(true); //TODO new
+		
+		INode name = new AttributeNode("nestedName"); //nesting
 		name.addChild(dummy);
 		INode fullName = new TupleNode("fullName");
 		fullName.addChild(name);
@@ -205,7 +259,7 @@ public class MappingTaskFactory {
 		 
 		INode person = new TupleNode("person");
 		person.addChild(id);
-		person.addChild(fullName); //TODO nesting
+		person.addChild(fullName); //nesting
 		person.addChild(worksFor);
 		
 		INode persons = new SetNode("persons");
@@ -266,46 +320,66 @@ public class MappingTaskFactory {
 	
 	private List<ValueCorrespondence> createValueCorrespondences() {
 		
-		ValueCorrespondence c0 = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.id", "usCongress.persons.person.id");
-		ValueCorrespondence c1 = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.fullName.nestedName"); 
+		//draw arrows
 		ValueCorrespondence c2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.id");
 		ValueCorrespondence c3 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.name");
 		ValueCorrespondence c4 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
-
 		
+		String targetNamePath = createNesting ? "usCongress.persons.person.fullName.nestedName" : "usCongress.persons.person.name";
+		ValueCorrespondence nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", targetNamePath);
+		
+		ValueCorrespondence idCorrespondence;
+		if(createConcat) {
+			idCorrespondence = createValueCorrespondenceWithConcats("usCongress.usCongressMembers.usCongressMember.id", "usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.id"); 
+		} else {
+			idCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.id", "usCongress.persons.person.id"); 
+		}
+
 		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
-		valueCorrespondences.add(c0);
-		valueCorrespondences.add(c1); 
 		valueCorrespondences.add(c2);
 		valueCorrespondences.add(c3);
 		valueCorrespondences.add(c4);
+		valueCorrespondences.add(idCorrespondence);
+		valueCorrespondences.add(nameCorrespondence); 
 
 		return valueCorrespondences;
 	}
-	
+
 	private ValueCorrespondence createValueCorrespondence(String str1, String str2) {
-		
+
 		List<String> sourcePathSteps = new ArrayList<String>();
 		List<String> targetPathSteps = new ArrayList<String>();
-		
+
 		sourcePathSteps.add(str1);
 		targetPathSteps.add(str2);
-		
+
 		PathExpression sourcePath = new PathExpression(sourcePathSteps);
 		PathExpression targetPath = new PathExpression(targetPathSteps);
-		
-		ValueCorrespondence corr;
-		if(createConcat && str1.equals("usCongress.usCongressBiographies.usCongressBiography.worksFor")) {
-			//	Expression exp = new Expression("right(\""+str1+"\",3)");
-			Expression exp = new Expression(str1 + " + \"---\"");
 
-			//TODO read source paths from exp
-			List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
-			sourcePaths.add(sourcePath);
-			corr = new ValueCorrespondence(sourcePaths, targetPath, exp);
-		} else {		
-			corr = new ValueCorrespondence(sourcePath, targetPath);
-		}
+		ValueCorrespondence	corr = new ValueCorrespondence(sourcePath, targetPath);
+
+		return corr;
+	}	
+		
+	private ValueCorrespondence createValueCorrespondenceWithConcats(String str1a, String str1b, String str2) {
+		
+		List<String> sourcePathStepsA = new ArrayList<String>();
+		List<String> sourcePathStepsB = new ArrayList<String>();
+		sourcePathStepsA.add(str1a);
+		sourcePathStepsB.add(str1b);
+		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
+		PathExpression sourcePathB = new PathExpression(sourcePathStepsB);
+		List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
+		sourcePaths.add(sourcePathA);
+		sourcePaths.add(sourcePathB);
+
+		List<String> targetPathSteps = new ArrayList<String>();
+		targetPathSteps.add(str2);
+		PathExpression targetPath = new PathExpression(targetPathSteps);
+		
+		String dashes = "\"---\"";
+		Expression exp = new Expression(str1a + " +" + dashes + " + " + str1b);
+		ValueCorrespondence	corr = new ValueCorrespondence(sourcePaths, targetPath, exp); //2 source paths, 1 target path
 		
 		return corr;
 	}

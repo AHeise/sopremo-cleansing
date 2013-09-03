@@ -12,11 +12,11 @@ import org.junit.Test;
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 
-public class GeneratedSchemaMappingFromTGDFileTest extends SopremoOperatorTestBase<GeneratedSchemaMapping> {
+public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTestBase<SpicyMappingTransformation> {
+	
 	@Override
-	protected GeneratedSchemaMapping createDefaultInstance(final int index) {
-		return new GeneratedSchemaMapping();
-		//setter, e.g. condition
+	protected SpicyMappingTransformation createDefaultInstance(final int index) {
+		return new SpicyMappingTransformation();
 	}
 	
 	@Ignore
@@ -40,7 +40,7 @@ public class GeneratedSchemaMappingFromTGDFileTest extends SopremoOperatorTestBa
 			e.printStackTrace();
 		}
 		
-		GeneratedSchemaMapping mapping = new GeneratedSchemaMapping(); 
+		SpicyMappingTransformation mapping = new SpicyMappingTransformation(); 
 		mapping.setMappingTask(task);
 		mapping.setInputIndex(inputIndex);
 		mapping.setOutputIndex(outputIndex);

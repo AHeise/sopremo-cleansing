@@ -28,7 +28,7 @@ import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
  * @author Andrina Mascher, Arvid Heise
  *
  */
-public class SchemaMappingUtil {
+public class EntityMappingUtil {
 
 	public static PathSegmentExpression convertSpicyPath(String inputIndex, VariablePathExpression spicyPath) {
 		/* e.g. spicyPath 					= 	v0.usCongressMember.biography
