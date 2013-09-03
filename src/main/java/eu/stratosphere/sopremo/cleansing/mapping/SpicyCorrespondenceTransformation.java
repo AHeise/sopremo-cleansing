@@ -54,16 +54,6 @@ public class SpicyCorrespondenceTransformation {
 	
 	private transient EvaluationContext context;
 
-//	public transient final java.util.Comparator<PathExpression> pathComparator = new Comparator<PathExpression>() {
-//		 public int compare(final PathExpression o1, final PathExpression o2) {
-//	            return o1.toString().compareTo(o2.toString());
-//	     } 
-//	};
-//	
-//	public java.util.Comparator<PathExpression> getPathComparator() {
-//		return pathComparator;
-//	}
-
 	public EvaluationContext getContext() {
 		return context;
 	}
@@ -99,8 +89,6 @@ public class SpicyCorrespondenceTransformation {
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
 //					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
 					sopremoSourcePath = ConstantExpression.NULL;
-					
-					
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
 				}

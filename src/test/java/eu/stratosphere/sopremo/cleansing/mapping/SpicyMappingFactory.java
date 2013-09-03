@@ -194,7 +194,7 @@ public class SpicyMappingFactory {
 	
 	private INode createTargetSchema() {
 		
-		INode dummy = new LeafNode("string");
+		INode dummy = new LeafNode("stringDummy");
 		
 //		person
 		
