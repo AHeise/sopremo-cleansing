@@ -39,8 +39,6 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 			e.printStackTrace();
 		}
 		
-		System.out.println(task.getMappingData().getAlgebraTree());
-		
 		SpicyMappingTransformation mapping = new SpicyMappingTransformation(); 
 		mapping.setMappingTask(task);
 		mapping.setInputIndex(inputIndex);
@@ -89,8 +87,6 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 		} catch (DAOException e) {
 			e.printStackTrace();
 		}
-		
-		System.out.println(task.getMappingData().getAlgebraTree());
 		
 		SpicyMappingTransformation mapping = new SpicyMappingTransformation(); 
 		mapping.setMappingTask(task);

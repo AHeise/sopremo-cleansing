@@ -4,6 +4,7 @@ import it.unibas.spicy.model.mapping.MappingTask;
 
 import java.util.HashMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.CoreFunctions;
@@ -28,9 +29,8 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMapping() {
 
-		MappingTask taskFactory = new SpicyMappingFactory().create();
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory);
-
+		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory.create());
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 		sopremoPlan
@@ -152,7 +152,7 @@ public class SpicyMappingTransformationTest extends
 				.addObject("id", "CompanyABC", "name", "CompanyABC")
 				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
-		// sopremoPlan.trace();
+		sopremoPlan.trace();
 		sopremoPlan.run();
 	}
 
