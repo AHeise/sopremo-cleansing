@@ -29,7 +29,7 @@ import com.google.common.io.Files;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Grouping;
-import eu.stratosphere.sopremo.cleansing.mapping.SchemaMapping.SchemaMappingSerializer;
+import eu.stratosphere.sopremo.cleansing.mapping.EntityMapping.SchemaMappingSerializer;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
@@ -54,13 +54,13 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
 @InputCardinality(2)	// TODO: @InputCardinality(min = 1, max = Integer.MAX_VALUE)
 @OutputCardinality(2)	// TODO: @OutputCardinality(min = 1, max = Integer.MAX_VALUE)
 @DefaultSerializer(SchemaMappingSerializer.class)
-public class SchemaMapping extends CompositeOperator<SchemaMapping> {
-	public static class SchemaMappingSerializer extends Serializer<SchemaMapping> {
+public class EntityMapping extends CompositeOperator<EntityMapping> {
+	public static class SchemaMappingSerializer extends Serializer<EntityMapping> {
 
 		@Override
-		public SchemaMapping read(final Kryo kryo, final Input input, final Class<SchemaMapping> type) {
+		public EntityMapping read(final Kryo kryo, final Input input, final Class<EntityMapping> type) {
 
-			SchemaMapping schemaMapping = (SchemaMapping) kryo.getRegistration(SchemaMapping.class.getSuperclass()).getSerializer().read(kryo, input, SchemaMapping.class);
+			EntityMapping schemaMapping = (EntityMapping) kryo.getRegistration(EntityMapping.class.getSuperclass()).getSerializer().read(kryo, input, EntityMapping.class);
 			try {
 				final DAOMappingTaskTgds tgds = new DAOMappingTaskTgds();
 				final File filePath = File.createTempFile("mapping", ".tgd");
@@ -76,9 +76,9 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		}
 
 		@Override
-		public void write(final Kryo kryo, final com.esotericsoftware.kryo.io.Output output, final SchemaMapping schemaMapping) {
+		public void write(final Kryo kryo, final com.esotericsoftware.kryo.io.Output output, final EntityMapping schemaMapping) {
 
-			kryo.getRegistration(SchemaMapping.class.getSuperclass()).getSerializer().write(kryo, output, schemaMapping);
+			kryo.getRegistration(EntityMapping.class.getSuperclass()).getSerializer().write(kryo, output, schemaMapping);
 			try {
 				// final DAOMappingTaskLines lines = new DAOMappingTaskLines();
 				final DAOMappingTaskTgds tgds = new DAOMappingTaskTgds();
@@ -94,9 +94,9 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		}
 
 		@Override
-		public SchemaMapping copy(final Kryo kryo, final SchemaMapping original) {
+		public EntityMapping copy(final Kryo kryo, final EntityMapping original) {
 			
-			SchemaMapping schemaMapping = new SchemaMapping();
+			EntityMapping schemaMapping = new EntityMapping();
 			try {
 				final DAOMappingTaskTgds tgds = new DAOMappingTaskTgds();
 				final File filePath = File.createTempFile("mapping", ".tgd");
@@ -121,7 +121,6 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 	private final String idStr = "id";
 	private final String inputPrefixStr = "in";
 	private String classStr;
-	private boolean DEBUG = true;
 
 	INode dummy = new LeafNode("dummy");
 	INode sourceAttr;
@@ -276,7 +275,7 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 			this.mappingTask.getTargetProxy().addJoinCondition(cond);
 		}
 		
-		if (DEBUG) System.out.println("mapping task:\n" + this.mappingTask);
+		SopremoUtil.LOG.debug("mapping task:\n" + this.mappingTask);
 	}
 
 	private int getNumberOfInputs(final ArrayCreation assignment) {
@@ -463,12 +462,12 @@ public class SchemaMapping extends CompositeOperator<SchemaMapping> {
 		SopremoUtil.trace();
 		final MappingData data = this.mappingTask.getMappingData();
 		final IAlgebraOperator tree = data.getAlgebraTree();
-		if (DEBUG) System.out.println(tree);
+		SopremoUtil.LOG.debug("generated spicy mapping tree:\n" + tree);
 
-		final GeneratedSchemaMapping sopremoOperator = new GeneratedSchemaMapping();
+		final SpicyMappingTransformation sopremoOperator = new SpicyMappingTransformation();
 		sopremoOperator.setMappingTask(this.mappingTask);
 
-		//TODO: loop
+		//TODO: create loop
 		final HashMap<String, Integer> inputIndex = new HashMap<String, Integer>(2);
 		inputIndex.put("entities_in0", 0);
 		inputIndex.put("entities_in1", 1);

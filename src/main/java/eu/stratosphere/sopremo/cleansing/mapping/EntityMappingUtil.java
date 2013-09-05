@@ -28,7 +28,7 @@ import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
  * @author Andrina Mascher, Arvid Heise
  *
  */
-public class SchemaMappingUtil {
+public class EntityMappingUtil {
 
 	public static PathSegmentExpression convertSpicyPath(String inputIndex, VariablePathExpression spicyPath) {
 		/* e.g. spicyPath 					= 	v0.usCongressMember.biography
@@ -42,7 +42,7 @@ public class SchemaMappingUtil {
 		if( inputIndex!=null ) {
 			pathSteps.add( inputIndex ); //needed for multiple input operator e.g. join input 0 or 1
 		} else {
-			pathSteps.add( "0" ); //TODO test
+			pathSteps.add( "0" ); 
 		}
 		pathSteps.add( getSourceId(spicyPath.getStartingVariable()) ); //e.g. v0
 	
@@ -54,6 +54,6 @@ public class SchemaMappingUtil {
 	}
 	
 	public static String getSourceId(SetAlias setAlias) { 
-		return "v"+ setAlias.getId(); //e.g. "v0"
+		return "v"+ setAlias.getId(); //e.g. "v0" as used by spicy
 	}
 }

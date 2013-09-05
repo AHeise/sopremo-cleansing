@@ -111,7 +111,7 @@ public class JepFunctionFactory {
 				if (exp.getLastStep()
 						.equals(pathFromFunctionSteps[pathFromFunctionSteps.length - 1])) // TODO
 																							// check!!!
-					return SchemaMappingUtil.convertSpicyPath("0", exp);
+					return EntityMappingUtil.convertSpicyPath("0", exp);
 			}
 			return null;
 		}

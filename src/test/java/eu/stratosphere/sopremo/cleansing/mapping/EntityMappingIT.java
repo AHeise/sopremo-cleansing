@@ -26,7 +26,7 @@ import org.junit.Test;
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 
-public class SchemaMappingIT extends MeteorIT {
+public class EntityMappingIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
 
 	@Before

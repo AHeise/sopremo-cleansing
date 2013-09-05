@@ -60,11 +60,13 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
+ * Reads a Spicy MappingTask and create Sopremo Operator
+ * 
  * @author Andrina Mascher, Arvid Heise
  */
 @InputCardinality(2)
 @OutputCardinality(2)
-public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMapping> {
+public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTransformation> {
 
 	private transient SopremoModule module;
 	//the mapping task holds tgds and schema information
@@ -80,7 +82,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 	private HashMap<String, Projection> reuseProjections = null;
 	//to reuse joins and antijoins by their spicy id
 	private HashMap<String, TwoSourceJoin> reuseJoins = null; 
-	NestedProjectionFromTGD nestedProjection = null;
+	SpicyCorrespondenceTransformation correspondenceTransformation = null;
 	
 	public HashMap<String, Integer> getInputIndex() {
 		return inputIndex;
@@ -107,57 +109,31 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 	}
 	
 	/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
-		 */
-		@Override
-		public void addImplementation(SopremoModule module, EvaluationContext context) {
-			
-			if(mappingTask == null) {
-				throw new IllegalStateException("MappingGenerator needs mappingTask with TGDs");
-			}
-			if(inputIndex == null || outputIndex == null) {
-				throw new IllegalStateException("MappingGenerator needs inputIndex and outputIndex");
-			}
-			
-			//init
-			this.module = module; 
-			nestedProjection = new NestedProjectionFromTGD();
-			nestedProjection.setContext(context);
-			reuseProjections = new HashMap<String, Projection>(inputIndex.size()); 
-			reuseJoins = new HashMap<String, TwoSourceJoin>(4); 
-			tgdIndex = new HashMap<String, FORule>();
-			for(FORule tgd : this.mappingTask.getMappingData().getRewrittenRules()) {
-				tgdIndex.put(tgd.getId(), tgd);
-			}
-			IAlgebraOperator tree = mappingTask.getMappingData().getAlgebraTree(); //tree contains rewritten tgd rules
-			processTree(tree); 
-			
-			
-			//build exemplary sopremoPlan
-//			Compose compose = (Compose) tree; //pick attributes for every target sink, always root
-//			Operator<?> union = processChild(tree.getChildren().get(0));
-//			Merge merge = (Merge) compose.getChildren().get(0); //collect all attributes, always 1 child only
-//			
-//			//nest_v2
-//			Operator<?> transform_0 = processChild(merge.getChildren().get(0)); //nest_v2
-//			Nest nest_v2 = (Nest) merge.getChildren().get(0);  //rename attributes according to TGD
-//			Project project = (Project) nest_v2.getChildren().get(0); //select attributes from source
-//			Operator<?> antiJoin = processChild(project.getChildren().get(0));	//TODO play with cardinalities. is it always solved as Difference?
-//			it.unibas.spicy.model.algebra.Difference difference = (it.unibas.spicy.model.algebra.Difference) project.getChildren().get(0);
-//			Operator<?> join = processChild(difference.getChildren().get(1));
-//						
-//			//nest_v2v3
-//			Operator<?> transform_1 = processChild(merge.getChildren().get(1)); //nest_v2v3
-//			Nest nest_v2v3 = (Nest) merge.getChildren().get(1);  //further includes project and same join
-//			
-//			
-//			module.getOutput(0).setInput(0, join);
-//			module.getOutput(0).setInput(0, antiJoin);
-//			module.getOutput(0).setInput(0, transform_0);
-//			module.getOutput(0).setInput(0, transform_1);
-//			module.getOutput(0).setInput(0, union);
-			
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
+	 */
+	@Override
+	public void addImplementation(SopremoModule module, EvaluationContext context) {
+
+		if(mappingTask == null) {
+			throw new IllegalStateException("MappingGenerator needs mappingTask with TGDs");
+		}
+		if(inputIndex == null || outputIndex == null) {
+			throw new IllegalStateException("MappingGenerator needs inputIndex and outputIndex");
+		}
+
+		//init
+		this.module = module; 
+		correspondenceTransformation = new SpicyCorrespondenceTransformation();
+		correspondenceTransformation.setContext(context);
+		reuseProjections = new HashMap<String, Projection>(inputIndex.size()); 
+		reuseJoins = new HashMap<String, TwoSourceJoin>(4); 
+		tgdIndex = new HashMap<String, FORule>();
+		for(FORule tgd : this.mappingTask.getMappingData().getRewrittenRules()) {
+			tgdIndex.put(tgd.getId(), tgd);
+		}
+		IAlgebraOperator tree = mappingTask.getMappingData().getAlgebraTree(); //tree contains rewritten tgd rules
+		processTree(tree); 			
 	}
 
 	private Operator<?> processChild(IAlgebraOperator treeElement) {
@@ -213,7 +189,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
 		for(Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping.entrySet()) {
 			//		Entry<SetAlias, List<Operator<?>>> targetInput = (Entry<SetAlias, List<Operator<?>>>) targetInputMapping.entrySet().iterator().next();
-			String targetName = SchemaMappingUtil.getSourceId(targetInput.getKey()); 
+			String targetName = EntityMappingUtil.getSourceId(targetInput.getKey()); 
 
 			UnionAll unionAll = new UnionAll().withInputs(targetInput.getValue());
 
@@ -230,10 +206,10 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 			String targetName = entry.getKey().getAbsoluteBindingPathExpression().getPathSteps().get(1);
 			
 			int i = outputIndex.get(targetName);
-			System.out.println("output " + outputIndex.get(targetName) + " is " + targetName);
+			SopremoUtil.LOG.debug("output " + outputIndex.get(targetName) + " is " + targetName);
 			module.getOutput(i).setInput(0, entry.getValue());
 		}
-		System.out.println(module);
+		SopremoUtil.LOG.debug("generated schema mapping module:\n " + module);
 	}
 		
 	private List<SetAlias> getTargetsOfTGD(Nest nest) {
@@ -245,7 +221,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		Operator<?> child = processChild( project.getChildren().get(0) );
 		
 		ObjectCreation objectCreationForTargets = new ObjectCreation();
-		//rename attributes according to TGD
+		/*rename attributes according to TGD
 		//we need to add mappings to objectCreation like this:
 //		addMapping("v3", new ObjectCreation(). 
 //			aeddMapping("id", createPath("v1", "id_old")). 
@@ -255,6 +231,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 //			addMapping("id", skolemWorksFor() ). 
 //			addMapping("name", createPath("v0", "worksFor_old"))
 //		);	
+		 */
 
 		TGDGeneratorsMap generators = nest.getGenerators();
 		for(SetAlias setAlias : getTargetsOfTGD(nest)) { //generate source-to-target mapping for v2 or v3 and add to projection
@@ -267,8 +244,8 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 					continue;
 				st_map.put(spicyTargetPath, tgdAttribute.getValue()); //("fullname.firstname", createPath("v0", "old_name")) 
 			}		
-			ObjectCreation objectVi = nestedProjection.createNestedObjectFromSpicyPaths(st_map, setAlias);
-			objectCreationForTargets.addMapping( SchemaMappingUtil.getSourceId(setAlias), objectVi); //e.g. v3, {target-attributes}
+			ObjectCreation objectVi = correspondenceTransformation.createNestedObjectFromSpicyPaths(st_map, setAlias);
+			objectCreationForTargets.addMapping( EntityMappingUtil.getSourceId(setAlias), objectVi); //e.g. v3, {target-attributes}
 		}
 				
 		Projection tgd = new Projection().
@@ -290,9 +267,9 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		TwoSourceJoin antiJoin = new TwoSourceJoin().
 				withInputs(child0, child1).
 				withCondition( new ElementInSetExpression(
-						SchemaMappingUtil.convertSpicyPath("0", difference.getLeftPaths().get(0)) , //TODO can we have multiple conditions?
+						EntityMappingUtil.convertSpicyPath("0", difference.getLeftPaths().get(0)) , //TODO can we have multiple conditions?
 						Quantor.EXISTS_NOT_IN, 
-						SchemaMappingUtil.convertSpicyPath("1", difference.getRightPaths().get(0)) ));
+						EntityMappingUtil.convertSpicyPath("1", difference.getRightPaths().get(0)) ));
 		
 		reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -311,13 +288,13 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		ArrayCreation arrayLeft = new ArrayCreation();
 		for(VariableCorrespondence varCor : difference.getLeftCorrespondences()) {
 			for(VariablePathExpression path : varCor.getSourcePaths()) {
-				arrayLeft.add( SchemaMappingUtil.convertSpicyPath("0", path) ); 
+				arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) ); 
 			}
 		}
 		ArrayCreation arrayRight = new ArrayCreation();
 		for(VariableCorrespondence varCor : difference.getRightCorrespondences()) {
 			for(VariablePathExpression path : varCor.getSourcePaths()) {
-				arrayRight.add( SchemaMappingUtil.convertSpicyPath("1", path) ); 
+				arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) ); 
 			}			
 		}
 		
@@ -341,9 +318,9 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
 				withInputs(child0, child1). 
 				withCondition(new ComparativeExpression(
-						SchemaMappingUtil.convertSpicyPath("0", spicyJoin.getJoinCondition().getFromPaths().get(0)), //TODO multiple join paths?
+						EntityMappingUtil.convertSpicyPath("0", spicyJoin.getJoinCondition().getFromPaths().get(0)), //TODO multiple join paths?
 						BinaryOperator.EQUAL, 
-						SchemaMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))  
+						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))  
 				));
 		
 		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
@@ -387,7 +364,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 	private Operator<?> processUnnest(IAlgebraOperator treeElement) {
 		Unnest unnest = (Unnest) treeElement; //e.g. "unnest v0 in usCongress.usCongressMembers"
 		SetAlias sourceAlias = unnest.getVariable(); 
-		String sourceId = SchemaMappingUtil.getSourceId(sourceAlias); //v0
+		String sourceId = EntityMappingUtil.getSourceId(sourceAlias); //v0
 		String sourceName = sourceAlias.getBindingPathExpression().getLastStep();  //usCongressMembers
 		//TODO can path be nested further? 
 		
@@ -402,7 +379,7 @@ public class GeneratedSchemaMapping extends CompositeOperator<GeneratedSchemaMap
 						).
 				withInputs( module.getInput(inputIndex.get(sourceName)) );
 		
-		System.out.println("Source Projection from: " + unnest.toString() + " reads input named " + sourceName + " at input index " + inputIndex.get(sourceName));
+		SopremoUtil.LOG.debug("Source Projection from: " + unnest.toString() + " reads input named " + sourceName + " at input index " + inputIndex.get(sourceName));
 		
 		reuseProjections.put(sourceId, projection);
 		return projection;
