@@ -131,7 +131,45 @@ public class SpicyMappingTransformationTest extends SopremoOperatorTestBase<Spic
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
-	}	
+	}
+	
+	@Test
+	public void shouldPerformMappingWithSubstring() {
+		
+		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		taskFactory.setCreateSubstring(true);
+		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory.create()); 
+		
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping); 
+		final EvaluationContext context = sopremoPlan.getEvaluationContext();
+		context.getFunctionRegistry().put(CoreFunctions.class);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+		sopremoPlan.getInput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029").
+			addObject("id", "usCongress2", "name", "John Adams", "biography", "A000039").
+			addObject("id", "usCongress3", "name", "John Doe", "biography", "A000059");
+		sopremoPlan.getInput(1).
+			addObject("biographyId", "A000029", "worksFor", "CompanyXYZ").
+			addObject("biographyId", "A000059", "worksFor", "CompanyUVW").
+			addObject("biographyId", "A000049", "worksFor", "CompanyABC");
+
+		sopremoPlan.getExpectedOutput(0).
+		add(new ObjectNode().put("id", TextNode.valueOf("usCongress1")).
+							put("name", TextNode.valueOf("An")).
+							put("worksFor", TextNode.valueOf("CompanyXYZ"))
+			).	
+		add(new ObjectNode().put("id", TextNode.valueOf("usCongress3")).
+							put("name", TextNode.valueOf("Jo")).
+							put("worksFor", TextNode.valueOf("CompanyUVW"))
+			);
+		sopremoPlan.getExpectedOutput(1).
+		addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+		addObject("id", "CompanyABC", "name", "CompanyABC").
+		addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		sopremoPlan.trace();
+		sopremoPlan.run();
+	}
 	
 	private SpicyMappingTransformation generateSopremoPlan(MappingTask task) {
 		SpicyMappingTransformation plan = new SpicyMappingTransformation();

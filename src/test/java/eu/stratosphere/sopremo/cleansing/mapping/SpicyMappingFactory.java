@@ -25,7 +25,7 @@ public class SpicyMappingFactory {
 
 	boolean createConcat = false;
 	boolean createNesting = false;
-	boolean createList = false;
+	boolean createSubstring = false;
 	
 	public static void main(String[] args) {
 		SpicyMappingFactory factory = new SpicyMappingFactory();
@@ -41,12 +41,12 @@ public class SpicyMappingFactory {
 		this.createNesting = createNesting;
 	}
 
-	public void setCreateList(boolean createList) {
-		this.createList = createList;
+	public void setCreateSubstring(boolean createSubstring) {
+		this.createSubstring = createSubstring;
 	}
 	
-	public boolean isCreateList() {
-		return this.createList;
+	public boolean isCreateSubstring() {
+		return this.createSubstring;
 	}
 	
 	public boolean isCreateConcat() {
@@ -334,12 +334,18 @@ public class SpicyMappingFactory {
 		ValueCorrespondence c3 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.name");
 		ValueCorrespondence c4 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
 		
-		String targetNamePath = createNesting ? "usCongress.persons.person.fullName.nestedName" : "usCongress.persons.person.name";
-		ValueCorrespondence nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", targetNamePath);
+		ValueCorrespondence nameCorrespondence;
+		if(createNesting) {
+			nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.fullName.nestedName");
+		} else if(createSubstring) {
+			nameCorrespondence = createValueCorrespondenceWithSubstring("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.name");
+		} else {
+			nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.name");
+		}
 		
 		ValueCorrespondence idCorrespondence;
 		if(createConcat) {
-			idCorrespondence = createValueCorrespondenceWithConcats("usCongress.usCongressMembers.usCongressMember.id", "usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.id"); 
+			idCorrespondence = createValueCorrespondenceWithConcats("usCongress.usCongressMembers.usCongressMember.id", "usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.id"); 	
 		} else {
 			idCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.id", "usCongress.persons.person.id"); 
 		}
@@ -388,6 +394,23 @@ public class SpicyMappingFactory {
 		
 		String dashes = "\"---\"";
 		Expression exp = new Expression(str1a + " +" + dashes + " + " + str1b);
+		ValueCorrespondence	corr = new ValueCorrespondence(sourcePaths, targetPath, exp); //2 source paths, 1 target path
+		
+		return corr;
+	}
+	
+	private ValueCorrespondence createValueCorrespondenceWithSubstring(String source, String target) {
+		List<String> sourcePathStepsA = new ArrayList<String>();
+		sourcePathStepsA.add(source);
+		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
+		List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
+		sourcePaths.add(sourcePathA);
+
+		List<String> targetPathSteps = new ArrayList<String>();
+		targetPathSteps.add(target);
+		PathExpression targetPath = new PathExpression(targetPathSteps);
+		
+		Expression exp = new Expression("substring(" + source + ", 2)");
 		ValueCorrespondence	corr = new ValueCorrespondence(sourcePaths, targetPath, exp); //2 source paths, 1 target path
 		
 		return corr;
