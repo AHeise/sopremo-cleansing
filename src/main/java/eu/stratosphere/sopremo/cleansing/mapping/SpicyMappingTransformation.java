@@ -401,7 +401,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		if(reuseProjections.containsKey(sourceId))
 			return reuseProjections.get(sourceId);	
 		
-		//TODO unnest can have selectionCondition and provenanceCondition, research what is this
+		//TODO unnest can have selectionCondition and provenanceCondition, research: what is this
 		
 		Projection projection = new Projection().
 				withResultProjection(new ObjectCreation().

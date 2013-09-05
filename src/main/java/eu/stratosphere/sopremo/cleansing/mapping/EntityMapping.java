@@ -467,7 +467,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		final SpicyMappingTransformation sopremoOperator = new SpicyMappingTransformation();
 		sopremoOperator.setMappingTask(this.mappingTask);
 
-		//TODO: create loop
+		//TODO: create loop and arbitrary input/output cardinality
 		final HashMap<String, Integer> inputIndex = new HashMap<String, Integer>(2);
 		inputIndex.put("entities_in0", 0);
 		inputIndex.put("entities_in1", 1);
