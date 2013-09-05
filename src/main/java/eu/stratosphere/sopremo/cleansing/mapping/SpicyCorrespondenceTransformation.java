@@ -21,6 +21,7 @@ import it.unibas.spicy.model.generators.NullValueGenerator;
 import it.unibas.spicy.model.generators.SkolemFunctionGenerator;
 import it.unibas.spicy.model.paths.PathExpression;
 import it.unibas.spicy.model.paths.SetAlias;
+import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
 import java.util.ArrayList;
@@ -74,6 +75,16 @@ public class SpicyCorrespondenceTransformation {
 		return createdNestedObject(map);
 	}
 	
+	public ObjectCreation createNestedObjectFromSpicyPaths(List<VariableCorrespondence> correspondences) {
+		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
+		for(VariableCorrespondence varCor : correspondences) {
+			List<String> targetPathList = EntityMappingUtil.getRelevantPathSteps(varCor.getTargetPath()); //split target and add first as key to map e.g. [v3,fullname,name]
+			Expression function = varCor.getTransformationFunction();	//includes source paths e.g. [v4.usCongressBiographies.usCongressBiography.worksFor]
+			addTargetAttributeCreationToMap(map, targetPathList, new FunctionGenerator(function));
+		}
+		return createdNestedObject(map);
+	}
+	
 	public ObjectCreation createdNestedObject(Map<String, List<TargetAttributeCreation>> map) {
 		ObjectCreation object = new ObjectCreation();
 		for(Entry<String, List<TargetAttributeCreation>> entry : map.entrySet()) {
@@ -87,7 +98,7 @@ public class SpicyCorrespondenceTransformation {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-//					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
 					sopremoSourcePath = ConstantExpression.NULL;
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
@@ -181,7 +192,7 @@ public class SpicyCorrespondenceTransformation {
  */
 class TargetAttributeCreation {
 	List<String> targetPath;
-	IValueGenerator value;
+	IValueGenerator value; //includes function (e.g. + or split) and source paths
 	
 	public List<String> getTargetPath() {
 		return targetPath;
