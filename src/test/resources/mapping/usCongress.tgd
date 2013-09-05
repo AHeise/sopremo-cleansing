@@ -1,0 +1,28 @@
+Mapping task:
+Source schema: 		generate
+Source instance:	generate
+Target schema:		generate
+
+SOURCE TO TARGET TGDs:
+uscongressMembers(id_o: $x35, name_o: $x36, biography_o: $x38), 
+uscongressBiographies(biographyId_o: $x38, worksFor_o: $x37) -> 
+       persons(id: $x35, name: $x36, worksFor: $x37).
+       
+uscongressMembers(id_o: $x35, name_o: $x36, biography_o: $x38), 
+uscongressBiographies(biographyId_o: $x38, worksFor_o: $x37) -> 
+       legalEntities(id: $x37, name: $x37). 
+
+SOURCE INSTANCE:
+uscongressMembers(id_o: "usCongress1",   name_o: "Andrew Adams",   biography_o: "A000029")
+uscongressMembers(id_o: "usCongress2",   name_o: "John Adams",   biography_o: "A000039")
+uscongressBiographies(biographyId_o: "A000029",   worksFor_o: "CompanyXYZ")
+uscongressBiographies(biographyId_o: "A000039",   worksFor_o: "CompanyABC")
+
+CONFIG:
+NOREWRITING: 1
+OVERLAPS: 0
+SKOLEMSFOREGDS: 0
+SKOLEMSTRINGS: 0
+LOCALSKOLEMS: 0
+SORTSTRATEGY: -1
+SKOLEMTABLESTRATEGY: -1

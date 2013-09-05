@@ -14,7 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.createPath;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.FunctionGenerator;
 import it.unibas.spicy.model.generators.IValueGenerator;
@@ -22,6 +21,7 @@ import it.unibas.spicy.model.generators.NullValueGenerator;
 import it.unibas.spicy.model.generators.SkolemFunctionGenerator;
 import it.unibas.spicy.model.paths.PathExpression;
 import it.unibas.spicy.model.paths.SetAlias;
+import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
 import java.util.ArrayList;
@@ -37,30 +37,21 @@ import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
 /**
+ * Reads Spicy Correspondence, i.e. source attribute to target attribute and creates Sopremo transformation.
+ * Attributes can be nested (no arrays yet) and transformations can include functions.
+ * 
  * @author Andrina Mascher, Arvid Heise
  *
  */
-public class NestedProjectionFromTGD {
+public class SpicyCorrespondenceTransformation {
 	
 	private transient EvaluationContext context;
-
-//	public transient final java.util.Comparator<PathExpression> pathComparator = new Comparator<PathExpression>() {
-//		 public int compare(final PathExpression o1, final PathExpression o2) {
-//	            return o1.toString().compareTo(o2.toString());
-//	     } 
-//	};
-//	
-//	public java.util.Comparator<PathExpression> getPathComparator() {
-//		return pathComparator;
-//	}
 
 	public EvaluationContext getContext() {
 		return context;
@@ -82,6 +73,16 @@ public class NestedProjectionFromTGD {
 		return createdNestedObject(map);
 	}
 	
+	public ObjectCreation createNestedObjectFromSpicyPaths(List<VariableCorrespondence> correspondences) {
+		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
+		for(VariableCorrespondence varCor : correspondences) {
+			List<String> targetPathList = EntityMappingUtil.getRelevantPathSteps(varCor.getTargetPath()); //split target and add first as key to map e.g. [v3,fullname,name]
+			Expression function = varCor.getTransformationFunction();	//includes source paths e.g. [v4.usCongressBiographies.usCongressBiography.worksFor]
+			addTargetAttributeCreationToMap(map, targetPathList, new FunctionGenerator(function));
+		}
+		return createdNestedObject(map);
+	}
+	
 	public ObjectCreation createdNestedObject(Map<String, List<TargetAttributeCreation>> map) {
 		ObjectCreation object = new ObjectCreation();
 		for(Entry<String, List<TargetAttributeCreation>> entry : map.entrySet()) {
@@ -95,8 +96,8 @@ public class NestedProjectionFromTGD {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
-					sopremoSourcePath = skolemWorksFor();
+					SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					sopremoSourcePath = ConstantExpression.NULL;
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
 				}
@@ -137,55 +138,36 @@ public class NestedProjectionFromTGD {
 		if(topNode instanceof ASTVarNode ) { //usual 1:1-mapping without a function
 			return createFunctionSourcePath( ((ASTVarNode) topNode).getVarName(), sourcePaths ); 
 		} else if(topNode instanceof ASTFunNode ) { //uses a function
-			return createFunctionExpression( (ASTFunNode) topNode, sourcePaths);
+			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths, this.context);
 		} else if(topNode instanceof ASTConstant) {
 			return new ConstantExpression( ((ASTConstant) topNode).getValue() );
 		} 
 		return null;
 	}
 
-	private EvaluationExpression createFunctionExpression(ASTFunNode topNode, List<VariablePathExpression> sourcePaths) {	
-			String operatorName = topNode.getName();
-			
-			if(operatorName.equals("+")) { //or getOperatorId, 
-				//TODO map other operators, and define String + vs. Integer +
-	//			EvaluationExpression sourcePath = createConditionPath(sources.get(0)); 
-				//TODO traverse JEP-tree to define input
-				
-				ArrayCreation input = new ArrayCreation(); // (sourcePath, new ConstantExpression("---"));
-				for(int childI=0; childI<topNode.jjtGetNumChildren(); childI++) {
-					Node child = topNode.jjtGetChild(childI);
-					input.add(processJepFunctionNode(child, sourcePaths));				
-				}
-				FunctionCall f = new FunctionCall("concat", this.context, input); 
-				return f;
-			}
-			
-			return null;
-		}
-
 	private PathSegmentExpression createFunctionSourcePath(String pathFromFunction, List<VariablePathExpression> sourcePaths) {
-			//path = usCongress.usCongressBiographies.usCongressBiography.worksFor;
+			//e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;
 			String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
-	//		String[] pathFromFunctionStepsTrunc = Arrays.copyOfRange(pathFromFunctionSteps, 2, pathFromFunctionSteps.length);
-			
+	
 			//chose suitable sourcePath that matches pathFromFunction
-			//sourcePath[0] = v1.usCongressBiography.worksFor;
+			//e.g. sourcePath[0] = v1.usCongressBiography.worksFor;
 			for(VariablePathExpression exp : sourcePaths) {
-				if(exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length-1])) //TODO check!!!
-					return SchemaMappingUtil.convertSpicyPath("0", exp);
+				if(exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length-1])) 
+					return EntityMappingUtil.convertSpicyPath("0", exp);
 			}
 			return null;
 		}
-	
-	private EvaluationExpression skolemWorksFor() {
-		return createPath("v1", "biographyId"); //TODO //"v1", "biographyId_o"
-	}
 }
 
+/**
+ * used in nested attributes: path to target and how target is calculated
+ * 
+ * @author Andrina
+ *
+ */
 class TargetAttributeCreation {
 	List<String> targetPath;
-	IValueGenerator value;
+	IValueGenerator value; //includes function (e.g. + or split) and source paths
 	
 	public List<String> getTargetPath() {
 		return targetPath;

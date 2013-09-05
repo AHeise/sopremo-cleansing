@@ -28,7 +28,7 @@ import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
  * @author Andrina Mascher, Arvid Heise
  *
  */
-public class SchemaMappingUtil {
+public class EntityMappingUtil {
 
 	public static PathSegmentExpression convertSpicyPath(String inputIndex, VariablePathExpression spicyPath) {
 		/* e.g. spicyPath 					= 	v0.usCongressMember.biography
@@ -42,18 +42,24 @@ public class SchemaMappingUtil {
 		if( inputIndex!=null ) {
 			pathSteps.add( inputIndex ); //needed for multiple input operator e.g. join input 0 or 1
 		} else {
-			pathSteps.add( "0" ); //TODO test
+			pathSteps.add( "0" ); 
 		}
-		pathSteps.add( getSourceId(spicyPath.getStartingVariable()) ); //e.g. v0
-	
-		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
-			pathSteps.add( spicyPath.getPathSteps().get(i) );			
-		}
+		
+		pathSteps.addAll(getRelevantPathSteps(spicyPath));
 		
 		return createPath(pathSteps); 
 	}
 	
+	public static List<String> getRelevantPathSteps(VariablePathExpression spicyPath) {
+		List<String> steps = new ArrayList<String>();
+		steps.add( getSourceId(spicyPath.getStartingVariable()) );
+		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
+			steps.add( spicyPath.getPathSteps().get(i) );			
+		}
+		return steps;
+	}
+	
 	public static String getSourceId(SetAlias setAlias) { 
-		return "v"+ setAlias.getId(); //e.g. "v0"
+		return "v"+ setAlias.getId(); //e.g. "v0" as used by spicy
 	}
 }
