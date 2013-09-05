@@ -23,6 +23,7 @@ import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.packages.IFunctionRegistry;
 import eu.stratosphere.sopremo.query.IConfObjectRegistry;
 
 /**
@@ -327,6 +328,30 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		final Sink output3 = new Sink("file://personNames.json").withInputs(extract.getOutput(2));
 		expectedPlan.setSinks(output1, output2, output3);
 		
+		assertPlanEquals(expectedPlan, actualPlan);
+	}
+	
+	@Ignore
+	@Test
+	public void testMinimalSchemaMappingWithConcat() {
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
+			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
+			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
+			"as [\n" +
+			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
+			"    name_p: concat([$usCongressMembers.name_o, \"---\"]),\n" +
+			"    worksFor_p: $usCongressMembers.id_o" + 
+			"  }," + 
+			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
+			"    name_l: $usCongressBiographies.worksFor_o" + 
+			"  }" + 
+			"];\n" + 
+			"write $person to 'file://person.json';\n" +
+			"write $legalEntity to 'file://legalEntity.json';";
+		
+		final SopremoPlan actualPlan = parseScript(query);
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 }
