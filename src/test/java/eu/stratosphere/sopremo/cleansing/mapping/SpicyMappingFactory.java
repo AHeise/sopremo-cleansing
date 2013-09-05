@@ -25,6 +25,9 @@ public class SpicyMappingFactory {
 
 	boolean createConcat = false;
 	boolean createNesting = false;
+	boolean createJoinWithConcat= false;
+	boolean createTargetJoinSwitch= false;
+	boolean createSourceJoinSwitch= false;
 	
 	public static void main(String[] args) {
 		SpicyMappingFactory factory = new SpicyMappingFactory();
@@ -32,20 +35,24 @@ public class SpicyMappingFactory {
 		factory.create();
 	}
 	
-	public boolean isCreateNesting() {
-		return createNesting;
+	public void setCreateJoinWithConcat(boolean createJoinWithConcat) {
+		this.createJoinWithConcat = createJoinWithConcat;
 	}
-
+	
 	public void setCreateNesting(boolean createNesting) {
 		this.createNesting = createNesting;
 	}
 
-	public boolean isCreateConcat() {
-		return createConcat;
-	}
-
 	public void setCreateConcat(boolean createConcat) {
 		this.createConcat = createConcat;
+	}
+
+	public void setCreateTargetJoinSwitch(boolean createTargetJoinSwitch) {
+		this.createTargetJoinSwitch = createTargetJoinSwitch;
+	}
+
+	public void setCreateSourceJoinSwitch(boolean createSourceJoinSwitch) {
+		this.createSourceJoinSwitch = createSourceJoinSwitch;
 	}
 
 	public MappingTask create() {
@@ -74,7 +81,6 @@ public class SpicyMappingFactory {
 		
 //		### key contraints
 		
-		//TODO waren nicht drin for source 
 //		KeyConstraint sourceKeyConstraint1 = createKeyConstraints("usCongress.usCongressBiographies.usCongressBiography.biographyId");
 //		KeyConstraint sourceKeyConstraint2 = createKeyConstraints("usCongress.usCongressMembers.usCongressMember.id");
 //		source.addKeyConstraint(sourceKeyConstraint1);
@@ -85,7 +91,7 @@ public class SpicyMappingFactory {
 		target.addKeyConstraint(targetKeyConstraint1);
 		target.addKeyConstraint(targetKeyConstraint2);
 		
-//		### foreign key contraints //TODO waren nicht drin
+//		### foreign key contraints
 		
 //		ForeignKeyConstraint foreignKeyConstraint1 = createForeignKeyConstraint("usCongress.usCongressMembers.usCongressMember.biography", sourceKeyConstraint1);
 //		source.addForeignKeyConstraint(foreignKeyConstraint1);
@@ -93,44 +99,6 @@ public class SpicyMappingFactory {
 		ForeignKeyConstraint foreignKeyConstraint2 = createForeignKeyConstraint("usCongress.persons.person.worksFor", targetKeyConstraint2);
 		target.addForeignKeyConstraint(foreignKeyConstraint2);
 
-//		### join conditions
-		
-		List<String> list1 = new ArrayList<String>();
-		list1.add("usCongress.usCongressMembers.usCongressMember.biography");
-		PathExpression fromPath1 = new PathExpression(list1);
-		List<PathExpression> slp1 = new ArrayList<PathExpression>();
-		slp1.add(fromPath1);
-		
-		List<String> list2 = new ArrayList<String>();
-		list2.add("usCongress.usCongressBiographies.usCongressBiography.biographyId");
-		PathExpression toPath1 = new PathExpression(list2);
-		List<PathExpression> slp2 = new ArrayList<PathExpression>();
-		slp2.add(toPath1);
-		
-//		JoinCondition sourceJoinCondition = new JoinCondition(fromPath1, toPath1);
-//		JoinCondition sourceJoinCondition = new JoinCondition(slp1, slp2, true, true);
-		JoinCondition sourceJoinCondition = new JoinCondition(slp1, slp2, true);
-		sourceJoinCondition.setMandatory(true);
-		sourceJoinCondition.setMonodirectional(true);
-		
-		List<String> list3 = new ArrayList<String>();
-		list3.add("usCongress.persons.person.worksFor");
-		PathExpression fromPath2 = new PathExpression(list3);
-		List<PathExpression> tlp1 = new ArrayList<PathExpression>();
-		tlp1.add(fromPath2);
-		
-		List<String> list4 = new ArrayList<String>();
-		list4.add("usCongress.legalEntities.legalEntity.id");
-		PathExpression toPath2 = new PathExpression(list4);
-		List<PathExpression> tlp2 = new ArrayList<PathExpression>();
-		tlp2.add(toPath2);
-		
-//		JoinCondition targetJoinCondition = new JoinCondition(fromPath2, toPath2);
-//		JoinCondition targetJoinCondition = new JoinCondition(tlp1, tlp2, true, true);
-		JoinCondition targetJoinCondition = new JoinCondition(tlp1, tlp2, true);
-		targetJoinCondition.setMandatory(true);
-		targetJoinCondition.setMonodirectional(true);
-		
 //		### value correspondences
 		
 		List<ValueCorrespondence> valueCorrespondences = createValueCorrespondences();
@@ -138,8 +106,7 @@ public class SpicyMappingFactory {
 //		### task
 
 		MappingTask task = new MappingTask(source, target, valueCorrespondences);
-		task.getSourceProxy().addJoinCondition(sourceJoinCondition);
-		task.getTargetProxy().addJoinCondition(targetJoinCondition);
+		createJoinConditions(task);
 		
 //		System.out.println("###\n" + sourceSchema.toShortString());
 //		System.out.println("###\n" + targetSchema.toShortString());
@@ -149,6 +116,49 @@ public class SpicyMappingFactory {
 		return task;
 	}
 	
+	private void createJoinConditions(MappingTask task) {
+		List<String> list1 = new ArrayList<String>();
+		list1.add("usCongress.usCongressMembers.usCongressMember.biography");
+		List<PathExpression> slp1 = new ArrayList<PathExpression>();
+		slp1.add(new PathExpression(list1));
+		
+		List<String> list2 = new ArrayList<String>();
+		list2.add("usCongress.usCongressBiographies.usCongressBiography.biographyId");
+		List<PathExpression> slp2 = new ArrayList<PathExpression>();
+		slp2.add(new PathExpression(list2));
+		
+		JoinCondition sourceJoinCondition;
+		if( !createSourceJoinSwitch ) {
+			sourceJoinCondition = new JoinCondition(slp1, slp2, true);
+		} else {
+			sourceJoinCondition = new JoinCondition(slp2, slp1, true);
+		}
+		sourceJoinCondition.setMandatory(true);
+		sourceJoinCondition.setMonodirectional(true);
+		
+		List<String> list3 = new ArrayList<String>();
+		list3.add("usCongress.persons.person.worksFor");
+		List<PathExpression> tlp1 = new ArrayList<PathExpression>();
+		tlp1.add(new PathExpression(list3));
+		
+		List<String> list4 = new ArrayList<String>();
+		list4.add("usCongress.legalEntities.legalEntity.id");
+		List<PathExpression> tlp2 = new ArrayList<PathExpression>();
+		tlp2.add(new PathExpression(list4));
+		
+		JoinCondition targetJoinCondition;
+		if( !createTargetJoinSwitch ) {
+			targetJoinCondition = new JoinCondition(tlp1, tlp2, true);
+		} else {
+			targetJoinCondition = new JoinCondition(tlp2, tlp1, true);
+		}
+		targetJoinCondition.setMandatory(true);
+		targetJoinCondition.setMonodirectional(true);
+		
+		task.getSourceProxy().addJoinCondition(sourceJoinCondition);
+		task.getTargetProxy().addJoinCondition(targetJoinCondition);
+	}
+
 	private INode createSourceSchema() {
 		
 		INode dummy = new LeafNode("dummy");
@@ -200,10 +210,10 @@ public class SpicyMappingFactory {
 		
 		INode id = new AttributeNode("id");
 		id.addChild(dummy);
-		id.setRequired(true); //TODO new
 		
 		INode name = new AttributeNode("name"); 
 		name.addChild(dummy);
+		id.setRequired(false);
 		
 		INode worksFor = new AttributeNode("worksFor");
 		worksFor.addChild(dummy);
@@ -247,10 +257,11 @@ public class SpicyMappingFactory {
 		
 		INode id = new AttributeNode("id");
 		id.addChild(dummy);
-		id.setRequired(true); //TODO new
+		id.setRequired(true); 
 		
 		INode name = new AttributeNode("nestedName"); //nesting
 		name.addChild(dummy);
+		name.setRequired(false);
 		INode fullName = new TupleNode("fullName");
 		fullName.addChild(name);
 		
@@ -320,10 +331,18 @@ public class SpicyMappingFactory {
 	
 	private List<ValueCorrespondence> createValueCorrespondences() {
 		
-		//draw arrows
-		ValueCorrespondence c2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.id");
-		ValueCorrespondence c3 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.name");
-		ValueCorrespondence c4 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
+		//draw 5 arrows
+		ValueCorrespondence wfCorrespondence1, wfCorrespondence2, wfCorrespondence3;
+		if(!createJoinWithConcat) {
+			wfCorrespondence1 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.id");
+			wfCorrespondence2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.name");
+			wfCorrespondence3 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
+		} else {
+			wfCorrespondence1 = createValueCorrespondenceWithConcats("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.id");
+			wfCorrespondence3 = createValueCorrespondenceWithConcats("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
+			wfCorrespondence2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.legalEntities.legalEntity.name");
+		}
+		
 		
 		String targetNamePath = createNesting ? "usCongress.persons.person.fullName.nestedName" : "usCongress.persons.person.name";
 		ValueCorrespondence nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", targetNamePath);
@@ -336,15 +355,15 @@ public class SpicyMappingFactory {
 		}
 
 		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
-		valueCorrespondences.add(c2);
-		valueCorrespondences.add(c3);
-		valueCorrespondences.add(c4);
+		valueCorrespondences.add(wfCorrespondence1);
+		valueCorrespondences.add(wfCorrespondence2);
+		valueCorrespondences.add(wfCorrespondence3);
 		valueCorrespondences.add(idCorrespondence);
 		valueCorrespondences.add(nameCorrespondence); 
 
 		return valueCorrespondences;
 	}
-
+	
 	private ValueCorrespondence createValueCorrespondence(String str1, String str2) {
 
 		List<String> sourcePathSteps = new ArrayList<String>();
@@ -369,7 +388,7 @@ public class SpicyMappingFactory {
 		sourcePathStepsB.add(str1b);
 		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
 		PathExpression sourcePathB = new PathExpression(sourcePathStepsB);
-		List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
+		List<PathExpression> sourcePaths = new ArrayList<PathExpression>(2);
 		sourcePaths.add(sourcePathA);
 		sourcePaths.add(sourcePathB);
 
@@ -380,6 +399,25 @@ public class SpicyMappingFactory {
 		String dashes = "\"---\"";
 		Expression exp = new Expression(str1a + " +" + dashes + " + " + str1b);
 		ValueCorrespondence	corr = new ValueCorrespondence(sourcePaths, targetPath, exp); //2 source paths, 1 target path
+		
+		return corr;
+	}
+	
+	private ValueCorrespondence createValueCorrespondenceWithConcats(String str1a, String str2) {
+		
+		List<String> sourcePathStepsA = new ArrayList<String>();
+		sourcePathStepsA.add(str1a);
+		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
+		List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
+		sourcePaths.add(sourcePathA);
+
+		List<String> targetPathSteps = new ArrayList<String>();
+		targetPathSteps.add(str2);
+		PathExpression targetPath = new PathExpression(targetPathSteps);
+		
+		String dashes = "\"---\"";
+		Expression exp = new Expression(str1a + " +" + dashes);
+		ValueCorrespondence	corr = new ValueCorrespondence(sourcePaths, targetPath, exp); //1 source path + "---", 1 target path
 		
 		return corr;
 	}

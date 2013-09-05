@@ -44,13 +44,19 @@ public class EntityMappingUtil {
 		} else {
 			pathSteps.add( "0" ); 
 		}
-		pathSteps.add( getSourceId(spicyPath.getStartingVariable()) ); //e.g. v0
-	
-		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
-			pathSteps.add( spicyPath.getPathSteps().get(i) );			
-		}
+		
+		pathSteps.addAll(getRelevantPathSteps(spicyPath));
 		
 		return createPath(pathSteps); 
+	}
+	
+	public static List<String> getRelevantPathSteps(VariablePathExpression spicyPath) {
+		List<String> steps = new ArrayList<String>();
+		steps.add( getSourceId(spicyPath.getStartingVariable()) );
+		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
+			steps.add( spicyPath.getPathSteps().get(i) );			
+		}
+		return steps;
 	}
 	
 	public static String getSourceId(SetAlias setAlias) { 
