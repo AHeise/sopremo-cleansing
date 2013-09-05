@@ -47,6 +47,7 @@ public class JepFunctionFactory {
 		{
 			this.put("+", new ConcatJepFunctionHandler());
 			this.put("substring", new SubstringJepFunctionHandler());
+			this.put("sum", new SumJepFunctionHandler());
 		}
 	};
 
@@ -168,6 +169,29 @@ public class JepFunctionFactory {
 			}
 
 			inputList.add(1, new ConstantExpression(IntNode.ZERO));
+
+			return inputList;
+		}
+	}
+
+	private static class SumJepFunctionHandler extends JepFunctionHandler {
+
+		public SumJepFunctionHandler() {
+			super("sum");
+		}
+
+		@Override
+		protected List<EvaluationExpression> handleInputs(ASTFunNode topNode,
+				List<VariablePathExpression> sourcePaths,
+				EvaluationScope context) {
+
+			List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
+
+			for (int childI = 0; childI < topNode.jjtGetNumChildren(); childI++) {
+				Node child = topNode.jjtGetChild(childI);
+				inputList.add(this.processJepFunctionNode(child, sourcePaths,
+						context));
+			}
 
 			return inputList;
 		}
