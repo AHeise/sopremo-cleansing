@@ -27,13 +27,13 @@ import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.CoerceExpression;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.packages.EvaluationScope;
 import eu.stratosphere.sopremo.type.IntNode;
-import eu.stratosphere.sopremo.type.TextNode;
 
 /**
  * @author Arvid Heise, Tommy Neubert
@@ -164,8 +164,11 @@ public class JepFunctionFactory {
 
 			for (int childI = 0; childI < topNode.jjtGetNumChildren(); childI++) {
 				Node child = topNode.jjtGetChild(childI);
-				inputList.add(this.processJepFunctionNode(child, sourcePaths,
-						context));
+				EvaluationExpression expr = this.processJepFunctionNode(child,
+						sourcePaths, context);
+
+				inputList.add((childI != 0) ? new CoerceExpression(
+						IntNode.class).withInputExpression(expr) : expr);
 			}
 
 			inputList.add(1, new ConstantExpression(IntNode.ZERO));
