@@ -28,6 +28,15 @@ import eu.stratosphere.sopremo.operator.Operator;
 public class MappingTaskFactory {
 
 	boolean createConcat = false;
+	boolean createList = false;
+	
+	public void setCreateList(boolean createList) {
+		this.createList = createList;
+	}
+	
+	public boolean isCreateList() {
+		return this.createList;
+	}
 	
 	public boolean isCreateConcat() {
 		return createConcat;
@@ -303,6 +312,14 @@ public class MappingTaskFactory {
 			List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
 			sourcePaths.add(sourcePath);
 			corr = new ValueCorrespondence(sourcePaths, targetPath, exp);
+		} else if(createList && str1.equals("usCongress.usCongressMembers.usCongressMember.name")) {
+//			Expression exp = new Expression("right(\""+str1+"\",3)");
+					Expression exp = new Expression("substring("+ str1 + ", 2)");
+
+					//TODO read source paths from exp
+					List<PathExpression> sourcePaths = new ArrayList<PathExpression>(1);
+					sourcePaths.add(sourcePath);
+					corr = new ValueCorrespondence(sourcePaths, targetPath, exp);
 		} else {		
 			corr = new ValueCorrespondence(sourcePath, targetPath);
 		}
