@@ -348,7 +348,6 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 				));
 		
 		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
-		System.out.println(sopremoJoin);
 		return sopremoJoin;
 	}
 
