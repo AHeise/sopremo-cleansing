@@ -58,16 +58,16 @@ public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDupl
 		super(numberOfInputs, numberOfOutputs);
 	}
 
-	protected abstract Operator<?> createPass(Pass pass, CandidateComparison comparison);
+	protected abstract Operator<?> createPass(List<Operator<?>> inputs, Pass pass, CandidateComparison comparison);
 
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection, CandidateComparison comparison, EvaluationContext context) {
 		if (selection.getPasses().size() == 1)
-			return createPass(selection.getPasses().get(0), comparison).withInputs(inputs);
+			return createPass(inputs, selection.getPasses().get(0), comparison);
 	
 		List<Operator<?>> passes = new ArrayList<Operator<?>>();
 		for (Pass pass : selection.getPasses())
-			passes.add(createPass(pass, comparison).withInputs(inputs));
+			passes.add(createPass(inputs, pass, comparison));
 	
 		return new Union().withInputs(passes);
 	}
