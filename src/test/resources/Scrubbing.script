@@ -1,0 +1,10 @@
+using cleansing;
+
+$data = read from 'ScrubbingTestData.json';
+
+$data_scrubbed = scrub $data with rules {
+	id: required,
+	type: type(int)
+};
+
+write $data_scrubbed to 'file:///tmp/ScrubbingTestOutput.json';

@@ -64,8 +64,8 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
  * 
  * @author Andrina Mascher, Arvid Heise
  */
-@InputCardinality(2) //TODO same as EntityMapping
-@OutputCardinality(1) 
+@InputCardinality(2) //TODO arbitrary in-/output
+@OutputCardinality(2) 
 public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTransformation> {
 
 	private transient SopremoModule module;
@@ -134,7 +134,6 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		}
 		IAlgebraOperator tree = mappingTask.getMappingData().getAlgebraTree(); //tree contains rewritten tgd rules
 		SopremoUtil.LOG.debug("Spicy mapping tree:\n" + tree);
-		System.out.println("Spicy mapping tree:\n" + tree); //TODO
 		processTree(tree); 			
 	}
 
@@ -177,8 +176,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		// build input list for every target
 		// each setAlias represents one target instance, e.g. <v2 as legalEntities>
 		HashMap<SetAlias, List<Operator<?>>> targetInputMapping = new HashMap<SetAlias, List<Operator<?>>>(); 
-//		for(IAlgebraOperator child : merge.getChildren()) { //TODO
-		IAlgebraOperator child = merge.getChildren().get(0);
+		for(IAlgebraOperator child : merge.getChildren()) { 
 			Nest nest = (Nest) child;
 			List<SetAlias> targetsOfTgd = getTargetsOfTGD(nest); //use with getId()
 			Operator<?> childOperator = processNest(nest);
@@ -192,7 +190,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 					targetInputMapping.put(target, newList);
 				}
 			}
-//		}
+		}
 
 		//build operator for every target using the input
 		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
@@ -217,8 +215,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 			SopremoUtil.LOG.debug("output " + outputIndex.get(targetName) + " is " + targetName);
 			module.getOutput(i).setInput(0, entry.getValue());
 		}
-//		SopremoUtil.LOG.info(
-		System.out.println("generated schema mapping module:\n " + module);
+		SopremoUtil.LOG.info("generated schema mapping module:\n " + module);
 	}
 
 	private List<SetAlias> getTargetsOfTGD(Nest nest) {
@@ -285,7 +282,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		
 		TwoSourceJoin antiJoin = new TwoSourceJoin().
 				withInputs(child0, child1).	
-				withCondition( new ElementInSetExpression( arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight ));
+				withCondition( new ElementInSetExpression( arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight ));	
 		
 		reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -309,14 +306,12 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		for(VariableCorrespondence varCor : difference.getRightCorrespondences()) {
 			arrayRight.add( EntityMappingUtil.convertSpicyPath("1", varCor.getTargetPath()) ); 		
 		}
-		
 		TwoSourceJoin antiJoin = new TwoSourceJoin().
 				withInputs(child0, child1).	
 				withCondition( new ElementInSetExpression( arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight ));
 		
 		reuseJoins.put(difference.getId(), antiJoin);
-//		return antiJoin;TODO
-		return child1;
+		return antiJoin;
 	}
 	
 	private Operator<?> processJoin(IAlgebraOperator treeElement) {
@@ -329,19 +324,28 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		Operator<?> child1 = processChild( spicyJoin.getChildren().get(1), null );
 		
 		//join conditions
-		ArrayCreation arrayLeft = new ArrayCreation();
-		for(VariablePathExpression path : spicyJoin.getJoinCondition().getFromPaths()) {
-			arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) ); 
-		}
-		ArrayCreation arrayRight = new ArrayCreation();
-		for(VariablePathExpression path : spicyJoin.getJoinCondition().getToPaths()) {
-			arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) ); 			
-		}
-		
+		 //TODO multiple join paths result in concurrency problem. join may not be executed
+//		ArrayCreation arrayLeft = new ArrayCreation();
+//		for(VariablePathExpression path : spicyJoin.getJoinCondition().getFromPaths()) {
+//			arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) ); 
+//		}
+//		ArrayCreation arrayRight = new ArrayCreation();
+//		for(VariablePathExpression path : spicyJoin.getJoinCondition().getToPaths()) {
+//			arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) ); 			
+//		}
+//		
+//		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
+//				withInputs(child0, child1). 
+//				withCondition(new ComparativeExpression( arrayLeft, BinaryOperator.EQUAL, arrayRight)
+//				);
+//		
 		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
 				withInputs(child0, child1). 
-				withCondition(new ComparativeExpression( arrayLeft, BinaryOperator.EQUAL, arrayRight)
-				);
+				withCondition(new ComparativeExpression(
+						EntityMappingUtil.convertSpicyPath("0", spicyJoin.getJoinCondition().getFromPaths().get(0)),
+						BinaryOperator.EQUAL, 
+						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))  
+				));
 		
 		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
 		return sopremoJoin;
@@ -361,21 +365,30 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		Operator<?> child1 = processChild( spicyJoin.getChildren().get(1), objectCreationForTargetsRight );
 		
 		//join conditions
-		ArrayCreation arrayLeft = new ArrayCreation();
-		for(VariablePathExpression path : spicyJoin.getJoinCondition().getFromPaths()) {
-			arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) ); 
-		}
-		ArrayCreation arrayRight = new ArrayCreation();
-		for(VariablePathExpression path : spicyJoin.getJoinCondition().getToPaths()) {
-				arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) ); 			
-		}
+		//TODO
+//		ArrayCreation arrayLeft = new ArrayCreation();
+//		for(VariablePathExpression path : spicyJoin.getJoinCondition().getFromPaths()) {
+//			arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) ); 
+//		}
+//		ArrayCreation arrayRight = new ArrayCreation();
+//		for(VariablePathExpression path : spicyJoin.getJoinCondition().getToPaths()) {
+//				arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) ); 			
+//		}
+//		
+//		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
+//				withInputs(child0, child1). 
+//				withCondition(new ComparativeExpression( arrayLeft, BinaryOperator.EQUAL, arrayRight)
+//				);
 		
 		TwoSourceJoin sopremoJoin = new TwoSourceJoin().
 				withInputs(child0, child1). 
-				withCondition(new ComparativeExpression( arrayLeft, BinaryOperator.EQUAL, arrayRight)
-				);
-		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
+				withCondition(new ComparativeExpression(
+						EntityMappingUtil.convertSpicyPath("0", spicyJoin.getJoinCondition().getFromPaths().get(0)),
+						BinaryOperator.EQUAL, 
+						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))  
+				));
 		
+		reuseJoins.put(spicyJoin.getId(), sopremoJoin);
 		return sopremoJoin;
 	}
 
@@ -388,7 +401,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		if(reuseProjections.containsKey(sourceId))
 			return reuseProjections.get(sourceId);	
 		
-		//TODO unnest can have selectionCondition and provenanceCondition (what's that?)
+		//TODO unnest can have selectionCondition and provenanceCondition, research what is this
 		
 		Projection projection = new Projection().
 				withResultProjection(new ObjectCreation().

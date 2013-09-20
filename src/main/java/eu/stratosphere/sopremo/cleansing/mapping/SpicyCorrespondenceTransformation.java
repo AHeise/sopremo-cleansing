@@ -148,23 +148,26 @@ public class SpicyCorrespondenceTransformation {
 	}
 
 	private EvaluationExpression createFunctionExpression(ASTFunNode topNode, List<VariablePathExpression> sourcePaths) {	
-			String operatorName = topNode.getName();
-			
-			if(operatorName.equals("+")) { //or getOperatorId, 
-				//TODO map other operators, and define String + vs. Integer +
-	//			EvaluationExpression sourcePath = createConditionPath(sources.get(0)); 
-				//TODO traverse JEP-tree to define input
-				
-				ArrayCreation input = new ArrayCreation(); // (sourcePath, new ConstantExpression("---"));
-				for(int childI=0; childI<topNode.jjtGetNumChildren(); childI++) {
-					Node child = topNode.jjtGetChild(childI);
-					input.add(processJepFunctionNode(child, sourcePaths));				
-				}
-				FunctionCall f = new FunctionCall("concat", this.context, input); 
-				return f;
-			}
-			
-			return null;
+
+		return JepFunctionFactory.create(topNode, sourcePaths, this.context);
+		
+//			String operatorName = topNode.getName();
+//			
+//			if(operatorName.equals("+")) { //or getOperatorId, 
+//				//TODO map other operators, and define String + vs. Integer +
+//	//			EvaluationExpression sourcePath = createConditionPath(sources.get(0)); 
+//				//TODO traverse JEP-tree to define input
+//				
+//				ArrayCreation input = new ArrayCreation(); // (sourcePath, new ConstantExpression("---"));
+//				for(int childI=0; childI<topNode.jjtGetNumChildren(); childI++) {
+//					Node child = topNode.jjtGetChild(childI);
+//					input.add(processJepFunctionNode(child, sourcePaths));				
+//				}
+//				FunctionCall f = new FunctionCall("concat", this.context, input); 
+//				return f;
+//			}
+//			
+//			return null;
 		}
 
 	private PathSegmentExpression createFunctionSourcePath(String pathFromFunction, List<VariablePathExpression> sourcePaths) {
