@@ -37,10 +37,8 @@ import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
@@ -98,7 +96,7 @@ public class SpicyCorrespondenceTransformation {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					SkolemFunctionGenerator sourcePathTgd = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
 					sopremoSourcePath = ConstantExpression.NULL;
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
@@ -140,35 +138,12 @@ public class SpicyCorrespondenceTransformation {
 		if(topNode instanceof ASTVarNode ) { //usual 1:1-mapping without a function
 			return createFunctionSourcePath( ((ASTVarNode) topNode).getVarName(), sourcePaths ); 
 		} else if(topNode instanceof ASTFunNode ) { //uses a function
-			return createFunctionExpression( (ASTFunNode) topNode, sourcePaths);
+			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths, this.context);
 		} else if(topNode instanceof ASTConstant) {
 			return new ConstantExpression( ((ASTConstant) topNode).getValue() );
 		} 
 		return null;
 	}
-
-	private EvaluationExpression createFunctionExpression(ASTFunNode topNode, List<VariablePathExpression> sourcePaths) {	
-
-		return JepFunctionFactory.create(topNode, sourcePaths, this.context);
-		
-//			String operatorName = topNode.getName();
-//			
-//			if(operatorName.equals("+")) { //or getOperatorId, 
-//				//TODO map other operators, and define String + vs. Integer +
-//	//			EvaluationExpression sourcePath = createConditionPath(sources.get(0)); 
-//				//TODO traverse JEP-tree to define input
-//				
-//				ArrayCreation input = new ArrayCreation(); // (sourcePath, new ConstantExpression("---"));
-//				for(int childI=0; childI<topNode.jjtGetNumChildren(); childI++) {
-//					Node child = topNode.jjtGetChild(childI);
-//					input.add(processJepFunctionNode(child, sourcePaths));				
-//				}
-//				FunctionCall f = new FunctionCall("concat", this.context, input); 
-//				return f;
-//			}
-//			
-//			return null;
-		}
 
 	private PathSegmentExpression createFunctionSourcePath(String pathFromFunction, List<VariablePathExpression> sourcePaths) {
 			//e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;

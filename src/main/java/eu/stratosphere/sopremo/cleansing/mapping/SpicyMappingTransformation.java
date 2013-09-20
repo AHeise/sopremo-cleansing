@@ -215,7 +215,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 			SopremoUtil.LOG.debug("output " + outputIndex.get(targetName) + " is " + targetName);
 			module.getOutput(i).setInput(0, entry.getValue());
 		}
-		SopremoUtil.LOG.info("generated schema mapping module:\n " + module);
+		SopremoUtil.LOG.info("generated schema mapping module:\n " + module); 
 	}
 
 	private List<SetAlias> getTargetsOfTGD(Nest nest) {
@@ -401,7 +401,7 @@ public class SpicyMappingTransformation extends CompositeOperator<SpicyMappingTr
 		if(reuseProjections.containsKey(sourceId))
 			return reuseProjections.get(sourceId);	
 		
-		//TODO unnest can have selectionCondition and provenanceCondition, research what is this
+		//TODO unnest can have selectionCondition and provenanceCondition, research: what is this
 		
 		Projection projection = new Projection().
 				withResultProjection(new ObjectCreation().
