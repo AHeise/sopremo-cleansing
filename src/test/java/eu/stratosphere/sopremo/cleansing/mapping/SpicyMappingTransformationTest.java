@@ -4,7 +4,6 @@ import it.unibas.spicy.model.mapping.MappingTask;
 
 import java.util.HashMap;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.CoreFunctions;

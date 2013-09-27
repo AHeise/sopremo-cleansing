@@ -67,7 +67,6 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 		sopremoPlan.run();
 	}	
 	
-	@Ignore
 	@Test
 	public void shouldPerformExampleMappingGeneratedWithSKFunction() {
 

@@ -14,8 +14,12 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import org.junit.Ignore;
+import it.unibas.spicy.model.mapping.MappingTask;
+
+import org.junit.Assert;
 import org.junit.Test;
+
+import com.esotericsoftware.kryo.Kryo;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.meteor.QueryParser;
@@ -23,7 +27,6 @@ import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.packages.IFunctionRegistry;
 import eu.stratosphere.sopremo.query.IConfObjectRegistry;
 
 /**
@@ -174,7 +177,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-	@Ignore
 	@Test
 	public void testOneInputMultipleOutput() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
@@ -202,7 +204,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-	@Ignore
 	@Test
 	public void testSwitchedOutputs() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
@@ -228,7 +229,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
 		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(0));
 		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(1));
-		expectedPlan.setSinks(output2, output1);
+		expectedPlan.setSinks(output1, output2);
 		
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -259,7 +260,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		//TODO need to test output cardinalities with integration test
 	}
 	
-	@Ignore
 	@Test
 	public void testThreeInputs() {
 		String query = 
@@ -274,7 +274,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
 			"    name_p: $usCongressMembers.name_o,\n" + 
 			"    worksFor_p: $legalEntity.id,\n" +
-			"	 state_p: $state.name" +
+			"	 state_p: $states.name" +
 			"  }," + 
 			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
 			"    name_l: $usCongressBiographies.worksFor_o" + 
@@ -296,7 +296,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-	@Ignore
 	@Test
 	public void testThreeOutputs() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
@@ -331,9 +330,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-	@Ignore
 	@Test
-	public void testMinimalSchemaMappingWithConcat() {
+	public void testMinimalSchemaMappingWithFunction() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
 			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
 			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
@@ -353,5 +351,36 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
 
 		assertPlanEquals(expectedPlan, actualPlan);
+	}
+	
+	@Test
+	public void testMappingTaskEquals() {
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
+				"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
+				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
+				"as [\n" +
+				"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
+				"    name_p: $usCongressMembers.name_o,\n" +
+				"    worksFor_p: $usCongressMembers.id_o" + 
+				"  }," + 
+				"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
+				"    name_l: $usCongressBiographies.worksFor_o" + 
+				"  }" + 
+				"];\n" + 
+				"write $person to 'file://person.json';\n" +
+				"write $legalEntity to 'file://legalEntity.json';";
+		
+		final SopremoPlan actualPlan = parseScript(query);
+		
+		EntityMapping mapping1 = null;
+		EntityMapping mapping2 = null;
+		for(Operator<?> operator : actualPlan.getContainedOperators()) {
+			if(operator instanceof EntityMapping) {
+				mapping1 = (EntityMapping)operator;
+				mapping2 = ((EntityMapping)operator).copy();
+				break;
+			}
+		}
+		Assert.assertEquals(mapping1, mapping2);
 	}
 }
