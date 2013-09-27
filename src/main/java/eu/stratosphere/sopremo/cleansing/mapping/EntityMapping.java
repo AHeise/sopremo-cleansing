@@ -113,8 +113,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 	}
 
-	private MappingTask mappingTask;
-
 	private static final String type = "XML";
 	private static final String targetStr = "target";
 	private static final String sourceStr = "source";
@@ -122,30 +120,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	private static final String entityStr = "entity_";
 	private static final String idStr = "id";
 	private static final String inputPrefixStr = "in";
-	private static String classStr;
+	private static INode dummy = new LeafNode("dummy");
 
-	private INode dummy = new LeafNode("dummy");
-	private INode sourceAttr;
-	private INode targetAttr;
-	private INode sourceEntity;
-	private INode targetEntity;
-	private INode sourceEntities;
-	private INode targetEntities;
+	private MappingTask mappingTask;
+	private JoinCondition sourceJoinCondition;
+
 	private INode sourceSchema = new SequenceNode(EntityMapping.sourceStr);
 	private INode targetSchema = new SequenceNode(EntityMapping.targetStr);
 
-	private DataSource source = new DataSource(type, this.sourceSchema);
-	private DataSource target = new DataSource(type, this.targetSchema);
-
-	private JoinCondition sourceJoinCondition;
-	private JoinCondition targetJoinCondition;
-	private List<JoinCondition> targetJoinConditions = new ArrayList<JoinCondition>();
-
-	private List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
-	private ValueCorrespondence corr;
-
-	private KeyConstraint targetKey;
-	private HashMap<String, String> foreignKeys = new HashMap<String, String>();
+	private INode sourceEntity;
+	private INode targetEntity;
 
 	@Property
 	@Name(preposition = "where")
@@ -156,10 +140,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 		for (final ChildIterator it = assignment.iterator(); it.hasNext();) {
 			final EvaluationExpression expr = it.next();
-			//just one key relationship
+			// just one key relationship
 			if (expr instanceof ArrayAccess) {
 				evaluateKeyRelationship(inputs, joinParts, expr);
-			//multiple AND-connected relationships
+				// multiple AND-connected relationships
 			} else {
 				for (final ChildIterator it2 = expr.iterator(); it2.hasNext();) {
 					evaluateKeyRelationship(inputs, joinParts, it2.next());
@@ -192,12 +176,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Property
 	@Name(adjective = "as")
 	public void setMappingExpression(final ArrayCreation assignment) {
-		EntityMapping.classStr = this.getClass().getSimpleName();
+
+		List<JoinCondition> targetJoinConditions = new ArrayList<JoinCondition>();
+		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+		
+		ValueCorrespondence corr = null;
+		
+		HashMap<String, String> foreignKeys = new HashMap<String, String>();
+		DataSource target = new DataSource(type, this.targetSchema);
 
 		this.createDefaultSourceSchema(this.getInputs().size());
 		this.createDefaultTargetSchema(this.getNumOutputs());
-		
-		//iterate over schema mapping groupings
+
+		// iterate over schema mapping groupings
 		for (int index = 0; index < assignment.size(); index++) { // operator
 																	// level
 
@@ -206,13 +197,13 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			final String[] groupingKey = operator.getGroupingKey(0).toString().split("\\."); // e.g.
 																								// in0.id
 			final String targetInputStr = EntityMapping.inputPrefixStr + String.valueOf(index); // e.g.
-																						// in0
+			// in0
 			final String sourceInputStr = groupingKey[0]; // e.g. in0
 			final String keyStr = groupingKey[1]; // e.g. id
 			String sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputStr); // e.g.
-																						// source.entities_in0.entity_in0
+			// source.entities_in0.entity_in0
 			final String targetNesting = this.createNesting(EntityMapping.targetStr, targetInputStr); // e.g.
-																								// target.entities_in0.entity_in0
+			// target.entities_in0.entity_in0
 
 			// add source grouping key to source schema
 			this.extendSourceSchemaBy(keyStr, sourceInputStr);
@@ -221,13 +212,13 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			this.extendTargetSchemaBy(EntityMapping.idStr, targetInputStr);
 
 			// create primary key: target entity id
-			this.targetKey = this.createKeyConstraints(targetNesting, EntityMapping.idStr);
-			this.target.addKeyConstraint(this.targetKey);
+			KeyConstraint targetKey = this.createKeyConstraints(targetNesting, EntityMapping.idStr);
+			target.addKeyConstraint(targetKey);
 
 			// create value correspondence: source grouping key -> target entity
 			// id
-			this.corr = this.createValueCorrespondence(sourceNesting, keyStr, targetNesting, EntityMapping.idStr);
-			this.valueCorrespondences.add(this.corr);
+			corr = this.createValueCorrespondence(sourceNesting, keyStr, targetNesting, EntityMapping.idStr);
+			valueCorrespondences.add(corr);
 
 			final ObjectCreation resultProjection = (ObjectCreation) operator.getResultProjection();
 			final List<Mapping<?>> mappings = resultProjection.getMappings();
@@ -249,10 +240,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				final String targetExpr = mapping.getTarget().toString(); // e.g.
 																			// name_person
 				sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr); // e.g.
-																						// source.entities_in0.entity_in0
+				// source.entities_in0.entity_in0
 
-				if (sourceInputExpr.contains(EntityMapping.classStr)) { // foreign key
-
+				if (sourceInputExpr.contains(this.getClass().getSimpleName())) { // foreign key
+					
+					JoinCondition targetJoinCondition;
 					final String fkSource = sourceInputExpr.replaceAll("[^0-9]", ""); // TODO:
 																						// better
 																						// way?
@@ -260,12 +252,12 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 					// create join condition for foreign keys, but no value
 					// correspondence
-					this.targetJoinCondition = this.createJoinCondition(targetNesting, targetExpr, sourceNesting, sourceExpr);
+					targetJoinCondition = this.createJoinCondition(targetNesting, targetExpr, sourceNesting, sourceExpr);
 					targetJoinConditions.add(targetJoinCondition);
 
 					// store foreign keys to add missing (transitive) value
 					// correspondences later
-					this.foreignKeys.put(targetJoinCondition.getFromPaths().get(0).toString(), targetJoinCondition.getToPaths().get(0).toString());
+					foreignKeys.put(targetJoinCondition.getFromPaths().get(0).toString(), targetJoinCondition.getToPaths().get(0).toString());
 
 				} else { // no foreign key
 
@@ -274,8 +266,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 					// create value correspondence: source attribute -> target
 					// attribute
-					this.corr = this.createValueCorrespondence(sourceNesting, sourceExpr, targetNesting, targetExpr);
-					this.valueCorrespondences.add(this.corr);
+					corr = this.createValueCorrespondence(sourceNesting, sourceExpr, targetNesting, targetExpr);
+					valueCorrespondences.add(corr);
 				}
 
 				// add target attribute to target schema
@@ -300,14 +292,14 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 
 		// create transitive value correspondences from foreign keys
-		List<ValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences();
+		List<ValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences(corr, valueCorrespondences, foreignKeys);
 
 		for (ValueCorrespondence cond : transitiveValueCorrespondences) {
 			valueCorrespondences.add(cond);
 		}
 
 		// create mapping task
-		this.mappingTask = new MappingTask(this.source, this.target, this.valueCorrespondences);
+		this.mappingTask = new MappingTask(new DataSource(type, this.sourceSchema), target, valueCorrespondences);
 		if (this.sourceJoinCondition != null)
 			this.mappingTask.getSourceProxy().addJoinCondition(this.sourceJoinCondition);
 
@@ -318,10 +310,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		SopremoUtil.LOG.debug("mapping task:\n" + this.mappingTask);
 	}
 
-//	public MappingTask getMappingTask() {
-//		return mappingTask;
-//	}
-	
+	// public MappingTask getMappingTask() {
+	// return mappingTask;
+	// }
+
 	public MappingTask getMappingTask() {
 		return mappingTask;
 	}
@@ -331,6 +323,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private void createDefaultSourceSchema(final int size) {
+		INode sourceEntities;
 
 		// source : SequenceNode
 		// entities_in0 : SetNode
@@ -341,14 +334,15 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		for (int index = 0; index < size; index++) {
 			final String input = EntityMapping.inputPrefixStr + String.valueOf(index);
 			this.sourceEntity = new SequenceNode(EntityMapping.entityStr + input);
-			this.sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
-			this.sourceEntities.addChild(this.sourceEntity);
-			this.sourceSchema.addChild(this.sourceEntities);
+			sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
+			sourceEntities.addChild(this.sourceEntity);
+			this.sourceSchema.addChild(sourceEntities);
 		}
 		this.sourceSchema.setRoot(true);
 	}
 
 	private void createDefaultTargetSchema(final int size) {
+		INode targetEntities;
 
 		// target : SequenceNode
 		// entities_in0 : SetNode
@@ -359,30 +353,31 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		for (int index = 0; index < size; index++) {
 			final String input = EntityMapping.inputPrefixStr + String.valueOf(index);
 			this.targetEntity = new SequenceNode(EntityMapping.entityStr + input);
-			this.targetEntities = new SetNode(EntityMapping.entitiesStr + input);
-			this.targetEntities.addChild(this.targetEntity);
-			this.targetSchema.addChild(this.targetEntities);
+			targetEntities = new SetNode(EntityMapping.entitiesStr + input);
+			targetEntities.addChild(this.targetEntity);
+			this.targetSchema.addChild(targetEntities);
 		}
 		this.targetSchema.setRoot(true);
 	}
 
 	private void extendSourceSchemaBy(final String attr, final String inputStr) {
+		INode sourceAttr;
 
 		this.sourceEntity = this.sourceSchema.getChild(EntityMapping.entitiesStr + inputStr).getChild(EntityMapping.entityStr + inputStr);
 		if (this.sourceEntity.getChild(attr) == null) {
-			this.sourceAttr = new AttributeNode(attr);
-			this.sourceAttr.addChild(this.dummy);
-			this.sourceEntity.addChild(this.sourceAttr);
+			sourceAttr = new AttributeNode(attr);
+			sourceAttr.addChild(EntityMapping.dummy);
+			this.sourceEntity.addChild(sourceAttr);
 		}
 	}
 
 	private void extendTargetSchemaBy(final String attr, final String inputStr) {
-
+		INode targetAttr;
 		this.targetEntity = this.targetSchema.getChild(EntityMapping.entitiesStr + inputStr).getChild(EntityMapping.entityStr + inputStr);
 		if (this.targetEntity.getChild(attr) == null) {
-			this.targetAttr = new AttributeNode(attr);
-			this.targetAttr.addChild(this.dummy);
-			this.targetEntity.addChild(this.targetAttr);
+			targetAttr = new AttributeNode(attr);
+			targetAttr.addChild(EntityMapping.dummy);
+			this.targetEntity.addChild(targetAttr);
 		}
 	}
 
@@ -467,18 +462,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return pathList;
 	}
 
-	private List<ValueCorrespondence> createTransitiveValueCorrespondences() {
+	private List<ValueCorrespondence> createTransitiveValueCorrespondences(ValueCorrespondence corr, List<ValueCorrespondence> valueCorrespondences,
+			HashMap<String, String> foreignKeys) {
 
 		List<ValueCorrespondence> transitiveValueCorrespondences = new ArrayList<ValueCorrespondence>();
-		for (String fk : this.foreignKeys.keySet()) {
+		for (String fk : foreignKeys.keySet()) {
 			String value = foreignKeys.get(fk).toString();
 
-			for (ValueCorrespondence vc : this.valueCorrespondences) {
+			for (ValueCorrespondence vc : valueCorrespondences) {
 				if (vc.getTargetPath().toString().equals(value)) {
 
 					for (PathExpression pe : vc.getSourcePaths()) {
-						this.corr = this.createValueCorrespondence(pe.toString(), fk);
-						transitiveValueCorrespondences.add(this.corr);
+						corr = this.createValueCorrespondence(pe.toString(), fk);
+						transitiveValueCorrespondences.add(corr);
 					}
 				}
 			}
@@ -550,25 +546,25 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private boolean mappingTasksAreEqual(MappingTask thiz, MappingTask other) {
-		//TODO type is not serialized by spicy
-//		if(thiz.getType() != other.getType())
-//			return false;
-		if(!checkCorrespondenceLists(thiz.getValueCorrespondences(), other.getValueCorrespondences())) {
+		// TODO type is not serialized by spicy
+		// if(thiz.getType() != other.getType())
+		// return false;
+		if (!checkCorrespondenceLists(thiz.getValueCorrespondences(), other.getValueCorrespondences())) {
 			return false;
 		}
-		if(!checkCorrespondenceLists(thiz.getCandidateCorrespondences(), other.getCandidateCorrespondences())) {
+		if (!checkCorrespondenceLists(thiz.getCandidateCorrespondences(), other.getCandidateCorrespondences())) {
 			return false;
 		}
 		return true;
 	}
 
 	private boolean checkCorrespondenceLists(List<ValueCorrespondence> thisCorrespondences, List<ValueCorrespondence> otherCorrespondences) {
-		if(thisCorrespondences.size() != otherCorrespondences.size())
+		if (thisCorrespondences.size() != otherCorrespondences.size())
 			return false;
 		List<ValueCorrespondence> clonedCorrespondences = new ArrayList<ValueCorrespondence>(otherCorrespondences);
-		for(ValueCorrespondence correspondence : thisCorrespondences) {
-			for(ValueCorrespondence correspondence2 : otherCorrespondences){
-				if(correspondencesAreEqual(correspondence, correspondence2)){
+		for (ValueCorrespondence correspondence : thisCorrespondences) {
+			for (ValueCorrespondence correspondence2 : otherCorrespondences) {
+				if (correspondencesAreEqual(correspondence, correspondence2)) {
 					clonedCorrespondences.remove(correspondence2);
 					break;
 				}
@@ -579,6 +575,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private boolean correspondencesAreEqual(ValueCorrespondence c1, ValueCorrespondence c2) {
-		return  c1.hasEqualPaths(c2);
+		return c1.hasEqualPaths(c2);
 	}
 }
