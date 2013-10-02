@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -43,6 +44,7 @@ public class EntityMappingIT extends MeteorIT {
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
 	
+	@Ignore
 	@Test
 	public void testNaive() throws IOException {
 
