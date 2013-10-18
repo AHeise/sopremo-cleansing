@@ -17,9 +17,11 @@ import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
 import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.LenientParser;
 import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RangeConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.TypeConstraint;
 import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
@@ -29,7 +31,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
 import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
@@ -69,12 +71,22 @@ public class CleansFunctions implements BuiltinProvider,
 		constantRegistry.put("chooseFirst", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
 				REMOVE_ILLEGAL_CHARACTERS);
+		constantRegistry.put("tryCoercing", TRY_COERCING_TO_TYPE);
+
+		this.registerTypeConstants(constantRegistry);
 
 		this.registerConstant(new NonNullConstraint(), constantRegistry);
 		this.registerConstant(new MostFrequentResolution(), constantRegistry);
 		this.registerConstant(MergeDistinctResolution.INSTANCE,
 				constantRegistry);
 		this.registerConstant(ChooseRandomResolution.INSTANCE, constantRegistry);
+	}
+
+	private void registerTypeConstants(IConstantRegistry registry) {
+		for (String constant : TypeConstraint.availableTypes.keySet()) {
+			registry.put(constant,
+					new ConstantExpression(TextNode.valueOf(constant)));
+		}
 	}
 
 	/*
@@ -87,7 +99,8 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
-		//registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
+		// registry.put("levenshtein", new SimilarityMacro(new
+		// LevenshteinSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(
 				new JaroWinklerSimilarity()));
 
@@ -97,6 +110,7 @@ public class CleansFunctions implements BuiltinProvider,
 		this.registerMacro(new WhiteListRuleMacro(), registry);
 		this.registerMacro(new BlackListRuleMacro(), registry);
 		this.registerMacro(new IllegalCharacterRuleMacro(), registry);
+		this.registerMacro(new TypeRuleMacro(), registry);
 
 		this.registerMacro(new DefaultValueResolutionMacro(), registry);
 
@@ -114,7 +128,8 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put(getScriptName(constant.getClass()), constant);
 	}
 
-	public static String getScriptName(Class<? extends EvaluationExpression> expr) {
+	public static String getScriptName(
+			Class<? extends EvaluationExpression> expr) {
 		Name name = expr.getAnnotation(Name.class);
 		if (name == null) {
 			SopremoUtil.LOG.warn("No name for " + expr + " found, using '"
@@ -184,8 +199,8 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.SoundEx
-					.generateSoundExInto(input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(
+						input, this.soundex);
 			} catch (IOException e) {
 			}
 			return this.soundex;
@@ -433,6 +448,32 @@ public class CleansFunctions implements BuiltinProvider,
 
 	}
 
+	private static class TypeRuleMacro extends CleansingMacro {
+
+		@Override
+		public void appendAsString(Appendable appendable) throws IOException {
+			// TODO Auto-generated method stub
+		}
+
+		@Override
+		public EvaluationExpression call(EvaluationExpression[] params) {
+			if (params.length == 1) {
+				Class<? extends IJsonNode> allowedClass = TypeConstraint.availableTypes
+						.get(params[0].evaluate(NullNode.getInstance())
+								.toString());
+				return new TypeConstraint(allowedClass);
+			} else {
+				throw new IllegalArgumentException("Wrong number of arguments.");
+			}
+		}
+
+		@Override
+		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
+			return TypeConstraint.class;
+		}
+
+	}
+
 	private static class DefaultValueResolutionMacro extends CleansingMacro {
 
 		@Override
@@ -498,25 +539,32 @@ public class CleansFunctions implements BuiltinProvider,
 
 			Similarity<IJsonNode> similarity;
 			if (params.length > 1) {
-				final InputSelection input0 = params[0].findFirst(InputSelection.class);
-				final InputSelection input1 = params[1].findFirst(InputSelection.class);
+				final InputSelection input0 = params[0]
+						.findFirst(InputSelection.class);
+				final InputSelection input1 = params[1]
+						.findFirst(InputSelection.class);
 				if (input0 == null || input1 == null)
-					throw new IllegalArgumentException("Paths are incomplete (source is unknown) " +
-						Arrays.asList(params));
+					throw new IllegalArgumentException(
+							"Paths are incomplete (source is unknown) "
+									+ Arrays.asList(params));
 				if (input0.getIndex() == input1.getIndex())
-					throw new IllegalArgumentException("Paths are using the same source " + Arrays.asList(params));
-				PathSegmentExpression left =
-					(PathSegmentExpression) (input0.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
-				PathSegmentExpression right =
-					(PathSegmentExpression) (input1.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
+					throw new IllegalArgumentException(
+							"Paths are using the same source "
+									+ Arrays.asList(params));
+				PathSegmentExpression left = (PathSegmentExpression) (input0
+						.getIndex() == 0 ? params[0] : params[1])
+						.remove(InputSelection.class);
+				PathSegmentExpression right = (PathSegmentExpression) (input1
+						.getIndex() == 0 ? params[0] : params[1])
+						.remove(InputSelection.class);
 
-				similarity =
-					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, left, right, true);
-			}
-			else {
-				final PathSegmentExpression path = (PathSegmentExpression) params[0].remove(InputSelection.class);
-				similarity =
-					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, path, path, true);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
+						.create(this.similarity, left, right, true);
+			} else {
+				final PathSegmentExpression path = (PathSegmentExpression) params[0]
+						.remove(InputSelection.class);
+				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
+						.create(this.similarity, path, path, true);
 			}
 			return new SimilarityExpression(similarity);
 		}
@@ -526,8 +574,8 @@ public class CleansFunctions implements BuiltinProvider,
 	 * This correction is a fix for {@link RangeRule}. To solve a violation this
 	 * correction simply chooses the nearest bound (lower bound if the actual
 	 * value was lower than the lower bound, upper bound if the actual value was
-	 * higher than the upper bound). To specify this correction for a {@link RangeRule} use the following syntax:
-	 * <code><pre>
+	 * higher than the upper bound). To specify this correction for a
+	 * {@link RangeRule} use the following syntax: <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
@@ -549,6 +597,33 @@ public class CleansFunctions implements BuiltinProvider,
 				if (that.getMin().compareTo(value) > 0)
 					return that.getMin();
 				return that.getMax();
+			} else {
+				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
+			}
+		}
+	};
+
+	public static final ValueCorrection TRY_COERCING_TO_TYPE = new ValueCorrection() {
+		private Object readResolve() {
+			return TRY_COERCING_TO_TYPE;
+		}
+
+		@Override
+		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+			if (violatedRule instanceof TypeConstraint) {
+				Class<? extends IJsonNode> type = ((TypeConstraint) violatedRule)
+						.getType();
+				NodeCache cache = ((TypeConstraint) violatedRule)
+						.getNodeCache();
+				try {
+					if (value instanceof TextNode)
+						return LenientParser.INSTANCE.parse((TextNode) value,
+								type, LenientParser.ELIMINATE_NOISE);
+					return TypeCoercer.INSTANCE.coerce(value, cache, type);
+				} catch (final Exception e) {
+					return UnresolvableCorrection.INSTANCE.fix(value,
+							violatedRule);
+				}
 			} else {
 				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
@@ -588,7 +663,8 @@ public class CleansFunctions implements BuiltinProvider,
 	/**
 	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
 	 * violation this correction simply removes all violating characters from
-	 * the value. To specify this correction for a {@link IllegalCharacterRule} use the following syntax: <code><pre>
+	 * the value. To specify this correction for a {@link IllegalCharacterRule}
+	 * use the following syntax: <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
