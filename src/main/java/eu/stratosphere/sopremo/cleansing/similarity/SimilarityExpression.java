@@ -26,6 +26,10 @@ public class SimilarityExpression extends EvaluationExpression {
 
 	private final Similarity<IJsonNode> similarity;
 
+	SimilarityExpression() {
+		this(null);
+	}
+
 	/**
 	 * Initializes SimilarityExpression.
 	 * 
@@ -49,8 +53,12 @@ public class SimilarityExpression extends EvaluationExpression {
 
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode,
-	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
+	 * 
+	 * @see
+	 * eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.
+	 * stratosphere.sopremo.type.IJsonNode,
+	 * eu.stratosphere.sopremo.type.IJsonNode,
+	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
 	public IJsonNode evaluate(IJsonNode node) {

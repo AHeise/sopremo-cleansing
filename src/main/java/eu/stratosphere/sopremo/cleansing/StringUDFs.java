@@ -16,17 +16,14 @@ package eu.stratosphere.sopremo.cleansing;
 
 import java.io.IOException;
 
-import eu.stratosphere.sopremo.cleansing.similarity.text.JaroSimilarity;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
 import eu.stratosphere.sopremo.function.SopremoFunction2;
 import eu.stratosphere.sopremo.function.SopremoVarargFunction;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.packages.BuiltinProvider;
 import eu.stratosphere.sopremo.type.ArrayNode;
-import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IObjectNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
 /**
@@ -40,7 +37,7 @@ public class StringUDFs implements BuiltinProvider {
 	public static final CONCAT_STRINGS CONCAT_STRINGS = new CONCAT_STRINGS();
 	public static final LOWER_CASE LOWER_CASE = new LOWER_CASE();
 	public static final UPPER_CASE UPPER_CASE = new UPPER_CASE();
-	public static final JARO_WINKLER JARO_WINKLER = new JARO_WINKLER();
+//	public static final JARO_WINKLER JARO_WINKLER = new JARO_WINKLER();
 
 	/**
 	 * This function normalizes a given value by removing all unneccessary
@@ -267,19 +264,19 @@ public class StringUDFs implements BuiltinProvider {
 		}
 	};
 
-	@Name(noun = "jaroWinkler")
-	public static class JARO_WINKLER extends SopremoFunction2<IObjectNode, IObjectNode> {
-
-		public JARO_WINKLER() {
-			super("jaroWinkler");
-		}
-
-		@Override
-		protected IJsonNode call(IObjectNode left, IObjectNode right) {
-			TextNode firstName_L = left.get("firstName");
-			TextNode firstName_R = right.get("firstName");
-
-			return DoubleNode.valueOf(new JaroSimilarity().getSimilarity(firstName_L, firstName_R));
-		}
-	};
+//	@Name(noun = "jaroWinkler")
+//	public static class JARO_WINKLER extends SopremoFunction2<IObjectNode, IObjectNode> {
+//
+//		public JARO_WINKLER() {
+//			super("jaroWinkler");
+//		}
+//
+//		@Override
+//		protected IJsonNode call(IObjectNode left, IObjectNode right) {
+//			TextNode firstName_L = left.get("firstName");
+//			TextNode firstName_R = right.get("firstName");
+//
+//			return DoubleNode.valueOf(new JaroSimilarity().getSimilarity(firstName_L, firstName_R));
+//		}
+//	};
 }
