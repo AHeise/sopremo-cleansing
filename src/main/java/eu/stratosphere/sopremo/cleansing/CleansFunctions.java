@@ -31,6 +31,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
 import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
@@ -99,10 +100,8 @@ public class CleansFunctions implements BuiltinProvider,
 	@Override
 	public void registerFunctions(IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
-		// registry.put("levenshtein", new SimilarityMacro(new
-		// LevenshteinSimilarity()));
-		registry.put("jaroWinkler", new SimilarityMacro(
-				new JaroWinklerSimilarity()));
+		registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
+		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
 
 		this.registerMacro(new PatternValidationRuleMacro(), registry);
 		this.registerMacro(new RangeRuleMacro(), registry);
