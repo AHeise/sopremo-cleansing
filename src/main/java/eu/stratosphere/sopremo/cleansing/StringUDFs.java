@@ -37,6 +37,7 @@ public class StringUDFs implements BuiltinProvider {
 	public static final CONCAT_STRINGS CONCAT_STRINGS = new CONCAT_STRINGS();
 	public static final LOWER_CASE LOWER_CASE = new LOWER_CASE();
 	public static final UPPER_CASE UPPER_CASE = new UPPER_CASE();
+//	public static final JARO_WINKLER JARO_WINKLER = new JARO_WINKLER();
 
 	/**
 	 * This function normalizes a given value by removing all unneccessary
@@ -55,8 +56,7 @@ public class StringUDFs implements BuiltinProvider {
 	 * textual value.
 	 */
 	@Name(noun = "normalize_whitespaces")
-	public static class NORMALIZE_WHITESPACES extends
-			SopremoFunction1<TextNode> {
+	public static class NORMALIZE_WHITESPACES extends SopremoFunction1<TextNode> {
 
 		public NORMALIZE_WHITESPACES() {
 			super("normalize_whitespaces");
@@ -71,8 +71,7 @@ public class StringUDFs implements BuiltinProvider {
 			String input = inputNode.toString();
 			input = input.trim();
 			while (input.contains(this.DOUBLE_WHITESPACE)) {
-				input = input.replaceAll(this.DOUBLE_WHITESPACE,
-						this.SINGLE_WHITESPACE);
+				input = input.replaceAll(this.DOUBLE_WHITESPACE, this.SINGLE_WHITESPACE);
 			}
 			return TextNode.valueOf(input);
 		}
@@ -96,8 +95,7 @@ public class StringUDFs implements BuiltinProvider {
 	 * make sure the first parameter references a textual value.
 	 */
 	@Name(noun = "remove_all_characters")
-	public static class REMOVE_ALL_CHARACTERS extends
-			SopremoFunction2<TextNode, TextNode> {
+	public static class REMOVE_ALL_CHARACTERS extends SopremoFunction2<TextNode, TextNode> {
 
 		public REMOVE_ALL_CHARACTERS() {
 			super("remove_all_characters");
@@ -133,8 +131,7 @@ public class StringUDFs implements BuiltinProvider {
 	 * must be used when calling this function.
 	 */
 	@Name(noun = "remove_all_strings")
-	public static class REMOVE_ALL_STRINGS extends
-			SopremoFunction2<TextNode, ArrayNode<TextNode>> {
+	public static class REMOVE_ALL_STRINGS extends SopremoFunction2<TextNode, ArrayNode<TextNode>> {
 
 		public REMOVE_ALL_STRINGS() {
 			super("remove_all_strings");
@@ -143,13 +140,11 @@ public class StringUDFs implements BuiltinProvider {
 		private String REPLACE_CHAR = "";
 
 		@Override
-		protected IJsonNode call(TextNode inputNode,
-				ArrayNode<TextNode> removals) {
+		protected IJsonNode call(TextNode inputNode, ArrayNode<TextNode> removals) {
 			String input = inputNode.toString();
 
 			for (TextNode removalString : removals) {
-				input = input.replace(removalString.toString(),
-						this.REPLACE_CHAR);
+				input = input.replace(removalString.toString(), this.REPLACE_CHAR);
 			}
 
 			return TextNode.valueOf(input);
@@ -201,12 +196,10 @@ public class StringUDFs implements BuiltinProvider {
 		}
 
 		@SuppressWarnings({ "unchecked", "unused" })
-		private void concatArrayContent(IArrayNode<IJsonNode> arrayNode,
-				StringBuilder builder) {
+		private void concatArrayContent(IArrayNode<IJsonNode> arrayNode, StringBuilder builder) {
 			for (IJsonNode node : arrayNode) {
 				if (node instanceof IArrayNode) {
-					this.concatArrayContent((IArrayNode<IJsonNode>) node,
-							builder);
+					this.concatArrayContent((IArrayNode<IJsonNode>) node, builder);
 				} else {
 					// builder.append(((TextNode) node).getTextValue());
 					try {
@@ -270,4 +263,20 @@ public class StringUDFs implements BuiltinProvider {
 			return TextNode.valueOf(inputString.toString().toUpperCase());
 		}
 	};
+
+//	@Name(noun = "jaroWinkler")
+//	public static class JARO_WINKLER extends SopremoFunction2<IObjectNode, IObjectNode> {
+//
+//		public JARO_WINKLER() {
+//			super("jaroWinkler");
+//		}
+//
+//		@Override
+//		protected IJsonNode call(IObjectNode left, IObjectNode right) {
+//			TextNode firstName_L = left.get("firstName");
+//			TextNode firstName_R = right.get("firstName");
+//
+//			return DoubleNode.valueOf(new JaroSimilarity().getSimilarity(firstName_L, firstName_R));
+//		}
+//	};
 }
