@@ -35,7 +35,7 @@ import java.util.BitSet;
 public class JaroSimilarity extends TextSimilarity {
 	protected transient BitSet leftMatched = new BitSet(), rightMatched = new BitSet();
 
-	protected transient int commonChars, transpositions;
+	transient int commonChars, transpositions;
 
 	private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
 		ois.defaultReadObject();

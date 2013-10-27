@@ -28,8 +28,10 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
  * 
  * @author Arvid Heise
  */
-public class JaroWinklerSimilarity extends JaroSimilarity {
-	private double minSimilarityForBoost = 0.7;
+public class JaroWinklerSimilarity extends TextSimilarity {
+	private float minSimilarityForBoost = 0.7f;
+
+	private final JaroSimilarity jaroSimilarity = new JaroSimilarity();
 
 	/**
 	 * Sets the minSimilarityForBoost to the specified value.
@@ -37,7 +39,7 @@ public class JaroWinklerSimilarity extends JaroSimilarity {
 	 * @param minSimilarityForBoost
 	 *        the minSimilarityForBoost to set
 	 */
-	public void setMinSimilarityForBoost(double minSimilarityForBoost) {
+	public void setMinSimilarityForBoost(float minSimilarityForBoost) {
 		if (minSimilarityForBoost < 0 || minSimilarityForBoost > 1)
 			throw new IllegalArgumentException("minSimilarityForBoost must be in [0; 1]");
 
@@ -60,13 +62,13 @@ public class JaroWinklerSimilarity extends JaroSimilarity {
 	 */
 	@Override
 	public double getSimilarity(CharSequence text1, CharSequence text2) {
-		final double jaroSimilarity = super.getSimilarity(text1, text2);
+		final double jaroSimilarity = this.jaroSimilarity.getSimilarity(text1, text2);
 
 		if (jaroSimilarity < this.minSimilarityForBoost)
 			return jaroSimilarity;
 
 		int prefixLength = 0;
-		final int maxLength = this.commonChars - this.transpositions;
+		final int maxLength = Math.min(5, this.jaroSimilarity.commonChars - this.jaroSimilarity.transpositions);
 		while (prefixLength < maxLength && text1.charAt(prefixLength) == text2.charAt(prefixLength))
 			prefixLength++;
 
