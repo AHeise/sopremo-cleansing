@@ -40,6 +40,6 @@ public class DiceCoefficientSimilarity extends SetSimilarity {
 	 */
 	@Override
 	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
-		return 2 * this.getNumberOfCommonTokens(node1, node2) / (node1.size() + node2.size());
+		return 2d * this.getNumberOfCommonTokens(node1, node2) / (node1.size() + node2.size());
 	}
 }

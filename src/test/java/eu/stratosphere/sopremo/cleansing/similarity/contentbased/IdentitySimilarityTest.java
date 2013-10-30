@@ -38,7 +38,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.IdentitySimilarity;
  * @author Arvid Heise
  */
 public class IdentitySimilarityTest extends SimilarityBaseTest {
-	public IdentitySimilarityTest(Object node1, Object node2, double expected) {
+	public IdentitySimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 

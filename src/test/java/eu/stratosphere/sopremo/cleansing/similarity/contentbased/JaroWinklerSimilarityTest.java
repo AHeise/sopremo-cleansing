@@ -15,7 +15,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
  * @author Arvid Heise
  */
 public class JaroWinklerSimilarityTest extends SimilarityBaseTest {
-	public JaroWinklerSimilarityTest(Object node1, Object node2, double expected) {
+	public JaroWinklerSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 
