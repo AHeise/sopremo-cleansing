@@ -18,7 +18,7 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
  * 
  */
 public enum DuplicateDetectionImplementation {
-	NAIVE(NaiveDuplicateDetection.class), BLOCKING(Blocking.class);
+	NAIVE(NaiveDuplicateDetection.class), BLOCKING(Blocking.class), SNM(SortedNeighborhood.class);
 	
 	private Class<? extends CompositeDuplicateDetectionAlgorithm<?>> type;
 
