@@ -15,7 +15,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.set.BlockDistanceSimilarity;
  * @author Arvid Heise
  */
 public class BlockDistanceSimilarityTest extends SimilarityBaseTest {
-	public BlockDistanceSimilarityTest(Object node1, Object node2, double expected) {
+	public BlockDistanceSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 

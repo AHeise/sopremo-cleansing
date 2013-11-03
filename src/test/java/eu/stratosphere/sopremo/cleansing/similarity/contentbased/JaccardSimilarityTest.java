@@ -14,8 +14,8 @@ import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
  * 
  * @author Arvid Heise
  */
-public class JaccardSimilaritySimilarityTest extends SimilarityBaseTest {
-	public JaccardSimilaritySimilarityTest(Object node1, Object node2, Object expected) {
+public class JaccardSimilarityTest extends SimilarityBaseTest {
+	public JaccardSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 
@@ -35,7 +35,7 @@ public class JaccardSimilaritySimilarityTest extends SimilarityBaseTest {
 			{ "hans-peter", "hans-peter", withTokenization(1) },
 			{ "hans-peter", "Hans-peter", withTokenization(0) },
 			{ "hans peter", "hans peter", withTokenization(1) },
-			{ "hans peter", "Hans peter", withTokenization(.5) },
+			{ "hans peter", "Hans peter", withTokenization(1d / 3) },
 			{ "thomas", "", withTokenization(0) },
 			{ "thomas", null, withTokenization(0) },
 			{ "", "", withTokenization(1) },

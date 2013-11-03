@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 
 import eu.stratosphere.sopremo.cleansing.SoundEx;
+import eu.stratosphere.util.CharSequenceUtil;
 
 /**
  * <code>SoundExSimilarity</code> compares two {@link IJsonNode}s based on a phonetic algorithm for indexing names by
@@ -61,7 +62,7 @@ public class SoundExSimilarity extends TextSimilarity {
 			SoundEx.generateSoundExInto(text2, this.soundex2);
 		} catch (IOException e) {
 		}
-		if (this.soundex1.equals(this.soundex2))
+		if (CharSequenceUtil.equal(this.soundex1, this.soundex2))
 			return 1.0;
 
 		return 0.0;

@@ -8,15 +8,15 @@ import org.junit.runners.Parameterized.Parameters;
 
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityBaseTest;
-import eu.stratosphere.sopremo.cleansing.similarity.set.DiceCoefficientSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.set.EuclideanSimilarity;
 
 /**
- * Tests the {@link DiceCoefficientSimilarity} class.
+ * Tests the {@link EuclideanDistanceSimilarity} class.
  * 
  * @author Arvid Heise
  */
-public class DiceCoefficientSimilarityTest extends SimilarityBaseTest {
-	public DiceCoefficientSimilarityTest(Object node1, Object node2, Object expected) {
+public class EuclideanSimilarityTest extends SimilarityBaseTest {
+	public EuclideanSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 
@@ -26,7 +26,7 @@ public class DiceCoefficientSimilarityTest extends SimilarityBaseTest {
 	 */
 	@Override
 	public Similarity<?> getSimilarity() {
-		return new DiceCoefficientSimilarity();
+		return new EuclideanSimilarity();
 	}
 
 	@Parameters

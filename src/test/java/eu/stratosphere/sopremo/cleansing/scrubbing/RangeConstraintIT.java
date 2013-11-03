@@ -26,7 +26,7 @@ public class RangeConstraintIT extends MeteorIT {
 		return parseScript("using cleansing;" +
 			"$data = read from 'src/test/resources/TestDataRange.json';" +
 			"$data_scrubbed = scrub $data with rules {" +
-			"number: inRange(500, 1500)," + "};" +
+			"number: range(500, 1500)," + "};" +
 			"write $data_scrubbed to 'file:///tmp/TestOutputRange.json';");
 	}
 }

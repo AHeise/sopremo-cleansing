@@ -121,7 +121,7 @@ public abstract class SimilarityBaseTest {
 			similarity = new CoercingSimilarity(similarity);
 		}
 		if (this.expected.getTransformation() == TransformedValue.Transformation.TOKENIZE) {
-			similarity = (Similarity) new TokenizingSimilarity((Similarity) similarity);
+			similarity = new CoercingSimilarity(new TokenizingSimilarity((Similarity) similarity));
 		}
 		try {
 			Assert.assertEquals(this.expected.getSim(), similarity.getSimilarity(this.node1, this.node2), 0.0001);
@@ -131,6 +131,7 @@ public abstract class SimilarityBaseTest {
 		}
 
 		if (similarity.isSymmetric() && !Double.isNaN(this.expected.getSim()))
-			Assert.assertEquals("Not symmetric", this.expected.getSim(), similarity.getSimilarity(this.node2, this.node1), 0.0001);
+			Assert.assertEquals("Not symmetric", this.expected.getSim(),
+				similarity.getSimilarity(this.node2, this.node1), 0.0001);
 	}
 }
