@@ -27,7 +27,7 @@ public class MappingInformation {
 	
 	private DataSource target = new DataSource(EntityMapping.type, targetSchema);
 	
-	private List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+	private List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
 
 	public MappingJoinCondition getSourceJoinCondition() {
 		return sourceJoinCondition;
@@ -85,11 +85,19 @@ public class MappingInformation {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
-	public List<ValueCorrespondence> getValueCorrespondences() {
+	public List<MappingValueCorrespondence> getValueCorrespondences() {
+		return valueCorrespondences;
+	}
+	
+	public List<ValueCorrespondence> getValueCorrespondencesAsSpicyTypes() {
+		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+		for(MappingValueCorrespondence mvc : this.getValueCorrespondences()){
+			valueCorrespondences.add(mvc.generateSpicyType());
+		}
 		return valueCorrespondences;
 	}
 
-	public void setValueCorrespondences(List<ValueCorrespondence> valueCorrespondences) {
+	public void setValueCorrespondences(List<MappingValueCorrespondence> valueCorrespondences) {
 		this.valueCorrespondences = valueCorrespondences;
 	}
 }

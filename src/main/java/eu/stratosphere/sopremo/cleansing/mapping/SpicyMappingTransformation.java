@@ -280,7 +280,7 @@ public class SpicyMappingTransformation extends
 		this.mappingTask = new MappingTask(new DataSource(EntityMapping.type,
 				this.mappingInformation.getSourceSchema()),
 				this.mappingInformation.getTarget(),
-				this.mappingInformation.getValueCorrespondences());
+				this.mappingInformation.getValueCorrespondencesAsSpicyTypes());
 		if (this.mappingInformation.getSourceJoinCondition() != null)
 			this.mappingTask.getSourceProxy().addJoinCondition(
 					this.mappingInformation.getSourceJoinCondition()

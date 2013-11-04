@@ -39,19 +39,10 @@ public class MappingJoinCondition {
 	}
 
 	public MappingJoinCondition(JoinCondition condition) {
-		this.fromPaths = this.extractPathFrom(condition.getFromPaths());
-		this.toPaths = this.extractPathFrom(condition.getToPaths());
+		this.fromPaths = MappingUtil.extractPathFrom(condition.getFromPaths());
+		this.toPaths = MappingUtil.extractPathFrom(condition.getToPaths());
 		this.isMandatory = condition.isMandatory();
 		this.isMonodirectional = condition.isMonodirectional();
-	}
-
-	private List<List<String>> extractPathFrom(List<PathExpression> fromPaths) {
-		List<List<String>> paths = new LinkedList<List<String>>();
-		for (PathExpression currentPath : fromPaths) {
-			List<String> pathSteps = currentPath.getPathSteps();
-			paths.add(pathSteps);
-		}
-		return paths;
 	}
 
 	public List<List<String>> getFromPaths() {
@@ -71,17 +62,9 @@ public class MappingJoinCondition {
 	}
 
 	public JoinCondition generateSpicyType() {
-		List<PathExpression> fromPaths = createPaths(this.fromPaths);
-		List<PathExpression> toPaths = createPaths(this.toPaths);
+		List<PathExpression> fromPaths = MappingUtil.createPaths(this.fromPaths);
+		List<PathExpression> toPaths = MappingUtil.createPaths(this.toPaths);
 		return new JoinCondition(fromPaths, toPaths, this.isMonodirectional,
 				this.isMandatory);
-	}
-
-	public static List<PathExpression> createPaths(List<List<String>> paths) {
-		List<PathExpression> spicyPaths = new LinkedList<PathExpression>();
-		for (List<String> currentPath : paths) {
-			spicyPaths.add(new PathExpression(currentPath));
-		}
-		return spicyPaths;
 	}
 }

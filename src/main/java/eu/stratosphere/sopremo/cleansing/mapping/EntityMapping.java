@@ -2,7 +2,6 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.KeyConstraint;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
@@ -107,7 +106,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Name(adjective = "as")
 	public void setMappingExpression(final ArrayCreation assignment) {
 
-		ValueCorrespondence corr = null;
+		MappingValueCorrespondence corr = null;
 
 		HashMap<String, String> foreignKeys = new HashMap<String, String>();
 
@@ -260,11 +259,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 
 		// create transitive value correspondences from foreign keys
-		List<ValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences(
+		List<MappingValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences(
 				corr, this.spicyMappingTransformation.getMappingInformation()
 						.getValueCorrespondences(), foreignKeys);
 
-		for (ValueCorrespondence cond : transitiveValueCorrespondences) {
+		for (MappingValueCorrespondence cond : transitiveValueCorrespondences) {
 			this.spicyMappingTransformation.getMappingInformation()
 					.getValueCorrespondences().add(cond);
 		}
@@ -367,7 +366,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return builder.toString();
 	}
 
-	private ValueCorrespondence createValueCorrespondence(
+	private MappingValueCorrespondence createValueCorrespondence(
 			final String sourceNesting, final String sourceAttr,
 			final String targetNesting, final String targetAttr) {
 
@@ -379,13 +378,13 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		targetSteps.add(targetNesting);
 		targetSteps.add(targetAttr);
 
-		final PathExpression sourcePath = new PathExpression(sourceSteps);
-		final PathExpression targetPath = new PathExpression(targetSteps);
+//		final PathExpression sourcePath = new PathExpression(sourceSteps);
+//		final PathExpression targetPath = new PathExpression(targetSteps);
 
-		return new ValueCorrespondence(sourcePath, targetPath);
+		return new MappingValueCorrespondence(sourceSteps, targetSteps);
 	}
 
-	private ValueCorrespondence createValueCorrespondence(final String source,
+	private MappingValueCorrespondence createValueCorrespondence(final String source,
 			final String target) {
 
 		final List<String> sourceSteps = new ArrayList<String>();
@@ -394,10 +393,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		sourceSteps.add(source);
 		targetSteps.add(target);
 
-		final PathExpression sourcePath = new PathExpression(sourceSteps);
-		final PathExpression targetPath = new PathExpression(targetSteps);
+//		final PathExpression sourcePath = new PathExpression(sourceSteps);
+//		final PathExpression targetPath = new PathExpression(targetSteps);
 
-		return new ValueCorrespondence(sourcePath, targetPath);
+		return new MappingValueCorrespondence(sourceSteps, targetSteps);
 	}
 
 	private KeyConstraint createKeyConstraints(final String nesting,
@@ -459,16 +458,18 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return pathList;
 	}
 
-	private List<ValueCorrespondence> createTransitiveValueCorrespondences(
-			ValueCorrespondence corr,
-			List<ValueCorrespondence> valueCorrespondences,
+	private List<MappingValueCorrespondence> createTransitiveValueCorrespondences(
+			MappingValueCorrespondence corr,
+			List<MappingValueCorrespondence> valueCorrespondences,
 			HashMap<String, String> foreignKeys) {
 
-		List<ValueCorrespondence> transitiveValueCorrespondences = new ArrayList<ValueCorrespondence>();
+		List<MappingValueCorrespondence> transitiveValueCorrespondences = new ArrayList<MappingValueCorrespondence>();
 		for (String fk : foreignKeys.keySet()) {
 			String value = foreignKeys.get(fk).toString();
 
-			for (ValueCorrespondence vc : valueCorrespondences) {
+			for (MappingValueCorrespondence mvc : valueCorrespondences) {
+				//we use a real ValueCorrespondence here, because the container type MappingValueCorrespondence only stores one single sourcePath
+				ValueCorrespondence vc = mvc.generateSpicyType();
 				if (vc.getTargetPath().toString().equals(value)) {
 
 					for (PathExpression pe : vc.getSourcePaths()) {
