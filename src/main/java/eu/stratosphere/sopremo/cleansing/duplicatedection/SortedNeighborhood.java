@@ -19,7 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javolution.util.FastList;
-
+import eu.stratosphere.pact.common.contract.Order;
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.base.ContextualProjection;
 import eu.stratosphere.sopremo.base.Grouping;
@@ -33,13 +33,17 @@ import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.OrderingExpression;
+import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
 import eu.stratosphere.sopremo.pact.SopremoMatch;
@@ -59,9 +63,11 @@ import eu.stratosphere.sopremo.type.NullNode;
 @OutputCardinality(1)
 @Name(noun = { "snm", "sorted neighborhood" })
 public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
-	private int windowSize;
+	private static final int DEFAULT_WINDOW_SIZE = 2, DEFAULT_NUMBER_OF_PARTITION = 10;
 
-	private int numberOfPartitions;
+	private int windowSize = DEFAULT_WINDOW_SIZE;
+
+	private int numberOfPartitions = DEFAULT_NUMBER_OF_PARTITION;
 
 	/**
 	 * [sorting key, count] -&gt; [key, rank]
@@ -97,9 +103,11 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 			throw new UnsupportedOperationException();
 
 		// record -> sorting key
-		final Projection sortingKeys = new Projection().withResultProjection(new ArrayCreation(
-			pass.getBlockingKeys().get(0),
-			new ReadConfigurationExpression("pact.parallel.task.id", new IntNode())));
+		final Projection sortingKeys = new Projection().
+			withInputs(inputs.get(0)).
+			withResultProjection(new ArrayCreation(
+				pass.getBlockingKeys().get(0),
+				new ReadConfigurationExpression("pact.parallel.task.id", new IntNode())));
 
 		// sorting key+ -> [sorting key, count]
 		final BatchAggregationExpression countExpression = new BatchAggregationExpression();
@@ -119,7 +127,7 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 
 		final Grouping countRecords = new Grouping().
 			withInputs(sortingKeys).
-			withResultProjection(new AggregationExpression(CoreFunctions.COUNT));
+			withResultProjection(CoreFunctions.COUNT.inline(EvaluationExpression.VALUE));
 		// [sorting key, rank] -> [sorting key, rank, count]
 		final ContextualProjection keysWithRankAndCount = new ContextualProjection().
 			withInputs(keysWithRank, countRecords).
@@ -131,34 +139,137 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 			withKeyExpression(0, pass.getBlockingKeys().get(0)).
 			withKeyExpression(1, new ArrayAccess(0));
 
-		return null;
+		final SlidingWindow window = new SlidingWindow().
+			withInputs(rankJoin).
+			withWindowSize(this.windowSize).withCondition(comparison.asCondition()).
+			withKeyExpression(0, new ArrayAccess(0)).
+			withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(2)));
+
+		return window;
 	}
 
+	@InputCardinality(1)
 	public static class SlidingWindow extends ElementaryOperator<SlidingWindow> {
-		private int windowSize;
+		private int windowSize = DEFAULT_WINDOW_SIZE;
 
-		private BooleanExpression condition;
+		private BooleanExpression condition = new UnaryExpression(new ConstantExpression(true));
 
-		public static class Implementation extends SopremoReduce {
-			private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
+		/**
+		 * Initializes SortedNeighborhood.SlidingWindow.
+		 */
+		public SlidingWindow() {
+		}
+
+		/**
+		 * Returns the windowSize.
+		 * 
+		 * @return the windowSize
+		 */
+		public int getWindowSize() {
+			return this.windowSize;
+		}
+
+		/**
+		 * Sets the windowSize to the specified value.
+		 * 
+		 * @param windowSize
+		 *        the windowSize to set
+		 */
+		public void setWindowSize(int windowSize) {
+			if (windowSize <= 1)
+				throw new NullPointerException("windowSize must be greater than 1");
+
+			this.windowSize = windowSize;
+		}
+
+		/**
+		 * Sets the windowSize to the specified value.
+		 * 
+		 * @param windowSize
+		 *        the windowSize to set
+		 */
+		public SlidingWindow withWindowSize(int windowSize) {
+			setWindowSize(windowSize);
+			return this;
+		}
+
+		/**
+		 * Returns the condition.
+		 * 
+		 * @return the condition
+		 */
+		public BooleanExpression getCondition() {
+			return this.condition;
+		}
+
+		/**
+		 * Sets the condition to the specified value.
+		 * 
+		 * @param condition
+		 *        the condition to set
+		 */
+		public void setCondition(BooleanExpression condition) {
+			if (condition == null)
+				throw new NullPointerException("condition must not be null");
+
+			this.condition = condition;
+		}
+
+		/**
+		 * Sets the condition to the specified value.
+		 * 
+		 * @param condition
+		 *        the condition to set
+		 */
+		public SlidingWindow withCondition(BooleanExpression condition) {
+			setCondition(condition);
+
+			return this;
+		}
+
+		public static class Implementation extends GenericSopremoReduce<IArrayNode<IJsonNode>, IJsonNode> {
 
 			private int windowSize;
 
 			private BooleanExpression condition;
 
 			private FastList<IJsonNode> ringBuffer = new FastList<IJsonNode>();
-			
-			/* (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.GenericSopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
+
+			private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
+
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.pact.GenericSopremoReduce#reduce(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void reduce(IStreamNode<IJsonNode> values, JsonCollector<IJsonNode> out) {
-				
+			protected void reduce(IStreamNode<IArrayNode<IJsonNode>> values, JsonCollector<IJsonNode> collector) {
+				// fill buffer with remainder of previous partition
+				final Iterator<IArrayNode<IJsonNode>> iterator = values.iterator();
+				boolean correctPartition = false;
+				while (iterator.hasNext()) {
+					IArrayNode<IJsonNode> partitionedValue = iterator.next();
+
+					if (this.ringBuffer.size() >= this.windowSize)
+						this.ringBuffer.removeFirst();
+
+					this.pair.set(1, partitionedValue.get(2));
+					if (correctPartition || (correctPartition = partitionedValue.get(0).equals(partitionedValue.get(1)))) {
+						for (FastList.Node<IJsonNode> n = this.ringBuffer.head(), end = this.ringBuffer.tail(); (n = n.getNext()) != end;) {
+							this.pair.set(0, n.getValue());
+							if (this.condition.evaluate(this.pair) == BooleanNode.TRUE)
+								collector.collect(this.pair);
+						}
+					}
+
+					this.ringBuffer.add(partitionedValue.get(2));
+				}
 			}
 		}
 
 	}
 
+	@InputCardinality(2)
 	public static class PartitionKeys extends ElementaryOperator<PartitionKeys> {
 		private int windowSize;
 
@@ -173,6 +284,24 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 		protected PartitionKeys(int windowSize, int numberOfPartitions) {
 			this.windowSize = windowSize;
 			this.numberOfPartitions = numberOfPartitions;
+		}
+
+		/**
+		 * Returns the windowSize.
+		 * 
+		 * @return the windowSize
+		 */
+		public int getWindowSize() {
+			return this.windowSize;
+		}
+
+		/**
+		 * Returns the numberOfPartitions.
+		 * 
+		 * @return the numberOfPartitions
+		 */
+		public int getNumberOfPartitions() {
+			return this.numberOfPartitions;
 		}
 
 		public static class Implementation extends SopremoCoGroup {

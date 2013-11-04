@@ -15,9 +15,8 @@ import eu.stratosphere.sopremo.cleansing.similarity.set.CosineSimilarity;
  * 
  * @author Arvid Heise
  */
-@Ignore
 public class CosineSimilarityTest extends SimilarityBaseTest {
-	public CosineSimilarityTest(Object node1, Object node2, double expected) {
+	public CosineSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 
@@ -28,17 +27,18 @@ public class CosineSimilarityTest extends SimilarityBaseTest {
 	public Similarity<?> getSimilarity() {
 		return new CosineSimilarity();
 	}
-	
+
 	@Parameters
-	public static  List<Object[]>  getParameters() {
+	public static List<Object[]> getParameters() {
 		return Arrays.asList(new Object[][] {
-			{ "thomas", "thomas", 1 },
-			{ "hans-peter", "hans-peter", 1 },
-			{ "hans-peter", "Hans-peter", 0 },
-			{ "thomas", "", 0 },
-			{ "thomas", null, withCoercion(0) },
-			{ "", "", 1 },
-			{ "", null, withCoercion(1) },
+			{ "thomas", "thomas", withTokenization(1) },
+			{ "hans-peter", "hans-peter", withTokenization(1) },
+			{ "hans-peter", "Hans-peter", withTokenization(0) },
+			{ "hans peter", "Hans peter", withTokenization(0.5) },
+			{ "thomas", "", withTokenization(0) },
+			{ "thomas", null, withTokenization(0) },
+			{ "", "", withTokenization(1) },
+			{ "", null, withTokenization(1) },
 		});
 	}
 }

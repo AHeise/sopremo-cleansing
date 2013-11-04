@@ -14,25 +14,27 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
  * 
  * @author Arvid Heise
  */
-public class LevenshteinSimilarityTest extends SimilarityBaseTest {	
-	public LevenshteinSimilarityTest(Object node1, Object node2, double expected) {
+public class LevenshteinSimilarityTest extends SimilarityBaseTest {
+	public LevenshteinSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
 	 * @see de.hpi.fgis.dude.junit.Similarity.SimilarityBaseTest#getSimilarity()
 	 */
 	@Override
 	public Similarity<?> getSimilarity() {
 		return new LevenshteinSimilarity();
 	}
-	
+
 	@Parameters
-	public static  List<Object[]>  getParameters() {
+	public static List<Object[]> getParameters() {
 		return Arrays.asList(new Object[][] {
 			{ "thomas", "thomas", 1 },
 			{ "hans-peter", "hans-peter", 1 },
 			{ "hans-peter", "Hans-peter", 0.9 },
+			{ "hans-peter", "hans-peter2", 10f / 11 },
 			{ "thomas", "", 0 },
 			{ "thomas", null, withCoercion(0) },
 			{ "", "", 1 },

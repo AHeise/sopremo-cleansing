@@ -24,6 +24,7 @@
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -32,11 +33,14 @@ import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * <code>EuclideanDistance</code> compares two {@link IJsonNode}s based on the Euclidean Distance attribute.
+ * <code>EuclideanSimilarity</code> compares two {@link IJsonNode}s based on the Euclidean Distance attribute.
  * 
  * @author Arvid Heise
  */
-public class EuclideanDistance extends SetSimilarity {
+public class EuclideanSimilarity extends SetSimilarity {
+	private final Object2IntMap<IJsonNode> termFrequencies1 = new Object2IntOpenHashMap<IJsonNode>(),
+			termFrequencies2 = new Object2IntOpenHashMap<IJsonNode>();
+
 	/*
 	 * (non-Javadoc)
 	 * @see
@@ -45,19 +49,19 @@ public class EuclideanDistance extends SetSimilarity {
 	 */
 	@Override
 	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
-		final Object2IntMap<IJsonNode> termFrequencies1 = this.getTermFrequencies(node1);
-		final Object2IntMap<IJsonNode> termFrequencies2 = this.getTermFrequencies(node2);
+		this.getTermFrequencies(node1, this.termFrequencies1);
+		this.getTermFrequencies(node2, this.termFrequencies2);
 
-		final Set<IJsonNode> values = new HashSet<IJsonNode>(termFrequencies1.keySet());
-		values.addAll(termFrequencies2.keySet());
+		final Set<IJsonNode> values = new HashSet<IJsonNode>(this.termFrequencies1.keySet());
+		values.addAll(this.termFrequencies2.keySet());
 
 		double distanceSq = 0;
 		for (IJsonNode value : values) {
-			int diff = termFrequencies1.getInt(value) - termFrequencies2.getInt(value);
+			int diff = this.termFrequencies1.getInt(value) - this.termFrequencies2.getInt(value);
 			distanceSq += diff * diff;
 		}
 		final double maxSq = node1.size() * node1.size() + node2.size() * node2.size();
 
-		return Math.pow(distanceSq / maxSq, 0.5);
+		return 1 - Math.pow(distanceSq / maxSq, 0.5);
 	}
 }

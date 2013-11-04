@@ -15,7 +15,7 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.MatchingCoefficientSimi
  * @author Arvid Heise
  */
 public class MatchingCoefficientSimilarityTest extends SimilarityBaseTest {
-	public MatchingCoefficientSimilarityTest(Object node1, Object node2, double expected) {
+	public MatchingCoefficientSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 

@@ -14,6 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
+
 /**
  * 
  */
@@ -27,6 +29,8 @@ public class DuplicateDetectionFactory {
 	public CompositeDuplicateDetectionAlgorithm<?> getMatchingAlgorithm(CandidateSelection selection, int numInputs) {
 		if (selection.getPasses().isEmpty())
 			return new NaiveDuplicateDetection();
-		return new Blocking();
+		if (selection.getSelectionHint() == SelectionHint.BLOCK || numInputs > 1)
+			return new Blocking();
+		return new SortedNeighborhood();
 	}
 }

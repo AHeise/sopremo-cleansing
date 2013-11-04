@@ -15,9 +15,8 @@ import eu.stratosphere.sopremo.cleansing.similarity.text.SoundExSimilarity;
  * 
  * @author Arvid Heise
  */
-@Ignore
 public class SoundExSimilarityTest extends SimilarityBaseTest {
-	public SoundExSimilarityTest(Object node1, Object node2, double expected) {
+	public SoundExSimilarityTest(Object node1, Object node2, Object expected) {
 		super(node1, node2, expected);
 	}
 

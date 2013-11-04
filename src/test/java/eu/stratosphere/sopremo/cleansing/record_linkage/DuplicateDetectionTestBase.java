@@ -16,6 +16,7 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -81,7 +82,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)), (CandidateComparison) dd.getComparison().clone());
 
 		try {
-			// this.sopremoTestPlan.trace();
+			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
@@ -113,7 +114,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		if (resultProjection == null)
 			resultProjection = EvaluationExpression.VALUE;
 
-		this.sopremoTestPlan.getExpectedOutput(0).add(resultProjection.evaluate(JsonUtil.asArray(left, right)));
+		this.sopremoTestPlan.getExpectedOutput(0).add(resultProjection.evaluate(JsonUtil.asArray(left, right)).clone());
 	}
 
 	/**
@@ -145,13 +146,13 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(dd);
 		sopremoTestPlan.getInput(0).
 			addObject("id", 0, "first name", "albert", "last name", "perfect duplicate", "age", 80).
-			// addObject("id", 1, "first name", "berta", "last name", "typo", "age", 70).
-			// addObject("id", 2, "first name", "charles", "last name", "age inaccurate", "age", 70).
-			// addObject("id", 3, "first name", "dagmar", "last name", "unmatched", "age", 75).
-			// addObject("id", 4, "first name", "elma", "last name", "first nameDiffers", "age", 60).
-			// addObject("id", 5, "first name", "albert", "last name", "perfect duplicate", "age", 80).
-			// addObject("id", 6, "first name", "berta", "last name", "tpyo", "age", 70).
-			// addObject("id", 7, "first name", "charles", "last name", "age inaccurate", "age", 69).
+			addObject("id", 1, "first name", "berta", "last name", "typo", "age", 70).
+			addObject("id", 2, "first name", "charles", "last name", "age inaccurate", "age", 70).
+			addObject("id", 3, "first name", "dagmar", "last name", "unmatched", "age", 75).
+			addObject("id", 4, "first name", "elma", "last name", "first nameDiffers", "age", 60).
+			addObject("id", 5, "first name", "albert", "last name", "perfect duplicate", "age", 80).
+			addObject("id", 6, "first name", "berta", "last name", "tpyo", "age", 70).
+			addObject("id", 7, "first name", "charles", "last name", "age inaccurate", "age", 69).
 			addObject("id", 8, "first name", "elmar", "last name", "first nameDiffers", "age", 60);
 		return sopremoTestPlan;
 	}
@@ -163,8 +164,8 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	 */
 	protected static EvaluationExpression getAggregativeProjection() {
 		final ObjectCreation aggregating = new ObjectCreation();
-		aggregating.addMapping("name", new ObjectAccess("first name"));
-		aggregating.addMapping("id", new ObjectAccess("id"));
+		aggregating.addMapping("name", new ArrayProjection(new ObjectAccess("first name")));
+		aggregating.addMapping("id", new ArrayProjection(new ObjectAccess("id")));
 
 		return aggregating;
 	}

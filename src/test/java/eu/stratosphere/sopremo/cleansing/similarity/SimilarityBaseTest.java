@@ -24,7 +24,6 @@
 package eu.stratosphere.sopremo.cleansing.similarity;
 
 import org.junit.Assert;
-
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -33,6 +32,7 @@ import org.junit.runners.Parameterized;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.JavaToJsonMapper;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
@@ -47,20 +47,65 @@ public abstract class SimilarityBaseTest {
 
 	private IJsonNode node1, node2;
 
-	private double expected;
+	private TransformedValue expected;
 
 	protected EvaluationContext context;
 
-	public SimilarityBaseTest(Object node1, Object node2, double expected) {
-		this.node1 = JsonUtil.createValueNode(node1);
-		this.node2 = JsonUtil.createValueNode(node2);
-		this.expected = expected;
+	public SimilarityBaseTest(Object node1, Object node2, Object expected) {
+		this.node1 = JavaToJsonMapper.INSTANCE.map(node1);
+		this.node2 = JavaToJsonMapper.INSTANCE.map(node2);
+		this.expected = expected instanceof Number ?
+			new TransformedValue(((Number) expected).doubleValue(), null) :
+			(TransformedValue) expected;
 	}
 
 	public abstract Similarity<?> getSimilarity();
 
-	protected static double withCoercion(double sim) {
-		return -sim - 1;
+	protected static TransformedValue withCoercion(double sim) {
+		return new TransformedValue(sim, TransformedValue.Transformation.COERCE);
+	}
+
+	protected static TransformedValue withTokenization(double sim) {
+		return new TransformedValue(sim, TransformedValue.Transformation.TOKENIZE);
+	}
+
+	private final static class TransformedValue {
+		private enum Transformation {
+			COERCE, TOKENIZE;
+		};
+
+		private Transformation transformation;
+
+		private double sim;
+
+		/**
+		 * Initializes TransformedValue.
+		 * 
+		 * @param sim
+		 * @param transformation
+		 */
+		public TransformedValue(double sim, Transformation transformation) {
+			this.sim = sim;
+			this.transformation = transformation;
+		}
+
+		/**
+		 * Returns the sim.
+		 * 
+		 * @return the sim
+		 */
+		public double getSim() {
+			return this.sim;
+		}
+
+		/**
+		 * Returns the transformation.
+		 * 
+		 * @return the transformation
+		 */
+		public Transformation getTransformation() {
+			return this.transformation;
+		}
 	}
 
 	@Before
@@ -68,22 +113,25 @@ public abstract class SimilarityBaseTest {
 		this.context = new EvaluationContext();
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void testSimilarity() throws Exception {
-		@SuppressWarnings("unchecked")
 		Similarity<IJsonNode> similarity = (Similarity<IJsonNode>) getSimilarity();
-		if (this.expected < 0) {
+		if (this.expected.getTransformation() == TransformedValue.Transformation.COERCE) {
 			similarity = new CoercingSimilarity(similarity);
-			this.expected = -this.expected - 1;
+		}
+		if (this.expected.getTransformation() == TransformedValue.Transformation.TOKENIZE) {
+			similarity = new CoercingSimilarity(new TokenizingSimilarity((Similarity) similarity));
 		}
 		try {
-			Assert.assertEquals(this.expected, similarity.getSimilarity(this.node1, this.node2), 0.0001);
+			Assert.assertEquals(this.expected.getSim(), similarity.getSimilarity(this.node1, this.node2), 0.0001);
 		} catch (Exception e) {
-			if (!Double.isNaN(this.expected))
+			if (!Double.isNaN(this.expected.getSim()))
 				throw e;
 		}
 
-		if (similarity.isSymmetric() && !Double.isNaN(this.expected))
-			Assert.assertEquals("Not symmetric", this.expected, similarity.getSimilarity(this.node2, this.node1), 0.0001);
+		if (similarity.isSymmetric() && !Double.isNaN(this.expected.getSim()))
+			Assert.assertEquals("Not symmetric", this.expected.getSim(),
+				similarity.getSimilarity(this.node2, this.node1), 0.0001);
 	}
 }

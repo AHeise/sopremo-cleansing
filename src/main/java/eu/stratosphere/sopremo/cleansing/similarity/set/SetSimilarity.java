@@ -61,11 +61,11 @@ public abstract class SetSimilarity extends AbstractSimilarity<IArrayNode<IJsonN
 		return commonTokens;
 	}
 
-	protected Object2IntMap<IJsonNode> getTermFrequencies(IArrayNode<IJsonNode> node1) {
-		final Object2IntOpenHashMap<IJsonNode> termFrequencies = new Object2IntOpenHashMap<IJsonNode>(node1.size());
-		termFrequencies.defaultReturnValue(0);
+	protected Object2IntMap<IJsonNode> getTermFrequencies(IArrayNode<IJsonNode> node1,
+			Object2IntMap<IJsonNode> termFrequencies) {
+		termFrequencies.clear();
 		for (IJsonNode node : node1)
-			termFrequencies.put(node, termFrequencies.get(node) + 1);
+			termFrequencies.put(node, termFrequencies.getInt(node) + 1);
 		return termFrequencies;
 	}
 }
