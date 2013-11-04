@@ -44,7 +44,6 @@ public class EntityMappingIT extends MeteorIT {
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
 	
-	@Ignore
 	@Test
 	public void testNaive() throws IOException {
 

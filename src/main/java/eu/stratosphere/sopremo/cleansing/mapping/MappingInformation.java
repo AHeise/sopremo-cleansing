@@ -1,13 +1,12 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.DataSource;
 import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class holds all relevant mapping information defined in a meteor script to create spicy specific data objects of them inside the {@link SpicyMappingTransformation}
@@ -17,8 +16,8 @@ import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 
 
 public class MappingInformation {
-	private JoinCondition sourceJoinCondition;
-	private List<JoinCondition> targetJoinConditions = new ArrayList<JoinCondition>();
+	private MappingJoinCondition sourceJoinCondition;
+	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 	
 	private INode sourceSchema = new SequenceNode(EntityMapping.sourceStr);
 	private INode targetSchema = new SequenceNode(EntityMapping.targetStr);
@@ -30,11 +29,11 @@ public class MappingInformation {
 	
 	private List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
 
-	public JoinCondition getSourceJoinCondition() {
+	public MappingJoinCondition getSourceJoinCondition() {
 		return sourceJoinCondition;
 	}
 
-	public void setSourceJoinCondition(JoinCondition sourceJoinCondition) {
+	public void setSourceJoinCondition(MappingJoinCondition sourceJoinCondition) {
 		this.sourceJoinCondition = sourceJoinCondition;
 	}
 
@@ -78,11 +77,11 @@ public class MappingInformation {
 		this.target = target;
 	}
 
-	public List<JoinCondition> getTargetJoinConditions() {
+	public List<MappingJoinCondition> getTargetJoinConditions() {
 		return targetJoinConditions;
 	}
 
-	public void setTargetJoinConditions(List<JoinCondition> targetJoinConditions) {
+	public void setTargetJoinConditions(List<MappingJoinCondition> targetJoinConditions) {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
