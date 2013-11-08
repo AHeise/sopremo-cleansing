@@ -476,15 +476,17 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 		List<MappingValueCorrespondence> transitiveValueCorrespondences = new ArrayList<MappingValueCorrespondence>();
 		for (String fk : foreignKeys.keySet()) {
-			String value = foreignKeys.get(fk).toString();
+			String value = foreignKeys.get(fk);
 
 			for (MappingValueCorrespondence mvc : valueCorrespondences) {
 				// we use a real ValueCorrespondence here, because the container
 				// type MappingValueCorrespondence only stores one single
 				// sourcePath
 				if (mvc.getTargetPath().toString().equals(value)) {
+						String[] targetPathSteps = fk.split("\\.");
+						String targetAttribute = targetPathSteps[targetPathSteps.length-1].substring(0, targetPathSteps[targetPathSteps.length-1].length()-1);
 						MappingValueCorrespondence correspondence = this
-								.createValueCorrespondence(mvc.getSourcePath().toString(), fk);
+								.createValueCorrespondence(mvc.getSourcePath().get(0), mvc.getSourcePath().get(1), fk.substring(1, fk.length()-targetAttribute.length()-1), targetAttribute);
 						transitiveValueCorrespondences.add(correspondence);
 				}
 			}
