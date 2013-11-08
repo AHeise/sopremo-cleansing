@@ -6,16 +6,22 @@ import java.util.List;
 
 public class MappingValueCorrespondence {
 	private List<String> sourcePath;
-    private List<String> targetPath;
-    
-    public MappingValueCorrespondence(List<String> sourcePath, List<String> targetPath){
-    	this.sourcePath = sourcePath;
-    	this.targetPath = targetPath;
-    }
-    
-    public ValueCorrespondence generateSpicyType(){
-    	return new ValueCorrespondence(MappingUtil.createPathExpression(this.sourcePath), MappingUtil.createPathExpression(this.targetPath));
-    }
+	private List<String> targetPath;
+
+	MappingValueCorrespondence() {
+	}
+
+	public MappingValueCorrespondence(List<String> sourcePath,
+			List<String> targetPath) {
+		this.sourcePath = sourcePath;
+		this.targetPath = targetPath;
+	}
+
+	public ValueCorrespondence generateSpicyType() {
+		return new ValueCorrespondence(
+				MappingUtil.createPathExpression(this.sourcePath),
+				MappingUtil.createPathExpression(this.targetPath));
+	}
 
 	public List<String> getSourcePath() {
 		return sourcePath;

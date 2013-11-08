@@ -22,15 +22,12 @@ import it.unibas.spicy.model.algebra.Nest;
 import it.unibas.spicy.model.algebra.Project;
 import it.unibas.spicy.model.algebra.SelectOnTargetValues;
 import it.unibas.spicy.model.algebra.Unnest;
-import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.DataSource;
-import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.KeyConstraint;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
-import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
 import it.unibas.spicy.model.mapping.FORule;
@@ -40,9 +37,6 @@ import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,9 +44,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.nfunk.jep.Parser;
-import org.nfunk.jep.function.Comparative;
-import org.nfunk.jep.function.Logical;
 import org.objenesis.instantiator.ObjectInstantiator;
 
 import com.esotericsoftware.kryo.DefaultSerializer;
@@ -91,101 +82,101 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
 @InputCardinality(2)
 // TODO arbitrary in-/output
 @OutputCardinality(2)
-@DefaultSerializer(value = SpicyMappingTransformation.SpicyMappingTransformationSerializer.class)
+//@DefaultSerializer(value = SpicyMappingTransformation.SpicyMappingTransformationSerializer.class)
 public class SpicyMappingTransformation extends
 		CompositeOperator<SpicyMappingTransformation> {
-	public static class SpicyMappingTransformationSerializer extends
-			Serializer<SpicyMappingTransformation> {
-		FieldSerializer<SpicyMappingTransformation> fieldSerializer;
-
-		public SpicyMappingTransformationSerializer(Kryo kryo,
-				Class<SpicyMappingTransformation> type) {
-			fieldSerializer = new FieldSerializer<SpicyMappingTransformation>(
-					kryo, type);
-
-			Registration registrySequenceNode = kryo.register(
-					SequenceNode.class, new FieldSerializer<SequenceNode>(kryo,
-							SequenceNode.class));
-			registrySequenceNode.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new SequenceNode("");
-				}
-			});
-			Registration registrySetNode = kryo.register(SetNode.class,
-					new FieldSerializer<SetNode>(kryo, SetNode.class));
-			registrySetNode.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new SetNode("");
-				}
-			});
-			Registration registryAttributeNode = kryo.register(
-					AttributeNode.class, new FieldSerializer<AttributeNode>(
-							kryo, AttributeNode.class));
-			registryAttributeNode.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new AttributeNode("");
-				}
-			});
-			Registration registryLeafNode = kryo.register(LeafNode.class,
-					new FieldSerializer<LeafNode>(kryo, LeafNode.class));
-			registryLeafNode.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new LeafNode("");
-				}
-			});
-			Registration registryKeyConstraint = kryo.register(
-					KeyConstraint.class, new FieldSerializer<KeyConstraint>(
-							kryo, KeyConstraint.class));
-			registryKeyConstraint.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new KeyConstraint(new PathExpression(
-							new ArrayList<String>()));
-				}
-			});
-			Registration registryPathExpression = kryo.register(
-					PathExpression.class, new FieldSerializer<PathExpression>(
-							kryo, PathExpression.class));
-			registryPathExpression.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new PathExpression(new ArrayList<String>());
-				}
-			});
-			Registration registryDataSource = kryo.register(DataSource.class,
-					new FieldSerializer<DataSource>(kryo, DataSource.class));
-			registryDataSource.setInstantiator(new ObjectInstantiator() {
-				@Override
-				public Object newInstance() {
-					return new DataSource("", null);
-				}
-			});
-		}
-
-		@Override
-		public void write(Kryo kryo,
-				com.esotericsoftware.kryo.io.Output output,
-				SpicyMappingTransformation object) {
-			fieldSerializer.write(kryo, output, object);
-		}
-
-		@Override
-		public SpicyMappingTransformation read(Kryo kryo, Input input,
-				Class<SpicyMappingTransformation> type) {
-			return fieldSerializer.read(kryo, input, type);
-
-		}
-
-		@Override
-		public SpicyMappingTransformation copy(Kryo kryo,
-				SpicyMappingTransformation original) {
-			return fieldSerializer.copy(kryo, original);
-		}
-	}
+//	public static class SpicyMappingTransformationSerializer extends
+//			Serializer<SpicyMappingTransformation> {
+//		FieldSerializer<SpicyMappingTransformation> fieldSerializer;
+//
+//		public SpicyMappingTransformationSerializer(Kryo kryo,
+//				Class<SpicyMappingTransformation> type) {
+//			fieldSerializer = new FieldSerializer<SpicyMappingTransformation>(
+//					kryo, type);
+//
+//			Registration registrySequenceNode = kryo.register(
+//					SequenceNode.class, new FieldSerializer<SequenceNode>(kryo,
+//							SequenceNode.class));
+//			registrySequenceNode.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new SequenceNode("");
+//				}
+//			});
+//			Registration registrySetNode = kryo.register(SetNode.class,
+//					new FieldSerializer<SetNode>(kryo, SetNode.class));
+//			registrySetNode.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new SetNode("");
+//				}
+//			});
+//			Registration registryAttributeNode = kryo.register(
+//					AttributeNode.class, new FieldSerializer<AttributeNode>(
+//							kryo, AttributeNode.class));
+//			registryAttributeNode.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new AttributeNode("");
+//				}
+//			});
+//			Registration registryLeafNode = kryo.register(LeafNode.class,
+//					new FieldSerializer<LeafNode>(kryo, LeafNode.class));
+//			registryLeafNode.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new LeafNode("");
+//				}
+//			});
+//			Registration registryKeyConstraint = kryo.register(
+//					KeyConstraint.class, new FieldSerializer<KeyConstraint>(
+//							kryo, KeyConstraint.class));
+//			registryKeyConstraint.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new KeyConstraint(new PathExpression(
+//							new ArrayList<String>()));
+//				}
+//			});
+//			Registration registryPathExpression = kryo.register(
+//					PathExpression.class, new FieldSerializer<PathExpression>(
+//							kryo, PathExpression.class));
+//			registryPathExpression.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new PathExpression(new ArrayList<String>());
+//				}
+//			});
+//			Registration registryDataSource = kryo.register(DataSource.class,
+//					new FieldSerializer<DataSource>(kryo, DataSource.class));
+//			registryDataSource.setInstantiator(new ObjectInstantiator() {
+//				@Override
+//				public Object newInstance() {
+//					return new DataSource("", null);
+//				}
+//			});
+//		}
+//
+//		@Override
+//		public void write(Kryo kryo,
+//				com.esotericsoftware.kryo.io.Output output,
+//				SpicyMappingTransformation object) {
+//			fieldSerializer.write(kryo, output, object);
+//		}
+//
+//		@Override
+//		public SpicyMappingTransformation read(Kryo kryo, Input input,
+//				Class<SpicyMappingTransformation> type) {
+//			return fieldSerializer.read(kryo, input, type);
+//
+//		}
+//
+//		@Override
+//		public SpicyMappingTransformation copy(Kryo kryo,
+//				SpicyMappingTransformation original) {
+//			return fieldSerializer.copy(kryo, original);
+//		}
+//	}
 
 	private MappingInformation mappingInformation = new MappingInformation();
 
@@ -194,8 +185,8 @@ public class SpicyMappingTransformation extends
 	private transient MappingTask mappingTask = null;
 	// index of name to tgd
 	// define input and output order by the sources'/sink's names
-	private HashMap<String, Integer> inputIndex = null;
-	private HashMap<String, Integer> outputIndex = null;
+	private Map<String, Integer> inputIndex = null;
+	private Map<String, Integer> outputIndex = null;
 
 	private static final String LEAF = "LEAF";
 	private transient HashMap<String, FORule> tgdIndex = null;
@@ -205,19 +196,19 @@ public class SpicyMappingTransformation extends
 	private HashMap<String, TwoSourceJoin> reuseJoins = null;
 	SpicyCorrespondenceTransformation correspondenceTransformation = null;
 
-	public HashMap<String, Integer> getInputIndex() {
+	public Map<String, Integer> getInputIndex() {
 		return inputIndex;
 	}
 
-	public void setInputIndex(HashMap<String, Integer> inputIndex) {
+	public void setInputIndex(Map<String, Integer> inputIndex) {
 		this.inputIndex = inputIndex;
 	}
 
-	public HashMap<String, Integer> getOutputIndex() {
+	public Map<String, Integer> getOutputIndex() {
 		return outputIndex;
 	}
 
-	public void setOutputIndex(HashMap<String, Integer> outputIndex) {
+	public void setOutputIndex(Map<String, Integer> outputIndex) {
 		this.outputIndex = outputIndex;
 	}
 
@@ -278,8 +269,8 @@ public class SpicyMappingTransformation extends
 	private void createMappingTaskFromMappingInformation() {
 		// create mapping task
 		this.mappingTask = new MappingTask(new DataSource(EntityMapping.type,
-				this.mappingInformation.getSourceSchema()),
-				this.mappingInformation.getTarget(),
+				this.mappingInformation.getSourceSchema().generateSpicyType()),
+				this.mappingInformation.getTarget().generateSpicyType(),
 				this.mappingInformation.getValueCorrespondencesAsSpicyTypes());
 		if (this.mappingInformation.getSourceJoinCondition() != null)
 			this.mappingTask.getSourceProxy().addJoinCondition(
