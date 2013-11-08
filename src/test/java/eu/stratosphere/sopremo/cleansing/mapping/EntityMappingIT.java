@@ -21,7 +21,6 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -50,7 +49,7 @@ public class EntityMappingIT extends MeteorIT {
 		String query = "$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
 				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography[0:1] == $usCongressBiographies.biographyId[1:1])\n" + 
+				"where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])\n" + 
 				"as [\n" +  
 				"  group $usCongressMembers by $usCongressMembers.id into {" + 
 				"    name: $usCongressMembers.name,\n" +
