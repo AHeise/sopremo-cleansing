@@ -35,13 +35,16 @@ import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.SetValueExpression;
 import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
+import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.INumericNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * @author Arvid Heise
@@ -235,6 +238,29 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 			this.outputSimilarity = outputSimilarity;
 	}
 
+	private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
+
+	private transient IArrayNode<DoubleNode> similarities = new ArrayNode<DoubleNode>();
+
+	public void performComparison(final IJsonNode left, final IJsonNode right, final JsonCollector<IJsonNode> collector) {
+		if (!this.preselect.shouldProcess(left, right))
+			return;
+
+		boolean satisfiesAll = true;
+		for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
+			satisfiesAll = this.duplicateRules.get(index).apply(left, right);
+		if (satisfiesAll) {
+			this.pair.set(0, left);
+			this.pair.set(1, right);
+			if (this.outputSimilarity) {
+				for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
+					this.similarities.get(index).setValue(this.duplicateRules.get(index).lastSim);
+				this.pair.set(2, this.similarities);
+			}
+			collector.collect(this.pair);
+		}
+	}
+
 	/**
 	 * Sets the value of outputSimilarity to the given value.
 	 * 
@@ -387,21 +413,10 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 			this.preselect = new OrderedPairsFilter(this.leftIdProjection, this.rightIdProjection);
 		} else
 			this.preselect = new NoPreselection();
+		
+		for (int diffSize = this.duplicateRules.size() - this.similarities.size(); diffSize > 0; diffSize--)
+			this.similarities.add(new DoubleNode());
 	}
-
-	// public void process(IJsonNode left, IJsonNode right, JsonCollector collector) {
-	// if (!this.preselect.shouldProcess(left, right))
-	// return;
-	//
-	// boolean satisfiesAll = true;
-	// for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
-	// satisfiesAll = this.duplicateRules.get(index).apply(left, right);
-	//
-	// if (satisfiesAll) {
-	// this.fillResult(this.result, left, right);
-	// collector.collect(this.resultProjection.evaluate(this.result));
-	// }
-	// }
 
 	public BooleanExpression asCondition() {
 		Preselection preselect = this.preselect;
@@ -450,7 +465,6 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 		List<ObjectAccess> idPaths = new ArrayList<ObjectAccess>();
 		for (int index = 0; index < inputs.size(); index++) {
 			final GlobalEnumeration globalEnumeration = new GlobalEnumeration().
-				withIdGeneration(GlobalEnumeration.LONG_COMBINATION).
 				withInputs(inputs.get(index));
 			outputs.add(globalEnumeration);
 

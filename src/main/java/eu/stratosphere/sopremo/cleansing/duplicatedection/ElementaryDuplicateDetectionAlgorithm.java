@@ -24,39 +24,39 @@ import eu.stratosphere.sopremo.operator.ElementaryOperator;
  */
 public abstract class ElementaryDuplicateDetectionAlgorithm<ImplType extends ElementaryDuplicateDetectionAlgorithm<ImplType>>
 		extends ElementaryOperator<ImplType> {
-	private BooleanExpression condition = new UnaryExpression(new ConstantExpression(true));
+	private CandidateComparison candidateComparison = new CandidateComparison();
 
 	/**
-	 * Returns the value of condition.
+	 * Returns the value of candidateComparison.
 	 * 
-	 * @return the condition
+	 * @return the candidateComparison
 	 */
-	public BooleanExpression getCondition() {
-		return this.condition;
+	public CandidateComparison getCandidateComparison() {
+		return this.candidateComparison;
 	}
 
 	/**
-	 * Sets the value of condition to the given value.
+	 * Sets the value of candidateComparison to the given value.
 	 * 
-	 * @param condition
-	 *        the condition to set
+	 * @param candidateComparison
+	 *        the candidateComparison to set
 	 */
-	public void setCondition(BooleanExpression condition) {
-		if (condition == null)
-			throw new NullPointerException("condition must not be null");
+	public void setCandidateComparison(CandidateComparison candidateComparison) {
+		if (candidateComparison == null)
+			throw new NullPointerException("candidateComparison must not be null");
 
-		this.condition = condition;
+		this.candidateComparison = candidateComparison;
 	}
 
 	/**
-	 * Sets the value of condition to the given value.
+	 * Sets the value of candidateComparison to the given value.
 	 * 
-	 * @param condition
-	 *        the condition to set
+	 * @param candidateComparison
+	 *        the candidateComparison to set
 	 * @return this
 	 */
-	public ImplType withCondition(BooleanExpression condition) {
-		this.setCondition(condition);
+	public ImplType withCandidateComparison(CandidateComparison candidateComparison) {
+		this.setCandidateComparison(candidateComparison);
 		return this.self();
 	}
 }
