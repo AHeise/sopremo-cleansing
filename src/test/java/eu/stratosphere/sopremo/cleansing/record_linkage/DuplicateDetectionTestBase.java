@@ -82,7 +82,6 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)), (CandidateComparison) dd.getComparison().clone());
 
 		try {
-			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));

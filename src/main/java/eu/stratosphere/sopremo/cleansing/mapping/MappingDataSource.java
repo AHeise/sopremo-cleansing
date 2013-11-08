@@ -16,16 +16,20 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.datasource.DataSource;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MappingDataSource {
-	
+import eu.stratosphere.sopremo.AbstractSopremoType;
+
+public class MappingDataSource extends AbstractSopremoType {
+
 	private List<MappingKeyConstraint> keyConstraints = new ArrayList<MappingKeyConstraint>();
+
 	private MappingSchema targetSchema;
-	
-	MappingDataSource(){
-		
+
+	MappingDataSource() {
+
 	}
 
 	/**
@@ -34,7 +38,7 @@ public class MappingDataSource {
 	public void addKeyConstraint(MappingKeyConstraint targetKey) {
 		this.keyConstraints.add(targetKey);
 	}
-	
+
 	public MappingSchema getTargetSchema() {
 		return this.targetSchema;
 	}
@@ -42,16 +46,50 @@ public class MappingDataSource {
 	public void setTargetSchema(MappingSchema targetSchema) {
 		if (targetSchema == null)
 			throw new NullPointerException("targetSchema must not be null");
-	
+
 		this.targetSchema = targetSchema;
 	}
-	
-	public DataSource generateSpicyType(){
+
+	public DataSource generateSpicyType() {
 		DataSource dataSource = new DataSource(EntityMapping.type, this.targetSchema.generateSpicyType());
-		for(MappingKeyConstraint keyConstraint : this.keyConstraints){
+		for (MappingKeyConstraint keyConstraint : this.keyConstraints) {
 			dataSource.addKeyConstraint(keyConstraint.generateSpicyType());
 		}
 		return dataSource;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + this.keyConstraints.hashCode();
+		result = prime * result + this.targetSchema.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MappingDataSource other = (MappingDataSource) obj;
+		return this.targetSchema.equals(other.targetSchema) && this.keyConstraints.equals(other.keyConstraints);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("MappingDataSource [keyConstraints=");
+		append(appendable, this.keyConstraints, ",");
+		appendable.append(", targetSchema=");
+		this.targetSchema.appendAsString(appendable);
+		appendable.append("]");
 	}
 
 }

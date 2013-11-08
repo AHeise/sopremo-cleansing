@@ -35,7 +35,7 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 	@InputCardinality(2)
 	public static class DirectBlocking extends ElementaryDuplicateDetectionAlgorithm<DirectBlocking> {
 		public static class Implementation extends SopremoMatch {
-			private CandidateComparison comparison;
+			private CandidateComparison candidateComparison;
 
 			/*
 			 * (non-Javadoc)
@@ -44,7 +44,7 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 			 */
 			@Override
 			protected void match(IJsonNode left, IJsonNode right, JsonCollector<IJsonNode> collector) {
-				this.comparison.performComparison(left, right, collector);
+				this.candidateComparison.performComparison(left, right, collector);
 			}
 		}
 	}
