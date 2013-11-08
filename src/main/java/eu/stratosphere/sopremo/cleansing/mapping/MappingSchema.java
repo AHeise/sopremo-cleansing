@@ -19,22 +19,30 @@ import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class MappingSchema {
+import javolution.text.TextFormat;
+import javolution.text.TypeFormat;
+
+import eu.stratosphere.sopremo.AbstractSopremoType;
+
+public class MappingSchema extends AbstractSopremoType {
 
 	private int size = 0;
+
 	private String label;
+
 	private Map<String, List<String>> groupings = new HashMap<String, List<String>>();
 
-	MappingSchema(){
-		
+	MappingSchema() {
+
 	}
-	
+
 	public MappingSchema(int size, String label) {
 		this.size = size;
 		this.label = label;
@@ -47,11 +55,11 @@ public class MappingSchema {
 	public Map<String, List<String>> getGroupings() {
 		return this.groupings;
 	}
-	
-	public void addKeyToInput(String input, String key){
-		if(this.groupings.containsKey(input)){
+
+	public void addKeyToInput(String input, String key) {
+		if (this.groupings.containsKey(input)) {
 			this.groupings.get(input).add(key);
-		}else{
+		} else {
 			this.groupings.put(input, new ArrayList<String>());
 			addKeyToInput(input, key);
 		}
@@ -68,9 +76,9 @@ public class MappingSchema {
 		// entities_in1 : SetNode
 		// entity_in1 : SequenceNode
 
-		for (int index = 0; index < size; index++) {
+		for (int index = 0; index < this.size; index++) {
 			final String input = EntityMapping.inputPrefixStr
-					+ String.valueOf(index);
+				+ String.valueOf(index);
 			INode tempEntity = new SequenceNode(EntityMapping.entityStr + input);
 			sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
 			sourceEntities.addChild(tempEntity);
@@ -86,8 +94,8 @@ public class MappingSchema {
 				INode sourceAttr;
 
 				INode sourceEntity = schema.getChild(
-						EntityMapping.entitiesStr + grouping.getKey())
-						.getChild(EntityMapping.entityStr + grouping.getKey());
+					EntityMapping.entitiesStr + grouping.getKey())
+					.getChild(EntityMapping.entityStr + grouping.getKey());
 
 				if (sourceEntity.getChild(value) == null) {
 					sourceAttr = new AttributeNode(value);
@@ -99,4 +107,42 @@ public class MappingSchema {
 
 		return schema;
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		appendable.append("MappingSchema [size=");
+		TypeFormat.format(this.size, appendable);
+		appendable.append(", label=");
+		appendable.append(this.label);
+		appendable.append(", groupings=");
+		TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
+		appendable.append("]");
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + this.groupings.hashCode();
+		result = prime * result + this.label.hashCode();
+		result = prime * result + this.size;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		MappingSchema other = (MappingSchema) obj;
+		return this.size == other.size && this.label.equals(other.label) && this.groupings.equals(other.groupings);
+	}
+
 }
