@@ -1,96 +1,80 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import it.unibas.spicy.model.correspondence.ValueCorrespondence;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import it.unibas.spicy.model.correspondence.ValueCorrespondence;
-import it.unibas.spicy.model.datasource.DataSource;
-import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.JoinCondition;
-import it.unibas.spicy.model.datasource.nodes.SequenceNode;
-
 /**
- * This class holds all relevant mapping information defined in a meteor script to create spicy specific data objects of them inside the {@link SpicyMappingTransformation}
+ * This class holds all relevant mapping information defined in a meteor script
+ * to create spicy specific data objects of them inside the
+ * {@link SpicyMappingTransformation}
+ * 
  * @author Fabian Tschirschnitz
- *
+ * 
  */
 
-
 public class MappingInformation {
-	private JoinCondition sourceJoinCondition;
-	private List<JoinCondition> targetJoinConditions = new ArrayList<JoinCondition>();
-	
-	private INode sourceSchema = new SequenceNode(EntityMapping.sourceStr);
-	private INode targetSchema = new SequenceNode(EntityMapping.targetStr);
+	private MappingJoinCondition sourceJoinCondition;
+	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 
-	private INode sourceEntity;
-	private INode targetEntity;
-	
-	private DataSource target = new DataSource(EntityMapping.type, targetSchema);
-	
-	private List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+	private MappingSchema sourceSchema;
 
-	public JoinCondition getSourceJoinCondition() {
+	private MappingDataSource target = new MappingDataSource();
+
+	private List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
+	
+	MappingInformation(){
+		
+	}
+
+	public MappingJoinCondition getSourceJoinCondition() {
 		return sourceJoinCondition;
 	}
 
-	public void setSourceJoinCondition(JoinCondition sourceJoinCondition) {
+	public void setSourceJoinCondition(MappingJoinCondition sourceJoinCondition) {
 		this.sourceJoinCondition = sourceJoinCondition;
 	}
 
-	public INode getSourceSchema() {
+	public MappingSchema getSourceSchema() {
 		return sourceSchema;
 	}
 
-	public void setSourceSchema(INode sourceSchema) {
+	public void setSourceSchema(MappingSchema sourceSchema) {
 		this.sourceSchema = sourceSchema;
 	}
 
-	public INode getTargetSchema() {
-		return targetSchema;
-	}
-
-	public void setTargetSchema(INode targetSchema) {
-		this.targetSchema = targetSchema;
-	}
-
-	public INode getSourceEntity() {
-		return sourceEntity;
-	}
-
-	public void setSourceEntity(INode sourceEntity) {
-		this.sourceEntity = sourceEntity;
-	}
-
-	public INode getTargetEntity() {
-		return targetEntity;
-	}
-
-	public void setTargetEntity(INode targetEntity) {
-		this.targetEntity = targetEntity;
-	}
-
-	public DataSource getTarget() {
+	public MappingDataSource getTarget() {
 		return target;
 	}
 
-	public void setTarget(DataSource target) {
+	public void setTarget(MappingDataSource target) {
 		this.target = target;
 	}
 
-	public List<JoinCondition> getTargetJoinConditions() {
+	public List<MappingJoinCondition> getTargetJoinConditions() {
 		return targetJoinConditions;
 	}
 
-	public void setTargetJoinConditions(List<JoinCondition> targetJoinConditions) {
+	public void setTargetJoinConditions(
+			List<MappingJoinCondition> targetJoinConditions) {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
-	public List<ValueCorrespondence> getValueCorrespondences() {
+	public List<MappingValueCorrespondence> getValueCorrespondences() {
 		return valueCorrespondences;
 	}
 
-	public void setValueCorrespondences(List<ValueCorrespondence> valueCorrespondences) {
+	public List<ValueCorrespondence> getValueCorrespondencesAsSpicyTypes() {
+		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+		for (MappingValueCorrespondence mvc : this.getValueCorrespondences()) {
+			valueCorrespondences.add(mvc.generateSpicyType());
+		}
+		return valueCorrespondences;
+	}
+
+	public void setValueCorrespondences(
+			List<MappingValueCorrespondence> valueCorrespondences) {
 		this.valueCorrespondences = valueCorrespondences;
 	}
 }
