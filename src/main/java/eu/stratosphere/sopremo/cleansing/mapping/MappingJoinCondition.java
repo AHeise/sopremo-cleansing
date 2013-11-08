@@ -17,7 +17,6 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.paths.PathExpression;
 
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -28,6 +27,10 @@ public class MappingJoinCondition {
 	private List<List<String>> toPaths;
 	private boolean isMandatory;
 	private boolean isMonodirectional;
+	
+	MappingJoinCondition(){
+		
+	}
 
 	public MappingJoinCondition(List<List<String>> fromPaths,
 			List<List<String>> toPaths, boolean isMandatory,
