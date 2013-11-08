@@ -21,6 +21,7 @@ import javolution.util.FastList;
 import eu.stratosphere.nephele.configuration.Configuration;
 import eu.stratosphere.pact.common.contract.Order;
 import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.ContextualProjection;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.base.Grouping;
@@ -34,6 +35,7 @@ import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.OrderingExpression;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
@@ -42,6 +44,7 @@ import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
@@ -61,7 +64,7 @@ import eu.stratosphere.sopremo.type.NullNode;
 @InputCardinality(min = 1, max = 2)
 @OutputCardinality(1)
 @Name(noun = { "snm", "sorted neighborhood" })
-public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
+public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm {
 	private static final int DEFAULT_WINDOW_SIZE = 2;
 
 	private int windowSize = DEFAULT_WINDOW_SIZE;
@@ -90,12 +93,14 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 	/*
 	 * (non-Javadoc)
 	 * @see
-	 * eu.stratosphere.sopremo.cleansing.duplicatedection.MultipassDuplicateDetectionAlgorithm#createPass(java.util.
-	 * List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass,
-	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#getImplementation(java
+	 * .util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison,
+	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected Operator<?> createPass(List<Operator<?>> inputs, Pass pass, CandidateComparison comparison) {
+	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
+		CandidateComparison comparison, EvaluationContext context) {
 		if (!comparison.isInnerSource())
 			throw new UnsupportedOperationException();
 
@@ -122,7 +127,7 @@ public class SortedNeighborhood extends MultipassDuplicateDetectionAlgorithm {
 
 		final Grouping countRecords = new Grouping().
 			withInputs(sortingKeys).
-			withResultProjection(CoreFunctions.COUNT.inline(EvaluationExpression.VALUE));
+			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 		// [sorting key, rank] -> [sorting key, rank, count]
 		final ContextualProjection keysWithRankAndCount = new ContextualProjection().
 			withInputs(keysWithRank, countRecords).

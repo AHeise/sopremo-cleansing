@@ -52,7 +52,6 @@ public class DuplicateDetectionIT extends MeteorIT {
 		this.output = this.testServer.getOutputFile("output.json");
 	}
 
-	@Ignore
 	@Test
 	public void testNaive() throws IOException {
 
@@ -78,6 +77,23 @@ public class DuplicateDetectionIT extends MeteorIT {
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
 			"  partition on $persons.age;" +
+			"write $duplicates to '" + this.output.toURI() + "';");
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("output.json",
+			JsonUtil.createArrayNode(r0, r10),
+			JsonUtil.createArrayNode(r4, r14));
+	}
+
+	@Test
+	public void testSorting() throws IOException {
+
+		final SopremoPlan plan = parseScript("using cleansing;" +
+			"$persons = read from '" + this.input.toURI() + "';" +
+			"$duplicates = detect duplicates $persons " +
+			"  where levenshtein($persons.firstName) >= 0.7" +
+			"  sort on $persons.age;" +
 			"write $duplicates to '" + this.output.toURI() + "';");
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));

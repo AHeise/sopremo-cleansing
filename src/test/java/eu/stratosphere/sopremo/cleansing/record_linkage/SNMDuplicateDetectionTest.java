@@ -23,7 +23,6 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  * 
  * @author Arvid Heise
  */
-@Ignore
 public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocking> {
 	private final EvaluationExpression[] sortingKeys;
 
