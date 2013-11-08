@@ -9,11 +9,9 @@ import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.KeyConstraint;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
-import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
 import it.unibas.spicy.model.datasource.nodes.TupleNode;
 import it.unibas.spicy.model.expressions.Expression;
-import it.unibas.spicy.model.mapping.MappingData;
 import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.PathExpression;
 

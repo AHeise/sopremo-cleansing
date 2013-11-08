@@ -36,6 +36,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
 @Name(noun = "map entities from")
 @InputCardinality(min = 1)
 @OutputCardinality(value = 2)
+//@OutputCardinality(min = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 	protected static final String type = "XML";
@@ -45,6 +46,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	protected static final String entityStr = "entity_";
 	protected static final String idStr = "id";
 	protected static final String inputPrefixStr = "in";
+	//FIXME
+	protected static final String outputPrefixStr = "in";
 	protected static INode dummy = new LeafNode("dummy");
 
 	private SpicyMappingTransformation spicyMappingTransformation = new SpicyMappingTransformation();
@@ -512,7 +515,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 		Map<String, Integer> outputIndex = new HashMap<String, Integer>();
 		for (int i = 0; i < this.getNumOutputs(); i++) {
-			outputIndex.put(entitiesStr + inputPrefixStr + i, i);
+			outputIndex.put(entitiesStr + outputPrefixStr + i, i);
 		}
 		this.spicyMappingTransformation.setInputIndex(inputIndex);
 		this.spicyMappingTransformation.setOutputIndex(outputIndex);
