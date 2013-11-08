@@ -10,6 +10,7 @@ import org.junit.runners.Parameterized;
 
 import com.google.common.collect.Lists;
 
+import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
@@ -20,8 +21,11 @@ import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.pact.JsonCollector;
+import eu.stratosphere.sopremo.serialization.SopremoRecordLayout;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -62,6 +66,27 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 			this.resultProjection);
 	}
 
+	protected Collector<IJsonNode> duplicateCollector = new Collector<IJsonNode>() {
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.pact.common.stubs.Collector#close()
+		 */
+		@Override
+		public void close() {
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.pact.common.stubs.Collector#collect(java.lang.Object)
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public void collect(IJsonNode record) {
+			final IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) record;
+			emitCandidate(array.get(0), array.get(1));
+		}
+	};
+
 	/**
 	 * Performs the naive record linkage in place and compares with the Pact code.
 	 */
@@ -71,6 +96,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		final DuplicateDetection dd = new DuplicateDetection();
 		dd.setCandidateSelection(getCandidateSelection());
 		dd.setImplementation(getImplementation());
+		dd.setDegreeOfParallelism(2);
 		if (this.useId) {
 			dd.getComparison().setIdProjection(new ObjectAccess("id"));
 		}
@@ -79,9 +105,11 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 
 		this.sopremoTestPlan = createTestPlan(dd);
 
-		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)), (CandidateComparison) dd.getComparison().clone());
+		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)),
+			(CandidateComparison) dd.getComparison().clone());
 
 		try {
+			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));

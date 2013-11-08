@@ -3,6 +3,8 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Ignore;
@@ -23,8 +25,11 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  * 
  * @author Arvid Heise
  */
+@Ignore
 public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocking> {
 	private final EvaluationExpression[] sortingKeys;
+
+	private final int windowSize;
 
 	/**
 	 * Initializes NaiveRecordLinkageInterSourceTest with the given parameter
@@ -34,12 +39,13 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	 * @param blockingKeys
 	 */
 	public SNMDuplicateDetectionTest(final EvaluationExpression projection,
-			final boolean useId, final String[][] sortingKeys) {
-		super(projection, useId);
+			final int windowSize, final String[][] sortingKeys) {
+		super(projection, true);
 
 		this.sortingKeys = new EvaluationExpression[sortingKeys[0].length];
 		for (int index = 0; index < this.sortingKeys.length; index++)
 			this.sortingKeys[index] = new ObjectAccess(sortingKeys[0][index]);
+		this.windowSize = windowSize;
 	}
 
 	/*
@@ -54,26 +60,28 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 		return candidateSelection;
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere.sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere
+	 * .sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
 	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
-		if (comparison.getIdProjection() == null) {
-			comparison.setPreselect(new NodeOrderSelector(input));
-		}
-		
-//		Collections.sort(input, new Comparator<IJsonNode>() {
-//		});
-		final BooleanExpression condition = comparison.asCondition();
-		for (final IJsonNode left : input) {
-			for (final IJsonNode right : input) {
-				boolean inSameBlockingBin = false;
-				for (int index = 0; index < this.sortingKeys.length && !inSameBlockingBin; index++)
-					if (this.sortingKeys[index].evaluate(left).equals(this.sortingKeys[index].evaluate(right)))
-						inSameBlockingBin = true;
-				if (inSameBlockingBin && condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
-						this.emitCandidate(left, right);
+		for (final EvaluationExpression sortingKey : this.sortingKeys) {
+			Collections.sort(input, new Comparator<IJsonNode>() {
+				@Override
+				public int compare(IJsonNode left, IJsonNode right) {
+					return sortingKey.evaluate(left).compareTo(sortingKey.evaluate(right));
+				}
+			});
+			
+			for (int index1 = 0, size = input.size(); index1 < size; index1++) {
+				IJsonNode left = input.get(index1);
+				for (int index2 = index1 + 1; index2 < Math.min(size, index1 + this.windowSize); index2++) {
+					IJsonNode right = input.get(index2);
+					comparison.performComparison(left, right, this.duplicateCollector);
+				}
 			}
 		}
 	}
@@ -96,13 +104,12 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	@Parameters
 	public static Collection<Object[]> getParameters() {
 		final EvaluationExpression[] projections = { null, getAggregativeProjection() };
-		final boolean[] useIds = { /*false,*/ true };
 
 		final ArrayList<Object[]> parameters = new ArrayList<Object[]>();
 		for (final EvaluationExpression projection : projections)
 			for (final String[][] combinedBlockingKeys : TestKeys.CombinedBlockingKeys)
-				for (final boolean useId : useIds)
-					parameters.add(new Object[] { projection, useId, combinedBlockingKeys });
+				for (final int windowSize : new int[] { 2, 3})
+					parameters.add(new Object[] { projection, windowSize, combinedBlockingKeys });
 
 		return parameters;
 	}

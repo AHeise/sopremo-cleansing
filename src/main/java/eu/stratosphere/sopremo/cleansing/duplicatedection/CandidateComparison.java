@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
@@ -242,8 +243,8 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 
 	private transient IArrayNode<DoubleNode> similarities = new ArrayNode<DoubleNode>();
 
-	public void performComparison(final IJsonNode left, final IJsonNode right, final JsonCollector<IJsonNode> collector) {
-		if (!this.preselect.shouldProcess(left, right))
+	public void performComparison(final IJsonNode left, final IJsonNode right, final Collector<IJsonNode> collector) {
+		if (this.preselect != null && !this.preselect.shouldProcess(left, right))
 			return;
 
 		boolean satisfiesAll = true;
@@ -411,8 +412,7 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 				throw new IllegalStateException("Requires id projection");
 
 			this.preselect = new OrderedPairsFilter(this.leftIdProjection, this.rightIdProjection);
-		} else
-			this.preselect = new NoPreselection();
+		}
 		
 		for (int diffSize = this.duplicateRules.size() - this.similarities.size(); diffSize > 0; diffSize--)
 			this.similarities.add(new DoubleNode());
