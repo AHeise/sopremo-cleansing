@@ -21,15 +21,17 @@ import it.unibas.spicy.model.datasource.nodes.SetNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class MappingSchema {
 
 	private int size = 0;
 	private String label;
-	private Map<String, List<String>> groupings = new HashMap<String, List<String>>();
+	private Map<String, Set<String>> groupings = new HashMap<String, Set<String>>();
 
 	MappingSchema(){
 		
@@ -44,7 +46,7 @@ public class MappingSchema {
 		return this.size;
 	}
 
-	public Map<String, List<String>> getGroupings() {
+	public Map<String, Set<String>> getGroupings() {
 		return this.groupings;
 	}
 	
@@ -52,7 +54,7 @@ public class MappingSchema {
 		if(this.groupings.containsKey(input)){
 			this.groupings.get(input).add(key);
 		}else{
-			this.groupings.put(input, new ArrayList<String>());
+			this.groupings.put(input, new HashSet<String>());
 			addKeyToInput(input, key);
 		}
 	}
@@ -80,7 +82,7 @@ public class MappingSchema {
 
 		// ##### extend schema #####
 
-		for (Entry<String, List<String>> grouping : this.groupings.entrySet()) {
+		for (Entry<String, Set<String>> grouping : this.groupings.entrySet()) {
 			for (String value : grouping.getValue()) {
 
 				INode sourceAttr;
