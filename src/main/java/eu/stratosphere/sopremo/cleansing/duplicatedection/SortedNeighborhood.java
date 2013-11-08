@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,6 +28,7 @@ import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Sort;
+import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking.DirectBlocking;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
@@ -41,6 +43,7 @@ import eu.stratosphere.sopremo.expressions.OrderingExpression;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -64,7 +67,7 @@ import eu.stratosphere.sopremo.type.NullNode;
 @InputCardinality(min = 1, max = 2)
 @OutputCardinality(1)
 @Name(noun = { "snm", "sorted neighborhood" })
-public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm {
+public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<SortedNeighborhood> {
 	private static final int DEFAULT_WINDOW_SIZE = 2;
 
 	private int windowSize = DEFAULT_WINDOW_SIZE;
@@ -100,52 +103,55 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm {
 	 */
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-		CandidateComparison comparison, EvaluationContext context) {
+			CandidateComparison comparison, EvaluationContext context) {
 		if (!comparison.isInnerSource())
 			throw new UnsupportedOperationException();
 
-		// record -> sorting key
-		final Projection sortingKeys = new Projection().
-			withInputs(inputs.get(0)).
-			withResultProjection(pass.getBlockingKeys().get(0));
+		List<JsonStream> passResults = new ArrayList<JsonStream>();
+		for (Pass pass : selection.getPasses()) {
+			// record -> sorting key
+			final Projection sortingKeys = new Projection().
+				withInputs(inputs.get(0)).
+				withResultProjection(pass.getBlockingKeys().get(0));
 
-		// [sorting key]+ -> [sorting key, count]
-		final BatchAggregationExpression countExpression = new BatchAggregationExpression();
-		final Grouping sortingKeyCount = new Grouping().
-			withInputs(sortingKeys).
-			withGroupingKey(EvaluationExpression.VALUE).
-			withResultProjection(
-				new ArrayCreation().
-					add(countExpression.add(CoreFunctions.FIRST)).
-					add(countExpression.add(CoreFunctions.COUNT))).
-			withName("Generate KPM List " + pass.getBlockingKeys().get(0));
+			// [sorting key]+ -> [sorting key, count]
+			final BatchAggregationExpression countExpression = new BatchAggregationExpression();
+			final Grouping sortingKeyCount = new Grouping().
+				withInputs(sortingKeys).
+				withGroupingKey(EvaluationExpression.VALUE).
+				withResultProjection(
+					new ArrayCreation().
+						add(countExpression.add(CoreFunctions.FIRST)).
+						add(countExpression.add(CoreFunctions.COUNT))).
+				withName("Generate KPM List " + pass.getBlockingKeys().get(0));
 
-		// [sorting key, count] -> [sorting key, rank]
-		final Sort keysWithRank = new Sort().
-			withInputs(sortingKeyCount).
-			withResultProjection(new EnumerationExpression());
+			// [sorting key, count] -> [sorting key, rank]
+			final Sort keysWithRank = new Sort().
+				withInputs(sortingKeyCount).
+				withResultProjection(new EnumerationExpression());
 
-		final Grouping countRecords = new Grouping().
-			withInputs(sortingKeys).
-			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
-		// [sorting key, rank] -> [sorting key, rank, count]
-		final ContextualProjection keysWithRankAndCount = new ContextualProjection().
-			withInputs(keysWithRank, countRecords).
-			withContextPath(new ArrayAccess(3));
+			final Grouping countRecords = new Grouping().
+				withInputs(sortingKeys).
+				withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
+			// [sorting key, rank] -> [sorting key, rank, count]
+			final ContextualProjection keysWithRankAndCount = new ContextualProjection().
+				withInputs(keysWithRank, countRecords).
+				withContextPath(new ArrayAccess(3));
 
-		// record + [sorting key, rank, count] -> [partition, partition, record]{1,3}
-		final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
-			withInputs(inputs.get(0), keysWithRankAndCount).
-			withKeyExpression(0, pass.getBlockingKeys().get(0)).
-			withKeyExpression(1, new ArrayAccess(0));
+			// record + [sorting key, rank, count] -> [partition, partition, record]{1,3}
+			final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
+				withInputs(inputs.get(0), keysWithRankAndCount).
+				withKeyExpression(0, pass.getBlockingKeys().get(0)).
+				withKeyExpression(1, new ArrayAccess(0));
 
-		final SlidingWindow window = new SlidingWindow().
-			withInputs(rankJoin).
-			withWindowSize(this.windowSize).withCondition(comparison.asCondition()).
-			withKeyExpression(0, new ArrayAccess(0)).
-			withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(2)));
-
-		return window;
+			final SlidingWindow window = new SlidingWindow().
+				withInputs(rankJoin).
+				withWindowSize(this.windowSize).withCondition(comparison.asCondition()).
+				withKeyExpression(0, new ArrayAccess(0)).
+				withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(2)));
+			passResults.add(window);
+		}
+		return new Union().withInputs(passResults);
 	}
 
 	@InputCardinality(1)
