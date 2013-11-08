@@ -273,7 +273,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 		// create transitive value correspondences from foreign keys
 		List<MappingValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences(
-				corr, this.spicyMappingTransformation.getMappingInformation()
+				this.spicyMappingTransformation.getMappingInformation()
 						.getValueCorrespondences(), foreignKeys);
 
 		for (MappingValueCorrespondence cond : transitiveValueCorrespondences) {
@@ -471,7 +471,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private List<MappingValueCorrespondence> createTransitiveValueCorrespondences(
-			MappingValueCorrespondence corr,
 			List<MappingValueCorrespondence> valueCorrespondences,
 			HashMap<String, String> foreignKeys) {
 
@@ -483,14 +482,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				// we use a real ValueCorrespondence here, because the container
 				// type MappingValueCorrespondence only stores one single
 				// sourcePath
-				ValueCorrespondence vc = mvc.generateSpicyType();
-				if (vc.getTargetPath().toString().equals(value)) {
-
-					for (PathExpression pe : vc.getSourcePaths()) {
-						corr = this
-								.createValueCorrespondence(pe.toString(), fk);
-						transitiveValueCorrespondences.add(corr);
-					}
+				if (mvc.getTargetPath().toString().equals(value)) {
+						MappingValueCorrespondence correspondence = this
+								.createValueCorrespondence(mvc.getSourcePath().toString(), fk);
+						transitiveValueCorrespondences.add(correspondence);
 				}
 			}
 		}
