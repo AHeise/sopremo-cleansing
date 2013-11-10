@@ -26,8 +26,16 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
 			CandidateComparison comparison, EvaluationContext context) {
 		return new ThetaJoin().
-			withCondition(comparison.asCondition()).
+			withCondition(comparison.asCondition(true)).
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
 			withInputs(inputs);
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#requiresEnumeration()
+	 */
+	@Override
+	protected boolean requiresEnumeration() {
+		return true;
 	}
 }

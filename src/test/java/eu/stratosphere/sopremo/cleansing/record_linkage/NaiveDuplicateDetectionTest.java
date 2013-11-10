@@ -43,7 +43,7 @@ public class NaiveDuplicateDetectionTest extends DuplicateDetectionTestBase<Naiv
 			comparison.setPreselect(new NodeOrderSelector(input));
 		}
 		
-		final BooleanExpression condition = comparison.asCondition();
+		final BooleanExpression condition = comparison.asCondition(true);
 		for (final IJsonNode left : input) {
 			for (final IJsonNode right : input) {
 				if (condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())

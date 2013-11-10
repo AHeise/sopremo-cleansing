@@ -31,6 +31,14 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
 			withInputs(inputs);
 	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm#requiresEnumeration()
+	 */
+	@Override
+	protected boolean requiresEnumeration() {
+		return true;
+	}
 
 	@InputCardinality(2)
 	public static class DirectBlocking extends ElementaryDuplicateDetectionAlgorithm<DirectBlocking> {
