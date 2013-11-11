@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
@@ -49,7 +50,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
 /**
  * @author Arvid Heise
  */
-public class CandidateComparison extends AbstractSopremoType implements Setupable, Cloneable {
+public class CandidateComparison extends AbstractSopremoType implements Cloneable {
 	/**
 	 * 
 	 */
@@ -242,8 +243,8 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 
 	private transient IArrayNode<DoubleNode> similarities = new ArrayNode<DoubleNode>();
 
-	public void performComparison(final IJsonNode left, final IJsonNode right, final JsonCollector<IJsonNode> collector) {
-		if (!this.preselect.shouldProcess(left, right))
+	public void performComparison(final IJsonNode left, final IJsonNode right, final Collector<IJsonNode> collector) {
+		if (this.preselect != null && !this.preselect.shouldProcess(left, right))
 			return;
 
 		boolean satisfiesAll = true;
@@ -404,23 +405,9 @@ public class CandidateComparison extends AbstractSopremoType implements Setupabl
 		return this.innerSource && (this.leftIdProjection == null || this.rightIdProjection == null);
 	}
 
-	@Override
-	public void setup() {
-		if (this.innerSource) {
-			if (this.getLeftIdProjection() == null || this.getRightIdProjection() == null)
-				throw new IllegalStateException("Requires id projection");
-
-			this.preselect = new OrderedPairsFilter(this.leftIdProjection, this.rightIdProjection);
-		} else
-			this.preselect = new NoPreselection();
-		
-		for (int diffSize = this.duplicateRules.size() - this.similarities.size(); diffSize > 0; diffSize--)
-			this.similarities.add(new DoubleNode());
-	}
-
-	public BooleanExpression asCondition() {
+	public BooleanExpression asCondition(boolean omitSmallerPairs) {
 		Preselection preselect = this.preselect;
-		if (preselect == null) {
+		if (omitSmallerPairs && preselect == null) {
 			if (this.innerSource) {
 				if (this.getLeftIdProjection() == null || this.getRightIdProjection() == null)
 					throw new IllegalStateException("Requires id projection or custom preselection");

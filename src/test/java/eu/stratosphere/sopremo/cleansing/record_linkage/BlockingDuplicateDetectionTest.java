@@ -62,7 +62,7 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 			comparison.setPreselect(new NodeOrderSelector(input));
 		}
 		
-		final BooleanExpression condition = comparison.asCondition();
+		final BooleanExpression condition = comparison.asCondition(true);
 		for (final IJsonNode left : input) {
 			for (final IJsonNode right : input) {
 				boolean inSameBlockingBin = false;

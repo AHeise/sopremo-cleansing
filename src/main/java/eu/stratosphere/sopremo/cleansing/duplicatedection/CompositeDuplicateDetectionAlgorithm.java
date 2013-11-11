@@ -110,13 +110,16 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<Operator<?>> inputs = (List) module.getInputs();
-		if (comparison.requiresEnumeration())
+		if (requiresEnumeration() && comparison.requiresEnumeration())
 			inputs = comparison.addEnumeration(inputs);
 		// duplicate input
 		if (comparison.isInnerSource())
 			inputs.add(inputs.get(0));
-		comparison.setup();
 		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison, context));
+	}
+
+	protected boolean requiresEnumeration() {
+		return false;
 	}
 
 	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,

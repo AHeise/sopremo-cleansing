@@ -24,37 +24,28 @@ import eu.stratosphere.pact.common.contract.Order;
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.ContextualProjection;
-import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Sort;
-import eu.stratosphere.sopremo.base.Union;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking.DirectBlocking;
+import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.OrderingExpression;
-import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
-import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
-import eu.stratosphere.sopremo.pact.SopremoMatch;
-import eu.stratosphere.sopremo.pact.SopremoReduce;
 import eu.stratosphere.sopremo.type.ArrayNode;
-import eu.stratosphere.sopremo.type.BooleanNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IStreamNode;
@@ -87,8 +78,9 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		public IJsonNode evaluate(IJsonNode node) {
 			@SuppressWarnings("unchecked")
 			final IntNode rankNode = ((IArrayNode<IntNode>) node).get(1);
+			int oldRank = this.rank;
 			this.rank += rankNode.getIntValue();
-			rankNode.setValue(this.rank);
+			rankNode.setValue(oldRank);
 			return node;
 		}
 	}
@@ -107,6 +99,9 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		if (!comparison.isInnerSource())
 			throw new UnsupportedOperationException();
 
+		final Grouping countRecords = new Grouping().
+			withInputs(inputs).
+			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 		List<JsonStream> passResults = new ArrayList<JsonStream>();
 		for (Pass pass : selection.getPasses()) {
 			// record -> sorting key
@@ -130,13 +125,10 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				withInputs(sortingKeyCount).
 				withResultProjection(new EnumerationExpression());
 
-			final Grouping countRecords = new Grouping().
-				withInputs(sortingKeys).
-				withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 			// [sorting key, rank] -> [sorting key, rank, count]
 			final ContextualProjection keysWithRankAndCount = new ContextualProjection().
 				withInputs(keysWithRank, countRecords).
-				withContextPath(new ArrayAccess(3));
+				withContextPath(new ArrayAccess(2));
 
 			// record + [sorting key, rank, count] -> [partition, partition, record]{1,3}
 			final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
@@ -146,19 +138,19 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 			final SlidingWindow window = new SlidingWindow().
 				withInputs(rankJoin).
-				withWindowSize(this.windowSize).withCondition(comparison.asCondition()).
+				withWindowSize(this.windowSize).
+				withCandidateComparison(comparison).
 				withKeyExpression(0, new ArrayAccess(0)).
-				withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(2)));
+				withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
+					new ChainedSegmentExpression(new ArrayAccess(2), pass.getBlockingKeys().get(0))));
 			passResults.add(window);
 		}
-		return new Union().withInputs(passResults);
+		return new UnionAll().withInputs(passResults);
 	}
 
 	@InputCardinality(1)
-	public static class SlidingWindow extends ElementaryOperator<SlidingWindow> {
-		private int windowSize = DEFAULT_WINDOW_SIZE;
-
-		private BooleanExpression condition = new UnaryExpression(new ConstantExpression(true));
+	public static class SlidingWindow extends ElementaryDuplicateDetectionAlgorithm<SlidingWindow> {
+		private int bufferSize = DEFAULT_WINDOW_SIZE - 1;
 
 		/**
 		 * Initializes SortedNeighborhood.SlidingWindow.
@@ -172,7 +164,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		 * @return the windowSize
 		 */
 		public int getWindowSize() {
-			return this.windowSize;
+			return this.bufferSize + 1;
 		}
 
 		/**
@@ -185,7 +177,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			if (windowSize <= 1)
 				throw new NullPointerException("windowSize must be greater than 1");
 
-			this.windowSize = windowSize;
+			this.bufferSize = windowSize - 1;
 		}
 
 		/**
@@ -199,49 +191,13 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			return this;
 		}
 
-		/**
-		 * Returns the condition.
-		 * 
-		 * @return the condition
-		 */
-		public BooleanExpression getCondition() {
-			return this.condition;
-		}
-
-		/**
-		 * Sets the condition to the specified value.
-		 * 
-		 * @param condition
-		 *        the condition to set
-		 */
-		public void setCondition(BooleanExpression condition) {
-			if (condition == null)
-				throw new NullPointerException("condition must not be null");
-
-			this.condition = condition;
-		}
-
-		/**
-		 * Sets the condition to the specified value.
-		 * 
-		 * @param condition
-		 *        the condition to set
-		 */
-		public SlidingWindow withCondition(BooleanExpression condition) {
-			setCondition(condition);
-
-			return this;
-		}
-
 		public static class Implementation extends GenericSopremoReduce<IArrayNode<IJsonNode>, IJsonNode> {
 
-			private int windowSize;
+			private int bufferSize;
 
-			private BooleanExpression condition;
+			private CandidateComparison candidateComparison;
 
 			private FastList<IJsonNode> ringBuffer = new FastList<IJsonNode>();
-
-			private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
 
 			/*
 			 * (non-Javadoc)
@@ -250,27 +206,29 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			 */
 			@Override
 			protected void reduce(IStreamNode<IArrayNode<IJsonNode>> values, JsonCollector<IJsonNode> collector) {
-				// fill buffer with remainder of previous partition
 				final Iterator<IArrayNode<IJsonNode>> iterator = values.iterator();
 				boolean correctPartition = false;
 				while (iterator.hasNext()) {
 					IArrayNode<IJsonNode> partitionedValue = iterator.next();
 
-					if (this.ringBuffer.size() >= this.windowSize)
-						this.ringBuffer.removeFirst();
-
-					this.pair.set(1, partitionedValue.get(2));
+					final IJsonNode value = partitionedValue.get(2);
 					if (correctPartition ||
 						(correctPartition = partitionedValue.get(0).equals(partitionedValue.get(1)))) {
 						for (FastList.Node<IJsonNode> n = this.ringBuffer.head(), end = this.ringBuffer.tail(); (n =
-							n.getNext()) != end;) {
-							this.pair.set(0, n.getValue());
-							if (this.condition.evaluate(this.pair) == BooleanNode.TRUE)
-								collector.collect(this.pair);
-						}
+							n.getNext()) != end;)
+							this.candidateComparison.performComparison(n.getValue(), value, collector);
 					}
 
-					this.ringBuffer.add(partitionedValue.get(2));
+					if (this.ringBuffer.size() >= this.bufferSize)
+						this.ringBuffer.removeFirst();
+					this.ringBuffer.add(value);
+				}
+
+				while (!this.ringBuffer.isEmpty()) {
+					final IJsonNode value = this.ringBuffer.removeFirst();
+					for (FastList.Node<IJsonNode> n = this.ringBuffer.head(), end = this.ringBuffer.tail(); (n =
+						n.getNext()) != end;)
+						this.candidateComparison.performComparison(n.getValue(), value, collector);
 				}
 			}
 		}
@@ -323,6 +281,19 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 			/*
 			 * (non-Javadoc)
+			 * @see
+			 * eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#open(eu.stratosphere.nephele.configuration.Configuration
+			 * )
+			 */
+			@Override
+			public void open(Configuration parameters) throws Exception {
+				super.open(parameters);
+				if (this.numberOfPartitions == STANDARD_DEGREE_OF_PARALLELISM)
+					this.numberOfPartitions = getRuntimeContext().getNumberOfParallelSubtasks();
+			}
+
+			/*
+			 * (non-Javadoc)
 			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
 			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
@@ -338,13 +309,11 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				for (int index = 0; iterator.hasNext(); index++) {
 					final IJsonNode record = iterator.next();
 					final int partitionNumber = (keyRank + index) * this.numberOfPartitions / numberOfRecords;
-					final int partitionNumberForReplication =
-						(keyRank + index + this.windowSize - 1) * this.numberOfPartitions / numberOfRecords;
+					final int partitionNumberForReplication = Math.min(this.numberOfPartitions - 1,
+						(keyRank + index + this.windowSize - 1) * this.numberOfPartitions / numberOfRecords);
 
-					if ((partitionNumber + 1 == partitionNumberForReplication) &&
-						(partitionNumberForReplication < this.numberOfPartitions))
-						emit(out, partitionNumberForReplication, partitionNumber, record);
-					emit(out, partitionNumber, partitionNumber, record);
+					for (int replicationNumber = partitionNumber; replicationNumber <= partitionNumberForReplication; replicationNumber++)
+						emit(out, replicationNumber, partitionNumber, record);
 				}
 			}
 
