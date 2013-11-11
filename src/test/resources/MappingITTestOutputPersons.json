@@ -1,0 +1,6 @@
+[
+	{"id", "usCongress1", "name", "Andrew Adams", "worksFor", "CompanyXYZ"},
+	{"id", null, "name", null, "worksFor", "CompanyABC"},
+	{"id", "usCongress3", "name", "John Doe", "worksFor", "CompanyUVW"}
+]
+
