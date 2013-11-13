@@ -37,7 +37,7 @@ public abstract class TextSimilarity extends AbstractSimilarity<TextNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(TextNode node1, TextNode node2) {
+	public float getSimilarity(TextNode node1, TextNode node2) {
 		if (node1.equals(node2))
 			return 1;
 		if (node1.length() == 0 || node2.length() == 0)
@@ -45,5 +45,5 @@ public abstract class TextSimilarity extends AbstractSimilarity<TextNode> {
 		return this.getSimilarity((CharSequence) node1, node2);
 	}
 
-	public abstract double getSimilarity(CharSequence text1, CharSequence text2);
+	public abstract float getSimilarity(CharSequence text1, CharSequence text2);
 }

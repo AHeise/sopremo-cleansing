@@ -44,7 +44,7 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 
 	private final List<Similarity<IJsonNode>> similarities = new ArrayList<Similarity<IJsonNode>>();
 
-	private double[] individualSimilarities;
+	private transient float[] individualSimilarities;
 
 	private Class<IJsonNode> expectedType;
 
@@ -52,7 +52,7 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	 * Initializes AggregationSimilarity.
 	 */
 	public AggregationSimilarity() {
-		this.individualSimilarities = new double[0];
+		this.individualSimilarities = new float[0];
 	}
 
 	/**
@@ -65,7 +65,7 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	public AggregationSimilarity(Similarity<?>... similarities) {
 		this.similarities.addAll((Collection) Arrays.asList(similarities));
 		this.inferExpectedType();
-		this.individualSimilarities = new double[this.similarities.size()];
+		this.individualSimilarities = new float[this.similarities.size()];
 	}
 
 	/**
@@ -78,7 +78,7 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	public AggregationSimilarity(Collection<? extends Similarity<?>> similarities) {
 		this.similarities.addAll((Collection<? extends Similarity<IJsonNode>>) similarities);
 		this.inferExpectedType();
-		this.individualSimilarities = new double[this.similarities.size()];
+		this.individualSimilarities = new float[this.similarities.size()];
 	}
 
 	/**
@@ -91,7 +91,7 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	public void add(Similarity<?> similarity) {
 		this.similarities.add((Similarity<IJsonNode>) similarity);
 		this.inferExpectedType();
-		this.individualSimilarities = new double[this.similarities.size()];
+		this.individualSimilarities = new float[this.similarities.size()];
 	}
 
 	/**
@@ -119,16 +119,16 @@ public abstract class AggregationSimilarity extends AbstractSimilarity<IJsonNode
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+	public float getSimilarity(IJsonNode node1, IJsonNode node2) {
 		if(this.individualSimilarities.length == 0)
-			return Double.NaN;
+			return Float.NaN;
 		
 		for (int index = 0; index < this.individualSimilarities.length; index++)
 			this.individualSimilarities[index] = this.similarities.get(index).getSimilarity(node1, node2);
 		return this.aggregateSimilarity(this.individualSimilarities);
 	}
 
-	protected abstract double aggregateSimilarity(double[] individualSimilarities);
+	protected abstract float aggregateSimilarity(float[] individualSimilarities);
 
 	/*
 	 * (non-Javadoc)

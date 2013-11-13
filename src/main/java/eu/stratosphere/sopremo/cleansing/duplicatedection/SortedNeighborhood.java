@@ -42,6 +42,7 @@ import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
@@ -62,6 +63,34 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	private static final int DEFAULT_WINDOW_SIZE = 2;
 
 	private int windowSize = DEFAULT_WINDOW_SIZE;
+
+	/**
+	 * Returns the windowSize.
+	 * 
+	 * @return the windowSize
+	 */
+	public int getWindowSize() {
+		return this.windowSize;
+	}
+
+	/**
+	 * Sets the windowSize to the specified value.
+	 * 
+	 * @param windowSize
+	 *        the windowSize to set
+	 */
+	@Property
+	@Name(preposition = { "with window", "with window size" })
+	public void setWindowSize(int windowSize) {
+		if (windowSize < 2)
+			throw new IllegalArgumentException("window size must be >= 2");
+		this.windowSize = windowSize;
+	}
+
+	public SortedNeighborhood withWindowSize(int windowSize) {
+		setWindowSize(windowSize);
+		return this;
+	}
 
 	/**
 	 * [sorting key, count] -&gt; [key, rank]

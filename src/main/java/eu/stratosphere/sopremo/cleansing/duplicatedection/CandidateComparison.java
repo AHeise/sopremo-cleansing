@@ -18,6 +18,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.collect.Lists;
+
 import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
@@ -36,7 +38,6 @@ import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.SetValueExpression;
 import eu.stratosphere.sopremo.operator.Operator;
-import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
@@ -45,7 +46,6 @@ import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.INumericNode;
-import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * @author Arvid Heise
@@ -161,11 +161,16 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	}
 
 	public static class DuplicateRule extends AbstractSopremoType {
-		private Similarity<IJsonNode> similarityMeasure;
+		private final Similarity<IJsonNode> similarityMeasure;
 
-		private double threshold;
+		private final float threshold;
 
-		private transient double lastSim;
+		private transient float lastSim;
+
+		public DuplicateRule(Similarity<IJsonNode> similarityMeasure, float threshold) {
+			this.similarityMeasure = similarityMeasure;
+			this.threshold = threshold;
+		}
 
 		public boolean apply(IJsonNode left, IJsonNode right) {
 			return (this.lastSim = this.similarityMeasure.getSimilarity(left, right)) >= this.threshold;
@@ -188,6 +193,33 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 		public void appendAsString(Appendable appendable) throws IOException {
 			SopremoUtil.append(appendable, "Sim: ", this.similarityMeasure, "; threshold: ", this.threshold);
 		}
+
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + this.similarityMeasure.hashCode();
+			long temp;
+			temp = Float.floatToIntBits(this.threshold);
+			result = prime * result + (int) (temp ^ (temp >>> 32));
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			DuplicateRule other = (DuplicateRule) obj;
+			return Float.floatToIntBits(this.threshold) == Float.floatToIntBits(other.threshold) &&
+					this.similarityMeasure.equals(other.similarityMeasure);
+		}
+
+		
+		
 	}
 
 	private List<DuplicateRule> duplicateRules = new ArrayList<DuplicateRule>();
@@ -306,6 +338,33 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	public CandidateComparison withResultProjection(EvaluationExpression resultProjection) {
 		this.setResultProjection(resultProjection);
 		return this;
+	}
+
+	public CandidateComparison withRules(DuplicateRule... rules) {
+		setDuplicateRules(rules);
+		return this;
+	}
+
+	public CandidateComparison withRules(List<DuplicateRule> rules) {
+		setDuplicateRules(rules);
+		return this;
+	}
+
+	public void setDuplicateRules(List<DuplicateRule> rules) {
+		this.duplicateRules = rules;
+	}
+
+	public void setDuplicateRules(DuplicateRule... rules) {
+		setDuplicateRules(Lists.newArrayList(rules));
+	}
+
+	/**
+	 * Returns the duplicateRules.
+	 * 
+	 * @return the duplicateRules
+	 */
+	public List<DuplicateRule> getDuplicateRules() {
+		return this.duplicateRules;
 	}
 
 	/**
@@ -479,23 +538,24 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 
 	public DuplicateRule parseRule(EvaluationExpression expression) {
 		if (expression instanceof ComparativeExpression) {
-			DuplicateRule duplicateRule = new DuplicateRule();
+			float threshold;
 			final ComparativeExpression ce = (ComparativeExpression) expression;
 			boolean includeEqual = true;
+			Similarity<IJsonNode> similarityMeasure;
 			switch (ce.getBinaryOperator()) {
 			case GREATER:
 				includeEqual = false;
 			case GREATER_EQUAL:
-				duplicateRule.threshold = ExpressionUtil.getConstant(ce.getExpr2(), INumericNode.class)
+				threshold = (float) ExpressionUtil.getConstant(ce.getExpr2(), INumericNode.class)
 					.getDoubleValue();
-				duplicateRule.similarityMeasure = parseSimilarity(ce.getExpr1());
+				similarityMeasure = parseSimilarity(ce.getExpr1());
 				break;
 			case LESS:
 				includeEqual = false;
 			case LESS_EQUAL:
-				duplicateRule.threshold = ExpressionUtil.getConstant(ce.getExpr1(), INumericNode.class)
+				threshold = (float) ExpressionUtil.getConstant(ce.getExpr1(), INumericNode.class)
 					.getDoubleValue();
-				duplicateRule.similarityMeasure = parseSimilarity(ce.getExpr2());
+				similarityMeasure = parseSimilarity(ce.getExpr2());
 				break;
 			default:
 				throw new IllegalArgumentException(
@@ -505,7 +565,8 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 			// small hack to exclude the same value;
 			// very unlikely to have results in the range [threshold-2e-126;threshold]
 			if (!includeEqual)
-				duplicateRule.threshold -= Float.MIN_VALUE;
+				threshold -= Float.MIN_VALUE;
+			DuplicateRule duplicateRule = new DuplicateRule(similarityMeasure, threshold);
 			return duplicateRule;
 		}
 		throw new IllegalArgumentException(

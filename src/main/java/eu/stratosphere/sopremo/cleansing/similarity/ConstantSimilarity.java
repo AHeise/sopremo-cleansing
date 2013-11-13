@@ -20,9 +20,9 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * @author Arvid Heise
  */
 public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
-	private double similarity;
+	private float similarity;
 
-	public ConstantSimilarity(double similarity) {
+	public ConstantSimilarity(float similarity) {
 		this.checkSimilarity(similarity);
 
 		this.similarity = similarity;
@@ -39,7 +39,7 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 		return this.similarity;
 	}
 
-	public void setSimilarity(double similarity) {
+	public void setSimilarity(float similarity) {
 		this.checkSimilarity(similarity);
 
 		this.similarity = similarity;
@@ -69,7 +69,7 @@ public class ConstantSimilarity extends AbstractSimilarity<IJsonNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+	public float getSimilarity(IJsonNode node1, IJsonNode node2) {
 		return this.similarity;
 	}
 }

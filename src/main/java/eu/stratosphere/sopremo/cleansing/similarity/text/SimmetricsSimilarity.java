@@ -54,7 +54,7 @@ public abstract class SimmetricsSimilarity<M extends AbstractStringMetric> exten
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
 		return this.metric.getSimilarity(text1.toString(), text2.toString());
 	}
 

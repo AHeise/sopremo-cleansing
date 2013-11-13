@@ -23,11 +23,6 @@ import it.unibas.spicy.model.algebra.Project;
 import it.unibas.spicy.model.algebra.SelectOnTargetValues;
 import it.unibas.spicy.model.algebra.Unnest;
 import it.unibas.spicy.model.datasource.DataSource;
-import it.unibas.spicy.model.datasource.KeyConstraint;
-import it.unibas.spicy.model.datasource.nodes.AttributeNode;
-import it.unibas.spicy.model.datasource.nodes.LeafNode;
-import it.unibas.spicy.model.datasource.nodes.SequenceNode;
-import it.unibas.spicy.model.datasource.nodes.SetNode;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
 import it.unibas.spicy.model.mapping.FORule;
@@ -43,15 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-
-import org.objenesis.instantiator.ObjectInstantiator;
-
-import com.esotericsoftware.kryo.DefaultSerializer;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Registration;
-import com.esotericsoftware.kryo.Serializer;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;

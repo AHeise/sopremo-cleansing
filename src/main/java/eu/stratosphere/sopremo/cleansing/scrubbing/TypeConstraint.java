@@ -19,32 +19,23 @@ import eu.stratosphere.sopremo.type.TextNode;
 
 @Name(adjective = "type")
 public class TypeConstraint extends ValidationRule {
-	public static Map<String, Class<? extends IJsonNode>> availableTypes = new HashMap<String, Class<? extends IJsonNode>>();
+	public static Map<String, Class<? extends IJsonNode>> AvailableTypes =
+		new HashMap<String, Class<? extends IJsonNode>>();
 
 	static {
-		availableTypes.put("int", IntNode.class);
-		availableTypes.put("long", LongNode.class);
-		availableTypes.put("bigint", BigIntegerNode.class);
+		AvailableTypes.put("int", IntNode.class);
+		AvailableTypes.put("long", LongNode.class);
+		AvailableTypes.put("bigint", BigIntegerNode.class);
 
-		availableTypes.put("double", DoubleNode.class);
-		availableTypes.put("decimal", DecimalNode.class);
+		AvailableTypes.put("double", DoubleNode.class);
+		AvailableTypes.put("decimal", DecimalNode.class);
 
-		availableTypes.put("numeric", INumericNode.class);
-		availableTypes.put("text", TextNode.class);
-		availableTypes.put("bool", BooleanNode.class);
-		availableTypes.put("array", IArrayNode.class);
-		availableTypes.put("object", IObjectNode.class);
+		AvailableTypes.put("numeric", INumericNode.class);
+		AvailableTypes.put("text", TextNode.class);
+		AvailableTypes.put("bool", BooleanNode.class);
+		AvailableTypes.put("array", IArrayNode.class);
+		AvailableTypes.put("object", IObjectNode.class);
 	}
-
-	// private static List<Class<? extends IJsonNode>> buildList(
-	// Class<? extends IJsonNode>... allowedClasses) {
-	// List<Class<? extends IJsonNode>> classes = new LinkedList<Class<? extends
-	// IJsonNode>>();
-	// for (Class<? extends IJsonNode> nodeClass : allowedClasses) {
-	// classes.add(nodeClass);
-	// }
-	// return classes;
-	// }
 
 	private final Class<? extends IJsonNode> type;
 
@@ -54,26 +45,12 @@ public class TypeConstraint extends ValidationRule {
 
 	/**
 	 * Initializes TypeValidationExpression.
-	 * 
 	 */
 	TypeConstraint() {
 		this.type = null;
 	}
 
 	private transient NodeCache nodeCache = new NodeCache();
-
-	// @Override
-	// public IJsonNode fix(final IJsonNode value) {
-	// try {
-	// if (value instanceof TextNode)
-	// return LenientParser.INSTANCE.parse((TextNode) value,
-	// this.type, LenientParser.ELIMINATE_NOISE);
-	// return TypeCoercer.INSTANCE
-	// .coerce(value, this.nodeCache, this.type);
-	// } catch (final Exception e) {
-	// return super.fix(value);
-	// }
-	// }
 
 	@Override
 	public boolean validate(final IJsonNode value) {

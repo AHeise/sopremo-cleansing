@@ -9,9 +9,9 @@ public class FusionContext extends EvaluationContext {
 	private int[] sourceIndexes;
 
 	private double[] weights;
-	
-	public FusionContext(){
-		
+
+	public FusionContext() {
+
 	}
 
 	public FusionContext(final EvaluationContext context) {
@@ -50,7 +50,7 @@ public class FusionContext extends EvaluationContext {
 
 		this.weights = weights;
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.AbstractSopremoType#clone()

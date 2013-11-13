@@ -72,7 +72,7 @@ public class TokenizingSimilarity extends TextSimilarity {
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
 		this.tokenizer.tokenizeInto(text1, this.tokens1);
 		this.tokenizer.tokenizeInto(text2, this.tokens2);
 		return this.innerSimilarity.getSimilarity(this.tokens1, this.tokens2);

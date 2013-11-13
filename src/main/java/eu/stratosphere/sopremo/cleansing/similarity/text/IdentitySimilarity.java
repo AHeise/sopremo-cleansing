@@ -33,7 +33,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  */
 public class IdentitySimilarity extends AbstractSimilarity<IJsonNode> {
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+	public float getSimilarity(IJsonNode node1, IJsonNode node2) {
 		return node1.equals(node2) ? 1 : 0;
 	}
 

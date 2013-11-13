@@ -93,7 +93,8 @@ public class DuplicateDetectionIT extends MeteorIT {
 			"$persons = read from '" + this.input.toURI() + "';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
-			"  sort on $persons.age;" +
+			"  sort on $persons.age" +
+			"  with window 20;" +
 			"write $duplicates to '" + this.output.toURI() + "';");
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));

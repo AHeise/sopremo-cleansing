@@ -17,10 +17,10 @@ package eu.stratosphere.sopremo.cleansing;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -66,6 +66,11 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 		this.candidateSelection = candidateSelection;
 	}
 
+	public DuplicateDetection withCandidateSelection(CandidateSelection candidateSelection) {
+		setCandidateSelection(candidateSelection);
+		return this;
+	}
+
 	@Property
 	@Name(preposition = "where")
 	public void setComparisonExpression(EvaluationExpression expression) {
@@ -85,7 +90,7 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 		this.candidateSelection.parse(expression, 1);
 		this.candidateSelection.setSelectionHint(SelectionHint.BLOCK);
 	}
-	
+
 	@Property
 	@Name(preposition = "on")
 	public void setKeyExpression(EvaluationExpression expression) {
@@ -97,6 +102,11 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	@Name(preposition = "with")
 	public void setImplementation(DuplicateDetectionImplementation implementation) {
 		this.implementation = implementation;
+	}
+
+	public DuplicateDetection withImplementation(DuplicateDetectionImplementation implementation) {
+		setImplementation(implementation);
+		return this;
 	}
 
 	/**
@@ -128,6 +138,17 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 			throw new NullPointerException("comparison must not be null");
 
 		this.comparison = comparison;
+	}
+
+	/**
+	 * Sets the value of comparison to the given value.
+	 * 
+	 * @param comparison
+	 *        the comparison to set
+	 */
+	public DuplicateDetection withComparison(CandidateComparison setComparison) {
+		setComparison(setComparison);
+		return this;
 	}
 
 	/*

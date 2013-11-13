@@ -29,13 +29,12 @@ public class ValueTreeContains extends BooleanExpression {
 
 	private final IJsonNode valueToFind;
 
-	public ValueTreeContains(IJsonNode valueToFind) {
+	public ValueTreeContains(final IJsonNode valueToFind) {
 		this.valueToFind = valueToFind;
 	}
-	
+
 	/**
 	 * Initializes ValueTreeContains.
-	 *
 	 */
 	ValueTreeContains() {
 		this.valueToFind = null;
@@ -47,7 +46,7 @@ public class ValueTreeContains extends BooleanExpression {
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public BooleanNode evaluate(IJsonNode node) {
+	public BooleanNode evaluate(final IJsonNode node) {
 		return BooleanNode.valueOf(this.isContainedIn(node));
 	}
 
@@ -57,16 +56,16 @@ public class ValueTreeContains extends BooleanExpression {
 	 * @return
 	 */
 	@SuppressWarnings("unchecked")
-	private boolean isContainedIn(IJsonNode node) {
+	private boolean isContainedIn(final IJsonNode node) {
 		if (node.equals(this.valueToFind))
 			return true;
 		if (node instanceof IStreamNode<?>) {
-			for (IJsonNode element : (Iterable<IJsonNode>) node)
+			for (final IJsonNode element : (Iterable<IJsonNode>) node)
 				if (this.isContainedIn(element))
 					return true;
 		}
 		else if (node instanceof IObjectNode)
-			for (Entry<String, IJsonNode> element : (IObjectNode) node)
+			for (final Entry<String, IJsonNode> element : (IObjectNode) node)
 				if (this.isContainedIn(element.getValue()))
 					return true;
 		return false;

@@ -46,7 +46,7 @@ public interface Similarity<NodeType extends IJsonNode> extends ISopremoType {
 	 *        The second object.
 	 * @return A value between <code>0.0</code> (not equal) and <code>1.0</code> (the same object).
 	 */
-	public double getSimilarity(NodeType node1, NodeType node2);
+	public float getSimilarity(NodeType node1, NodeType node2);
 
 	public Class<NodeType> getExpectedType();
 

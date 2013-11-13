@@ -47,10 +47,10 @@ public class MongeElkanSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode<IJsonNode> leftValues, IArrayNode<IJsonNode> rightValues) {
-		double sum = 0;
+	protected float getSetSimilarity(IArrayNode<IJsonNode> leftValues, IArrayNode<IJsonNode> rightValues) {
+		float sum = 0;
 		for (IJsonNode leftValue : leftValues) {
-			double max = 0;
+			float max = 0;
 			for (IJsonNode rightValue : rightValues)
 				max = Math.max(max, this.baseMeasure.getSimilarity(leftValue, rightValue));
 			sum += max;

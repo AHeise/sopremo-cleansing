@@ -90,7 +90,7 @@ public class CoercingSimilarity extends AbstractSimilarity<IJsonNode> implements
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+	public float getSimilarity(IJsonNode node1, IJsonNode node2) {
 		return this.actualSimilarity.getSimilarity(
 			TypeCoercer.INSTANCE.coerce(node1, this.cache1, this.coercionType),
 			TypeCoercer.INSTANCE.coerce(node2, this.cache2, this.coercionType));

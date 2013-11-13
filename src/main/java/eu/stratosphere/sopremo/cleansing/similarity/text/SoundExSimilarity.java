@@ -51,11 +51,11 @@ public class SoundExSimilarity extends TextSimilarity {
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
 		if (text1.length() == 0 && text2.length() == 0)
-			return 1.0;
+			return 1f;
 		if (text1.length() == 0 || text2.length() == 0)
-			return 0.0;
+			return 0f;
 
 		try {
 			SoundEx.generateSoundExInto(text1, this.soundex1);
@@ -63,8 +63,8 @@ public class SoundExSimilarity extends TextSimilarity {
 		} catch (IOException e) {
 		}
 		if (CharSequenceUtil.equal(this.soundex1, this.soundex2))
-			return 1.0;
+			return 1f;
 
-		return 0.0;
+		return 0f;
 	}
 }

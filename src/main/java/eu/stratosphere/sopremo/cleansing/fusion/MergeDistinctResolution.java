@@ -9,7 +9,7 @@ import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-@Name(noun="mergeDistinct")
+@Name(noun = "mergeDistinct")
 public class MergeDistinctResolution extends ConflictResolution {
 	/**
 	 * The default, stateless instance.
@@ -21,11 +21,11 @@ public class MergeDistinctResolution extends ConflictResolution {
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
 		this.distinctValues.clear();
-		//this.distinctValues.add(NullNode.getInstance());
+		// this.distinctValues.add(NullNode.getInstance());
 
-		Iterator<IJsonNode> iterator = values.iterator();
+		final Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext()) {
-			IJsonNode element = getValueFromSourceTaggedObject(iterator.next());
+			final IJsonNode element = this.getValueFromSourceTaggedObject(iterator.next());
 			if (this.distinctValues.contains(element))
 				iterator.remove();
 			else

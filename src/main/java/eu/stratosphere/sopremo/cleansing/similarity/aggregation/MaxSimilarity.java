@@ -66,9 +66,9 @@ public class MaxSimilarity extends AggregationSimilarity {
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities) {
-		double max = 0;
-		for (double sim : individualSimilarities)
+	protected float aggregateSimilarity(float[] individualSimilarities) {
+		float max = 0;
+		for (float sim : individualSimilarities)
 			max = Math.max(sim, max);
 		return max;
 	}

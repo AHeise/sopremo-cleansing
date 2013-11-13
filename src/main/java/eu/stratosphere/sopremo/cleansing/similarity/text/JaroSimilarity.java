@@ -49,7 +49,7 @@ public class JaroSimilarity extends TextSimilarity {
 	 * java.lang.CharSequence, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
 		this.leftMatched.clear();
 		this.rightMatched.clear();
 
@@ -61,7 +61,7 @@ public class JaroSimilarity extends TextSimilarity {
 
 		this.countTranspositions(text1, text2);
 
-		double dCommonChars = this.commonChars;
+		float dCommonChars = this.commonChars;
 		return (dCommonChars / text1.length() + dCommonChars / text2.length() + //
 		(this.commonChars - this.transpositions) / dCommonChars) / 3;
 	}

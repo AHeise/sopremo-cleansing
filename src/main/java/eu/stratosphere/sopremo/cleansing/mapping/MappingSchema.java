@@ -28,7 +28,6 @@ import java.util.Map.Entry;
 
 import javolution.text.TextFormat;
 import javolution.text.TypeFormat;
-
 import eu.stratosphere.sopremo.AbstractSopremoType;
 
 public class MappingSchema extends AbstractSopremoType {

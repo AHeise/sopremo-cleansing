@@ -38,11 +38,11 @@ public abstract class RecordResolution extends ConflictResolution {
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public void fuse(IArrayNode<IJsonNode> values, Map<String, CompositeEvidence> weights) {
-		fusedRecord.clear();
-		for (IJsonNode value : values) {
-			IObjectNode object = (IObjectNode) value;
-			for (Entry<String, IJsonNode> field : object) {
+	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
+		this.fusedRecord.clear();
+		for (final IJsonNode value : values) {
+			final IObjectNode object = (IObjectNode) value;
+			for (final Entry<String, IJsonNode> field : object) {
 				IJsonNode fieldValues = this.fusedRecord.get(field.getKey());
 				if (fieldValues == MissingNode.getInstance())
 					this.fusedRecord.put(field.getKey(), fieldValues = new ArrayNode<IJsonNode>());
