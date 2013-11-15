@@ -21,6 +21,7 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Sel
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -44,6 +45,16 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	private DuplicateDetectionImplementation implementation = null;
 
+	private SortedNeighborhood snm = new SortedNeighborhood();
+	
+	/**
+	 * Initializes DuplicateDetection.
+	 *
+	 */
+	public DuplicateDetection() {
+		addPropertiesFrom(snm);
+	}
+	
 	/**
 	 * Returns the candidateSelection.
 	 * 

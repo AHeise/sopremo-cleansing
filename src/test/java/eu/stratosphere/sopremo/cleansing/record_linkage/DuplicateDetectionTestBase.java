@@ -1,6 +1,5 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Ignore;
@@ -21,10 +20,7 @@ import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.pact.JsonCollector;
-import eu.stratosphere.sopremo.serialization.SopremoRecordLayout;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
-import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
@@ -150,7 +146,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	 * @return the context
 	 */
 	protected EvaluationContext getContext() {
-		return this.sopremoTestPlan.getEvaluationContext();
+		return this.sopremoTestPlan.getCompilationContext();
 	}
 
 	/**

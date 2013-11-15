@@ -99,7 +99,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * @return the context
 	 */
 	protected EvaluationContext getContext() {
-		return this.sopremoTestPlan.getEvaluationContext();
+		return this.sopremoTestPlan.getCompilationContext();
 	}
 
 	/**

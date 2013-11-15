@@ -251,8 +251,7 @@ public class SpicyMappingTransformation extends
 	 * .sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module,
-			EvaluationContext context) {
+	public void addImplementation(SopremoModule module, EvaluationContext context) {
 
 		if (this.mappingTask == null) {
 			createMappingTaskFromMappingInformation();
@@ -265,7 +264,6 @@ public class SpicyMappingTransformation extends
 		// init
 		this.module = module;
 		this.correspondenceTransformation = new SpicyCorrespondenceTransformation();
-		this.correspondenceTransformation.setContext(context);
 		this.reuseProjections = new HashMap<String, Projection>(this.inputIndex.size());
 		this.reuseJoins = new HashMap<String, TwoSourceJoin>(4);
 		this.tgdIndex = new HashMap<String, FORule>();
@@ -273,10 +271,10 @@ public class SpicyMappingTransformation extends
 			this.tgdIndex.put(tgd.getId(), tgd);
 		}
 		IAlgebraOperator tree = this.mappingTask.getMappingData().getAlgebraTree(); // tree
-																				// contains
-																				// rewritten
-																				// tgd
-																				// rules
+		// contains
+		// rewritten
+		// tgd
+		// rules
 		SopremoUtil.LOG.debug("Spicy mapping tree:\n" + tree);
 		processTree(tree);
 	}

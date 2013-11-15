@@ -6,8 +6,6 @@ import java.util.HashMap;
 
 import org.junit.Test;
 
-import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.ArrayNode;
@@ -164,8 +162,6 @@ public class SpicyMappingTransformationTest extends
 				.create());
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
-		final EvaluationContext context = sopremoPlan.getEvaluationContext();
-		context.getFunctionRegistry().put(CoreFunctions.class);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 
 		this.addDefaultPersonsToPlan(sopremoPlan);
@@ -210,8 +206,6 @@ public class SpicyMappingTransformationTest extends
 				.create());
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
-		final EvaluationContext context = sopremoPlan.getEvaluationContext();
-		context.getFunctionRegistry().put(CoreFunctions.class);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 
 		this.addDefaultPersonsToPlan(sopremoPlan);
@@ -255,8 +249,6 @@ public class SpicyMappingTransformationTest extends
 				.create());
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
-		final EvaluationContext context = sopremoPlan.getEvaluationContext();
-		context.getFunctionRegistry().put(CoreFunctions.class);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 
 		this.addDefaultPersonsToPlan(sopremoPlan);
@@ -300,8 +292,6 @@ public class SpicyMappingTransformationTest extends
 				.create());
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
-		final EvaluationContext context = sopremoPlan.getEvaluationContext();
-		context.getFunctionRegistry().put(CoreFunctions.class);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 		sopremoPlan
 				.getInput(0)

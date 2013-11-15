@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cleansing.fusion.CompositeEvidence;
 import eu.stratosphere.sopremo.cleansing.fusion.ResolutionBasedFusion;
 import eu.stratosphere.sopremo.cleansing.fusion.SingleOutputResolution;
@@ -160,12 +159,13 @@ public class Fusion extends CompositeOperator<Fusion> {
 	}
 
 	private void showWarning(PathSegmentExpression path, EvaluationExpression expr) {
-		String scriptName =
-			SopremoEnvironment.getInstance().getEvaluationContext().getConstantRegistry().getName(
-				expr.getClass().getAnnotation(Name.class));
+//		String scriptName =
+//			SopremoEnvironment.getInstance().getEvaluationContext().getConstantRegistry().
+//				getNameChooser().getName(expr.getClass().getAnnotation(Name.class));
 
+		// TODO: get name?
 		SopremoUtil.LOG.warn(String.format(Fusion.SINGLE_OUTPUT_WARNING,
-			path.toString(), scriptName));
+			path.toString(), expr.toString()));
 	}
 
 	@Override
