@@ -2,7 +2,6 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import java.util.List;
 
-import eu.stratosphere.sopremo.cleansing.CleansFunctions;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 

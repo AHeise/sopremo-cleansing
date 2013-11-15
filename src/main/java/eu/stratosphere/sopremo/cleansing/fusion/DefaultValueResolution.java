@@ -13,7 +13,7 @@ public class DefaultValueResolution extends ConflictResolution {
 	private final IJsonNode defaultValue;
 
 	public DefaultValueResolution() {
-		defaultValue = NullNode.getInstance();
+		this.defaultValue = NullNode.getInstance();
 	}
 
 	public DefaultValueResolution(final IJsonNode defaultValue) {
@@ -22,7 +22,7 @@ public class DefaultValueResolution extends ConflictResolution {
 
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values,
-			Map<String, CompositeEvidence> weights) {
+			final Map<String, CompositeEvidence> weights) {
 		values.clear();
 		values.add(this.defaultValue);
 	}

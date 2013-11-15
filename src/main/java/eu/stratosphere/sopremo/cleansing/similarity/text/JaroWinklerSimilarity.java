@@ -61,8 +61,8 @@ public class JaroWinklerSimilarity extends TextSimilarity {
 	 * java.lang.CharSequence, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
-		final double jaroSimilarity = this.jaroSimilarity.getSimilarity(text1, text2);
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
+		final float jaroSimilarity = this.jaroSimilarity.getSimilarity(text1, text2);
 
 		if (jaroSimilarity < this.minSimilarityForBoost)
 			return jaroSimilarity;
@@ -75,6 +75,6 @@ public class JaroWinklerSimilarity extends TextSimilarity {
 		if (prefixLength == 0)
 			return jaroSimilarity;
 
-		return jaroSimilarity + 0.1 * prefixLength * (1 - jaroSimilarity);
+		return jaroSimilarity + 0.1f * prefixLength * (1 - jaroSimilarity);
 	}
 }

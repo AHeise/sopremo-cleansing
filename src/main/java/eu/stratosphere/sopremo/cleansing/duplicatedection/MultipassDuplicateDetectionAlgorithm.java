@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
 import eu.stratosphere.sopremo.operator.Operator;

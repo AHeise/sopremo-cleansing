@@ -39,8 +39,8 @@ public class JaccardSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+	protected float getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		int commonTokens = this.getNumberOfCommonTokens(node1, node2);
-		return (double) commonTokens / (node1.size() + node2.size() - commonTokens);
+		return (float) commonTokens / (node1.size() + node2.size() - commonTokens);
 	}
 }

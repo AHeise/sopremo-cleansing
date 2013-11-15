@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cleansing.fusion.CompositeEvidence;
 import eu.stratosphere.sopremo.cleansing.fusion.ResolutionBasedFusion;
 import eu.stratosphere.sopremo.cleansing.fusion.SingleOutputResolution;
@@ -29,10 +30,8 @@ import eu.stratosphere.sopremo.type.NullNode;
 /**
  * Input elements are either
  * <ul>
- * <li>Array of records resulting from record linkage without transitive
- * closure. [r1, r2, r3] with r<sub>i</sub>
- * <li>Array of record clusters resulting from record linkage with transitive
- * closure
+ * <li>Array of records resulting from record linkage without transitive closure. [r1, r2, r3] with r<sub>i</sub>
+ * <li>Array of record clusters resulting from record linkage with transitive closure
  * </ul>
  * 
  * @author Arvid Heise
@@ -42,16 +41,14 @@ import eu.stratosphere.sopremo.type.NullNode;
 @OutputCardinality(1)
 public class Fusion extends CompositeOperator<Fusion> {
 
-	private static String SINGLE_OUTPUT_WARNING = "Last resolution of field '%s' (%s) can yield to multiple outputs.\nEither you've chosen this behavior explicitly or you should choose an additional resolution that enforces a single output value.";
+	private static String SINGLE_OUTPUT_WARNING =
+		"Last resolution of field '%s' (%s) can yield to multiple outputs.\nEither you've chosen this behavior explicitly or you should choose an additional resolution that enforces a single output value.";
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime
-				* result
-				+ ((resolutionBasedFusion == null) ? 0 : resolutionBasedFusion
-						.hashCode());
+		result = prime * result + this.resolutionBasedFusion.hashCode();
 		return result;
 	}
 
@@ -64,12 +61,7 @@ public class Fusion extends CompositeOperator<Fusion> {
 		if (getClass() != obj.getClass())
 			return false;
 		Fusion other = (Fusion) obj;
-		if (resolutionBasedFusion == null) {
-			if (other.resolutionBasedFusion != null)
-				return false;
-		} else if (!resolutionBasedFusion.equals(other.resolutionBasedFusion))
-			return false;
-		return true;
+		return this.resolutionBasedFusion.equals(other.resolutionBasedFusion);
 	}
 
 	private ResolutionBasedFusion resolutionBasedFusion = new ResolutionBasedFusion();
@@ -78,7 +70,7 @@ public class Fusion extends CompositeOperator<Fusion> {
 	@Name(preposition = "with weights")
 	public void setWeightsExpression(ObjectCreation weightsExpression) {
 		this.parseWeightsExpression(weightsExpression,
-				EvaluationExpression.VALUE);
+			EvaluationExpression.VALUE);
 	}
 
 	@Property
@@ -86,7 +78,7 @@ public class Fusion extends CompositeOperator<Fusion> {
 	public void setResolutionExpression(ObjectCreation ruleExpression) {
 		this.resolutionBasedFusion.clear();
 		this.parseResolutionExpression(ruleExpression,
-				EvaluationExpression.VALUE);
+			EvaluationExpression.VALUE);
 	}
 
 	private void parseWeightsExpression(ObjectCreation weightsExpression,
@@ -101,7 +93,7 @@ public class Fusion extends CompositeOperator<Fusion> {
 			ObjectCreation weightsExpression) {
 		for (Mapping<?> mapping : weightsExpression.getMappings()) {
 			weights.put(this.getFieldName(mapping),
-					this.createEvidence(mapping.getExpression()));
+				this.createEvidence(mapping.getExpression()));
 		}
 	}
 
@@ -112,31 +104,26 @@ public class Fusion extends CompositeOperator<Fusion> {
 			ObjectCreation objectCreation;
 			EvaluationExpression evaluationExpression;
 			if (arithmeticExpr.getFirstOperand() instanceof ObjectCreation) {
-				objectCreation = (ObjectCreation) arithmeticExpr
-						.getFirstOperand();
+				objectCreation = (ObjectCreation) arithmeticExpr.getFirstOperand();
 				evaluationExpression = arithmeticExpr.getSecondOperand();
 			} else {
-				objectCreation = (ObjectCreation) arithmeticExpr
-						.getSecondOperand();
+				objectCreation = (ObjectCreation) arithmeticExpr.getSecondOperand();
 				evaluationExpression = arithmeticExpr.getFirstOperand();
 			}
-			DecimalNode baseEvidence = (DecimalNode) evaluationExpression
-					.evaluate(NullNode.getInstance());
+			DecimalNode baseEvidence = (DecimalNode) evaluationExpression.evaluate(NullNode.getInstance());
 			evidence = new CompositeEvidence(baseEvidence);
 			for (Mapping<?> mapping : objectCreation.getMappings()) {
 				evidence.putEvidence(this.getFieldName(mapping),
-						this.createEvidence(mapping.getExpression()));
+					this.createEvidence(mapping.getExpression()));
 			}
 			return evidence;
-		} else {
-			return new CompositeEvidence((DecimalNode) expr.evaluate(NullNode
-					.getInstance()));
 		}
+		return new CompositeEvidence((DecimalNode) expr.evaluate(NullNode.getInstance()));
 	}
 
 	private String getFieldName(Mapping<?> mapping) {
 		return ((ObjectAccess) mapping.getTargetExpression().getLast())
-				.getField();
+			.getField();
 	}
 
 	private void parseResolutionExpression(ObjectCreation ruleExpression,
@@ -145,7 +132,7 @@ public class Fusion extends CompositeOperator<Fusion> {
 		for (Mapping<?> mapping : mappings) {
 			final EvaluationExpression expression = mapping.getExpression();
 			final PathSegmentExpression path = ExpressionUtil.makePath(value,
-					mapping.getTargetExpression());
+				mapping.getTargetExpression());
 
 			if (expression instanceof ArrayCreation) {
 				int expressionSize = ((ArrayCreation) expression).size();
@@ -153,9 +140,9 @@ public class Fusion extends CompositeOperator<Fusion> {
 				for (EvaluationExpression nestedExpression : expression) {
 					if (expressionSize == ++currentExpression)
 						this.checkAnnotationAndShowWarning(path,
-								nestedExpression);
+							nestedExpression);
 					this.resolutionBasedFusion.addResolution(nestedExpression,
-							path);
+						path);
 				}
 			} else {
 				this.checkAnnotationAndShowWarning(path, expression);
@@ -166,19 +153,19 @@ public class Fusion extends CompositeOperator<Fusion> {
 
 	private void checkAnnotationAndShowWarning(PathSegmentExpression path,
 			EvaluationExpression expr) {
-		SingleOutputResolution annotation = expr.getClass().getAnnotation(
-				SingleOutputResolution.class);
+		SingleOutputResolution annotation = expr.getClass().getAnnotation(SingleOutputResolution.class);
 		if (annotation == null) {
 			this.showWarning(path, expr);
 		}
 	}
 
-	private void showWarning(PathSegmentExpression path,
-			EvaluationExpression expr) {
-		String scriptName = CleansFunctions.getScriptName(expr.getClass());
+	private void showWarning(PathSegmentExpression path, EvaluationExpression expr) {
+		String scriptName =
+			SopremoEnvironment.getInstance().getEvaluationContext().getConstantRegistry().getName(
+				expr.getClass().getAnnotation(Name.class));
 
 		SopremoUtil.LOG.warn(String.format(Fusion.SINGLE_OUTPUT_WARNING,
-				path.toString(), scriptName));
+			path.toString(), scriptName));
 	}
 
 	@Override

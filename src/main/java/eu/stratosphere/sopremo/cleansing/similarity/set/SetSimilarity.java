@@ -15,7 +15,6 @@
 package eu.stratosphere.sopremo.cleansing.similarity.set;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -42,14 +41,14 @@ public abstract class SetSimilarity extends AbstractSimilarity<IArrayNode<IJsonN
 	 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+	public float getSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		final boolean node1Empty = node1.isEmpty(), node2Empty = node2.isEmpty();
 		if (node1Empty || node2Empty)
 			return node1Empty == node2Empty ? 1 : 0;
 		return this.getSetSimilarity(node1, node2);
 	}
 
-	protected abstract double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2);
+	protected abstract float getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2);
 
 	protected int getNumberOfCommonTokens(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		int commonTokens = 0;

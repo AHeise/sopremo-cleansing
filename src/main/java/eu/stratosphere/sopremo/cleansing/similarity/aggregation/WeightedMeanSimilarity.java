@@ -111,12 +111,12 @@ public class WeightedMeanSimilarity extends AggregationSimilarity {
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities) {
-		double mean = 0;
+	protected float aggregateSimilarity(float[] individualSimilarities) {
+		float mean = 0;
 		for (int index = 0; index < individualSimilarities.length; index++) {
-			final double sim = individualSimilarities[index];
+			final float sim = individualSimilarities[index];
 			mean += Math.pow(sim, this.m) * this.weights.get(index) / this.weightSum;
 		}
-		return Math.pow(mean, 1 / this.m);
+		return (float) Math.pow(mean, 1 / this.m);
 	}
 }

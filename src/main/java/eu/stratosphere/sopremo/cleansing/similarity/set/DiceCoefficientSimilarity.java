@@ -39,7 +39,7 @@ public class DiceCoefficientSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
-		return 2d * this.getNumberOfCommonTokens(node1, node2) / (node1.size() + node2.size());
+	protected float getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+		return 2f * this.getNumberOfCommonTokens(node1, node2) / (node1.size() + node2.size());
 	}
 }

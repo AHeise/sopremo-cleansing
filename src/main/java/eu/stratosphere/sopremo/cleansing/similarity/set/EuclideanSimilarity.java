@@ -48,20 +48,20 @@ public class EuclideanSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+	protected float getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
 		this.getTermFrequencies(node1, this.termFrequencies1);
 		this.getTermFrequencies(node2, this.termFrequencies2);
 
 		final Set<IJsonNode> values = new HashSet<IJsonNode>(this.termFrequencies1.keySet());
 		values.addAll(this.termFrequencies2.keySet());
 
-		double distanceSq = 0;
+		float distanceSq = 0;
 		for (IJsonNode value : values) {
 			int diff = this.termFrequencies1.getInt(value) - this.termFrequencies2.getInt(value);
 			distanceSq += diff * diff;
 		}
-		final double maxSq = node1.size() * node1.size() + node2.size() * node2.size();
+		final float maxSq = node1.size() * node1.size() + node2.size() * node2.size();
 
-		return 1 - Math.pow(distanceSq / maxSq, 0.5);
+		return (float) (1 - Math.pow(distanceSq / maxSq, 0.5));
 	}
 }

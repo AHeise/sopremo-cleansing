@@ -42,8 +42,8 @@ public class LevenshteinSimilarity extends TextSimilarity {
 	 * java.lang.CharSequence)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
-		return 1 - (double) computeLevenshteinDistance(text1, text2) / Math.max(text1.length(), text2.length());
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
+		return 1 - (float) computeLevenshteinDistance(text1, text2) / Math.max(text1.length(), text2.length());
 	}
 
 	private static int min(int a, int b, int c) {

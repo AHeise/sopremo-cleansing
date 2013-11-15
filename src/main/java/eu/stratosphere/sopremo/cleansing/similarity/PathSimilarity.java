@@ -109,7 +109,7 @@ public class PathSimilarity<NodeType extends IJsonNode> extends AbstractSimilari
 	 */
 	@SuppressWarnings("unchecked")
 	@Override
-	public double getSimilarity(IJsonNode node1, IJsonNode node2) {
+	public float getSimilarity(IJsonNode node1, IJsonNode node2) {
 		final NodeType left = (NodeType) this.leftExpression.evaluate(node1);
 		if (left == MissingNode.getInstance())
 			return 0;

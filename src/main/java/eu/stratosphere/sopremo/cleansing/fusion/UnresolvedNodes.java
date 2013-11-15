@@ -11,11 +11,11 @@ public class UnresolvedNodes extends ArrayNode<IJsonNode> {
 		super();
 	}
 
-	public UnresolvedNodes(Collection<? extends IJsonNode> nodes) {
+	public UnresolvedNodes(final Collection<? extends IJsonNode> nodes) {
 		super(nodes);
 	}
 
-	public UnresolvedNodes(IJsonNode... nodes) {
+	public UnresolvedNodes(final IJsonNode... nodes) {
 		super(nodes);
 	}
 

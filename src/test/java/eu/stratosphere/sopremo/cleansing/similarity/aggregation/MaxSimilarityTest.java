@@ -49,23 +49,23 @@ public class MaxSimilarityTest {
 		
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		similarity.add(new ConstantSimilarity(0.0));
+		similarity.add(new ConstantSimilarity(0.0f));
 		
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		similarity.add(new ConstantSimilarity(0.1));
+		similarity.add(new ConstantSimilarity(0.1f));
 		
 		assertEquals(0.1, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 		
 		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 		
 		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
 		
-		similarity.add(new ConstantSimilarity(1.0));
+		similarity.add(new ConstantSimilarity(1.0f));
 		
 		assertEquals(1.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
 	}

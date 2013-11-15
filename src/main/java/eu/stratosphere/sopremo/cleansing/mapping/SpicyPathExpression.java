@@ -14,9 +14,9 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import it.unibas.spicy.model.paths.PathExpression;
+
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import com.esotericsoftware.kryo.DefaultSerializer;
@@ -24,11 +24,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import it.unibas.spicy.model.paths.PathExpression;
 
 /**
  * @author arv

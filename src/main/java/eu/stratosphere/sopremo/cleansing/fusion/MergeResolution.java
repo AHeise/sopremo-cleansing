@@ -15,7 +15,7 @@ public class MergeResolution extends ConflictResolution {
 
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values, final Map<String, CompositeEvidence> weights) {
-		Iterator<IJsonNode> iterator = values.iterator();
+		final Iterator<IJsonNode> iterator = values.iterator();
 		while (iterator.hasNext())
 			if (iterator.next() == NullNode.getInstance())
 				iterator.remove();

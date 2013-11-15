@@ -12,30 +12,31 @@ import eu.stratosphere.sopremo.type.DecimalNode;
 public class CompositeEvidence extends AbstractSopremoType implements Iterable<Entry<String, CompositeEvidence>> {
 
 	private DecimalNode baseEvidence;
+
 	private Map<String, CompositeEvidence> subEvidences;
-	
-	public CompositeEvidence(){
-		
+
+	public CompositeEvidence() {
+
 	}
 
-	public CompositeEvidence(DecimalNode baseEvidence) {
+	public CompositeEvidence(final DecimalNode baseEvidence) {
 		this.baseEvidence = baseEvidence;
 		this.subEvidences = new HashMap<String, CompositeEvidence>();
 	}
 
 	public DecimalNode getBaseEvidence() {
-		return baseEvidence;
+		return this.baseEvidence;
 	}
 
-	public void setBaseEvidence(DecimalNode baseEvidence) {
+	public void setBaseEvidence(final DecimalNode baseEvidence) {
 		this.baseEvidence = baseEvidence;
 	}
 
-	public CompositeEvidence getEvidence(String fieldName) {
+	public CompositeEvidence getEvidence(final String fieldName) {
 		return this.subEvidences.get(fieldName);
 	}
 
-	public void putEvidence(String fieldName, CompositeEvidence evidence) {
+	public void putEvidence(final String fieldName, final CompositeEvidence evidence) {
 		this.subEvidences.put(fieldName, evidence);
 	}
 
@@ -45,37 +46,38 @@ public class CompositeEvidence extends AbstractSopremoType implements Iterable<E
 	}
 
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
-		appendable.append("{ baseEvidence: ").append(this.baseEvidence.toString()).append(", subEvidences: ").append(this.subEvidences.toString()).append(" }");
+	public void appendAsString(final Appendable appendable) throws IOException {
+		appendable.append("{ baseEvidence: ").append(this.baseEvidence.toString()).append(", subEvidences: ").append(
+			this.subEvidences.toString()).append(" }");
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((baseEvidence == null) ? 0 : baseEvidence.hashCode());
-		result = prime * result + ((subEvidences == null) ? 0 : subEvidences.hashCode());
+		result = prime * result + (this.baseEvidence == null ? 0 : this.baseEvidence.hashCode());
+		result = prime * result + (this.subEvidences == null ? 0 : this.subEvidences.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		CompositeEvidence other = (CompositeEvidence) obj;
-		if (baseEvidence == null) {
+		final CompositeEvidence other = (CompositeEvidence) obj;
+		if (this.baseEvidence == null) {
 			if (other.baseEvidence != null)
 				return false;
-		} else if (!baseEvidence.equals(other.baseEvidence))
+		} else if (!this.baseEvidence.equals(other.baseEvidence))
 			return false;
-		if (subEvidences == null) {
+		if (this.subEvidences == null) {
 			if (other.subEvidences != null)
 				return false;
-		} else if (!subEvidences.equals(other.subEvidences))
+		} else if (!this.subEvidences.equals(other.subEvidences))
 			return false;
 		return true;
 	}

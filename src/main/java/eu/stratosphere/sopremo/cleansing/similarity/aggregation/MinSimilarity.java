@@ -65,9 +65,9 @@ public class MinSimilarity extends AggregationSimilarity {
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double aggregateSimilarity(double[] individualSimilarities) {
-		double min = 1;
-		for (double sim : individualSimilarities)
+	protected float aggregateSimilarity(float[] individualSimilarities) {
+		float min = 1;
+		for (float sim : individualSimilarities)
 			min = Math.min(sim, min);
 		return min;
 	}

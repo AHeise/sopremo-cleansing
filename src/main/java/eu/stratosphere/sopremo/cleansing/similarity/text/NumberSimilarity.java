@@ -48,13 +48,13 @@ public class NumberSimilarity extends AbstractSimilarity<INumericNode> {
 	 * eu.stratosphere.sopremo.type.IJsonNode)
 	 */
 	@Override
-	public double getSimilarity(INumericNode node1, INumericNode node2) {
+	public float getSimilarity(INumericNode node1, INumericNode node2) {
 		final double diff = Math.abs(node1.getDoubleValue() - node2.getDoubleValue());
 		if (diff == 0)
 			return 1;
 		if (diff > this.maxDiff)
 			return 0;
-		return 1 - diff / this.maxDiff;
+		return (float) (1 - diff / this.maxDiff);
 	}
 
 	/*

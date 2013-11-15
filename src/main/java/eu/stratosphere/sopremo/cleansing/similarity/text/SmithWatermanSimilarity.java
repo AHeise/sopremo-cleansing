@@ -98,13 +98,13 @@ public class SmithWatermanSimilarity extends TextSimilarity {
 	 * java.lang.String, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public double getSimilarity(CharSequence text1, CharSequence text2) {
-		final double smithWaterman = this.getUnNormalisedSimilarity(text1.toString(), text2.toString());
+	public float getSimilarity(CharSequence text1, CharSequence text2) {
+		final float smithWaterman = this.getUnNormalisedSimilarity(text1.toString(), text2.toString());
 
 		// normalise into zero to one region from min max possible
 		final int maxLength = Math.max(text1.length(), text2.length());
-		final double maxValue = maxLength * Math.max(this.dCostFunc.getMaxCost(), this.gapCost);
-		final double minValue = maxLength * Math.min(this.dCostFunc.getMinCost(), this.gapCost);
+		final float maxValue = maxLength * Math.max(this.dCostFunc.getMaxCost(), this.gapCost);
+		final float minValue = maxLength * Math.min(this.dCostFunc.getMinCost(), this.gapCost);
 
 		// return actual / possible distance to get 0-1 range
 		return (smithWaterman - minValue) / (maxValue - minValue);

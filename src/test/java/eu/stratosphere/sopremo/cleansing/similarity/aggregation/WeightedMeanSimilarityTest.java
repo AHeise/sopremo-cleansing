@@ -50,12 +50,12 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.0));
+		similarity.add(new ConstantSimilarity(0.0f));
 
 		double expectedValue = 0.0;
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(1.0));
+		similarity.add(new ConstantSimilarity(1.0f));
 
 		expectedValue = 0.0;
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
@@ -70,22 +70,22 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.1));
+		similarity.add(new ConstantSimilarity(0.1f));
 
 		double expectedValue = 1.0 / (1.0 / 0.1);
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 
 		expectedValue = 2.0 / ((1.0 / 0.1) + (1.0 / 0.5));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 
 		expectedValue = 3.0 / ((1.0 / 0.1) + (1.0 / 0.5) + (1.0 / 0.5));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(1.0));
+		similarity.add(new ConstantSimilarity(1.0f));
 
 		expectedValue = 4.0 / ((1.0 / 0.1) + (1.0 / 0.5) + (1.0 / 0.5) + (1.0 / 1.0));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
@@ -100,22 +100,22 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.1), 2);
+		similarity.add(new ConstantSimilarity(0.1f), 2);
 
 		double expectedValue = (2.0) / (2.0 / 0.1);
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.4), 4);
+		similarity.add(new ConstantSimilarity(0.4f), 4);
 
 		expectedValue = (2.0 + 4.0) / ((2.0 / 0.1) + (4.0 / 0.4));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(0.4), 1);
+		similarity.add(new ConstantSimilarity(0.4f), 1);
 
 		expectedValue = (2.0 + 4.0 + 1.0) / ((2.0 / 0.1) + (4.0 / 0.4) + (1.0 / 0.4));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
-		similarity.add(new ConstantSimilarity(1.0), 10);
+		similarity.add(new ConstantSimilarity(1.0f), 10);
 
 		expectedValue = (2.0 + 4.0 + 1.0 + 10.0) / ((2.0 / 0.1) + (4.0 / 0.4) + (1.0 / 0.4) + (10.0 / 1.0));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
@@ -130,23 +130,23 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 		
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.0));
+		similarity.add(new ConstantSimilarity(0.0f));
 		
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.1));
+		similarity.add(new ConstantSimilarity(0.1f));
 		
 		assertEquals(0.05, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 		
 		assertEquals(0.2, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.5));
+		similarity.add(new ConstantSimilarity(0.5f));
 		
 		assertEquals(0.275, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(1.0));
+		similarity.add(new ConstantSimilarity(1.0f));
 		
 		assertEquals(0.42, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 	}
@@ -160,27 +160,27 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 		
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.0), 1);
+		similarity.add(new ConstantSimilarity(0.0f), 1);
 		
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.0), 2);
+		similarity.add(new ConstantSimilarity(0.0f), 2);
 		
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.1), 2);
+		similarity.add(new ConstantSimilarity(0.1f), 2);
 		
 		assertEquals(0.04, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.4), 4);
+		similarity.add(new ConstantSimilarity(0.4f), 4);
 		
 		assertEquals(0.2, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(0.4), 1);
+		similarity.add(new ConstantSimilarity(0.4f), 1);
 		
 		assertEquals(0.22, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 		
-		similarity.add(new ConstantSimilarity(1.0), 10);
+		similarity.add(new ConstantSimilarity(1.0f), 10);
 		
 		assertEquals(0.61, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 	}

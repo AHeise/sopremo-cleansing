@@ -12,14 +12,15 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class ChooseRandomResolution extends ConflictResolution {
 
 	public final static ChooseRandomResolution INSTANCE = new ChooseRandomResolution();
+
 	private transient final Random rnd = new Random();
 
 	@Override
 	public void fuse(final IArrayNode<IJsonNode> values,
 			final Map<String, CompositeEvidence> weights) {
-		int rndIndex = rnd.nextInt(values.size());
-		IJsonNode randomlyChosenValue = getValueFromSourceTaggedObject(values
-				.get(rndIndex));
+		final int rndIndex = this.rnd.nextInt(values.size());
+		final IJsonNode randomlyChosenValue = this.getValueFromSourceTaggedObject(values
+			.get(rndIndex));
 		values.clear();
 		values.add(randomlyChosenValue);
 	}

@@ -5,8 +5,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
@@ -45,11 +43,10 @@ import eu.stratosphere.sopremo.packages.ConstantRegistryCallback;
 import eu.stratosphere.sopremo.packages.FunctionRegistryCallback;
 import eu.stratosphere.sopremo.packages.IConstantRegistry;
 import eu.stratosphere.sopremo.packages.IFunctionRegistry;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.CachingArrayNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.NullNode;
+import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
@@ -60,18 +57,17 @@ public class CleansFunctions implements BuiltinProvider,
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * eu.stratosphere.sopremo.packages.ConstantRegistryCallback#registerConstants
 	 * (eu.stratosphere.sopremo.packages. IConstantRegistry)
 	 */
 	@Override
-	public void registerConstants(IConstantRegistry constantRegistry) {
+	public void registerConstants(final IConstantRegistry constantRegistry) {
 
 		constantRegistry.put("chooseNearestBound", CHOOSE_NEAREST_BOUND);
 		constantRegistry.put("chooseFirst", CHOOSE_FIRST_FROM_LIST);
 		constantRegistry.put("removeIllegalCharacters",
-				REMOVE_ILLEGAL_CHARACTERS);
+			REMOVE_ILLEGAL_CHARACTERS);
 		constantRegistry.put("tryCoercing", TRY_COERCING_TO_TYPE);
 
 		this.registerTypeConstants(constantRegistry);
@@ -79,97 +75,95 @@ public class CleansFunctions implements BuiltinProvider,
 		this.registerConstant(new NonNullConstraint(), constantRegistry);
 		this.registerConstant(new MostFrequentResolution(), constantRegistry);
 		this.registerConstant(MergeDistinctResolution.INSTANCE,
-				constantRegistry);
+			constantRegistry);
 		this.registerConstant(ChooseRandomResolution.INSTANCE, constantRegistry);
 	}
 
-	private void registerTypeConstants(IConstantRegistry registry) {
-		for (String constant : TypeConstraint.availableTypes.keySet()) {
+	private void registerTypeConstants(final IConstantRegistry registry) {
+		for (final String constant : TypeConstraint.AvailableTypes.keySet())
 			registry.put(constant,
-					new ConstantExpression(TextNode.valueOf(constant)));
-		}
+				new ConstantExpression(TextNode.valueOf(constant)));
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * eu.stratosphere.sopremo.packages.FunctionRegistryCallback#registerFunctions
 	 * (eu.stratosphere.sopremo.packages. IFunctionRegistry)
 	 */
 	@Override
-	public void registerFunctions(IFunctionRegistry registry) {
+	public void registerFunctions(final IFunctionRegistry registry) {
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
 
-		this.registerMacro(new PatternValidationRuleMacro(), registry);
-		this.registerMacro(new RangeRuleMacro(), registry);
-		this.registerMacro(new DefaultValueCorrectionMacro(), registry);
-		this.registerMacro(new WhiteListRuleMacro(), registry);
-		this.registerMacro(new BlackListRuleMacro(), registry);
-		this.registerMacro(new IllegalCharacterRuleMacro(), registry);
-		this.registerMacro(new TypeRuleMacro(), registry);
-
-		this.registerMacro(new DefaultValueResolutionMacro(), registry);
-
-		// 0.2compability
-		// registry.put("vote", new VoteMacro());
+		// scrubbing constraint macros
+		this.registerMacro(new ConstraintMacro(PatternValidationConstraint.class) {
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.cleansing.ConstraintMacro#process(eu.stratosphere.sopremo.expressions.
+			 * EvaluationExpression[])
+			 */
+			@Override
+			protected EvaluationExpression process(EvaluationExpression[] params) {
+				return new PatternValidationConstraint(
+					Pattern.compile(params[0].evaluate(MissingNode.getInstance()).toString()));
+			}
+		}, registry);
+		this.registerMacro(new ConstraintMacro(RangeConstraint.class, 2) {
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.cleansing.ConstraintMacro#process(eu.stratosphere.sopremo.expressions.
+			 * EvaluationExpression[])
+			 */
+			@Override
+			protected EvaluationExpression process(EvaluationExpression[] params) {
+				return new RangeConstraint(params[0].evaluate(MissingNode.getInstance()),
+					params[1].evaluate(MissingNode.getInstance()));
+			}
+		}, registry);
+		this.registerMacro(new ConstraintMacro(DefaultValueCorrection.class), registry);
+		this.registerMacro(new ConstraintMacro(DefaultValueResolution.class), registry);
+		this.registerMacro(new ConstraintMacro(WhiteListConstraint.class), registry);
+		this.registerMacro(new ConstraintMacro(BlackListConstraint.class), registry);
+		this.registerMacro(new ConstraintMacro(IllegalCharacterConstraint.class), registry);
+		this.registerMacro(new ConstraintMacro(TypeConstraint.class) {
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.cleansing.ConstraintMacro#process(eu.stratosphere.sopremo.expressions.
+			 * EvaluationExpression[])
+			 */
+			@Override
+			protected EvaluationExpression process(EvaluationExpression[] params) {
+				final Class<? extends IJsonNode> type =
+					TypeConstraint.AvailableTypes.get(params[0].evaluate(MissingNode.getInstance()).toString());
+				return new TypeConstraint(type);
+			}
+		}, registry);
 	}
 
-	private void registerMacro(MacroBase macro, IFunctionRegistry registry) {
-		registry.put(getScriptName(((CleansingMacro) macro)
-				.getWrappedExpressionClass()), macro);
+	private void registerMacro(final ConstraintMacro macro, final IFunctionRegistry registry) {
+		registry.put(macro.getConstraintClass().getAnnotation(Name.class), macro);
 	}
 
-	private void registerConstant(EvaluationExpression constant,
-			IConstantRegistry registry) {
-		registry.put(getScriptName(constant.getClass()), constant);
+	private void registerConstant(final EvaluationExpression constant, final IConstantRegistry registry) {
+		registry.put(constant.getClass().getAnnotation(Name.class), constant);
 	}
-
-	public static String getScriptName(
-			Class<? extends EvaluationExpression> expr) {
-		Name name = expr.getAnnotation(Name.class);
-		if (name == null) {
-			SopremoUtil.LOG.warn("No name for " + expr + " found, using '"
-					+ expr.getSimpleName() + "'.");
-			return expr.getSimpleName();
-		}
-		if (name.noun().length != 0)
-			return name.noun()[0];
-		if (name.verb().length != 0)
-			return name.verb()[0];
-		if (name.adjective().length != 0)
-			return name.adjective()[0];
-		if (name.preposition().length != 0)
-			return name.preposition()[0];
-		SopremoUtil.LOG.warn("Name found for " + expr
-				+ " but non of the properties are set, using '"
-				+ expr.getSimpleName() + "'");
-		return expr.getSimpleName();
-	}
-
-	public static final SopremoFunction GENERATE_ID = new GenerateId();
 
 	@Name(verb = "generateId")
-	public static class GenerateId extends SopremoFunction1<TextNode> {
-		GenerateId() {
-			super("generateId");
-		}
-
+	public static final SopremoFunction GENERATE_ID = new SopremoFunction1<TextNode>() {
 		private transient TextNode resultId = new TextNode();
 
 		private transient int id = 0;
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see
 		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
 		 * .stratosphere.sopremo.type.IArrayNode)
 		 */
 		@Override
-		public IJsonNode call(TextNode prefix) {
+		public IJsonNode call(final TextNode prefix) {
 			this.resultId.clear();
 			this.resultId.append(prefix);
 			this.resultId.append(this.id++);
@@ -177,30 +171,16 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 	};
 
-	public static final SopremoFunction SOUNDEX = new SoundEx();
-
 	@Name(noun = "soundex")
-	public static class SoundEx extends SopremoFunction1<TextNode> {
-		SoundEx() {
-			super("soundex");
-		}
-
+	public static final SopremoFunction SOUNDEX = new SopremoFunction1<TextNode>() {
 		private transient TextNode soundex = new TextNode();
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
-		 * .stratosphere.sopremo.type.IArrayNode)
-		 */
 		@Override
-		public IJsonNode call(TextNode input) {
+		public IJsonNode call(final TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(
-						input, this.soundex);
-			} catch (IOException e) {
+				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(input, this.soundex);
+			} catch (final IOException e) {
 			}
 			return this.soundex;
 		}
@@ -211,30 +191,17 @@ public class CleansFunctions implements BuiltinProvider,
 	// public static final SopremoFunction REMOVE_VOWELS =
 	// CoreFunctions.REPLACE.bind(TextNode.valueOf("(?i)[aeiou]"),
 	// TextNode.valueOf(""));
-
-	public static final SopremoFunction LONGEST = new Longest();
-
+	
 	@Name(adjective = "longest")
-	public static class Longest extends SopremoFunction1<IArrayNode<IJsonNode>> {
-		Longest() {
-			super("longest");
-		}
-
+	public static SopremoFunction Longest = new SopremoFunction1<IArrayNode<IJsonNode>>() {
 		private transient NodeCache nodeCache = new NodeCache();
 
 		private transient CachingArrayNode<IJsonNode> result = new CachingArrayNode<IJsonNode>();
 
 		private transient IntList sizes = new IntArrayList();
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * eu.stratosphere.sopremo.cleansing.CleansFunctions.LONGEST#call(eu
-		 * .stratosphere.sopremo.type.IArrayNode)
-		 */
 		@Override
-		public IJsonNode call(IArrayNode<IJsonNode> values) {
+		public IJsonNode call(final IArrayNode<IJsonNode> values) {
 			this.result.setSize(0);
 			if (values.isEmpty())
 				return this.result;
@@ -245,9 +212,9 @@ public class CleansFunctions implements BuiltinProvider,
 			}
 
 			this.sizes.clear();
-			for (IJsonNode value : values)
+			for (final IJsonNode value : values)
 				this.sizes.add(TypeCoercer.INSTANCE.coerce(value,
-						this.nodeCache, TextNode.class).length());
+					this.nodeCache, TextNode.class).length());
 			int maxSize = this.sizes.getInt(0);
 			for (int index = 1; index < this.sizes.size(); index++)
 				maxSize = Math.max(index, maxSize);
@@ -257,244 +224,6 @@ public class CleansFunctions implements BuiltinProvider,
 			return this.result;
 		}
 	};
-
-	private static class PatternValidationRuleMacro extends CleansingMacro {
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object)
-		 */
-		@Override
-		public PatternValidationConstraint call(EvaluationExpression[] params) {
-
-			if (params.length == 1)
-				return new PatternValidationConstraint(
-						Pattern.compile(params[0].evaluate(
-								NullNode.getInstance()).toString()));
-			else
-				throw new IllegalArgumentException("Wrong number of arguments.");
-
-		}
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return PatternValidationConstraint.class;
-		}
-	}
-
-	private static class RangeRuleMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length == 2) {
-				return new RangeConstraint(params[0].evaluate(NullNode
-						.getInstance()), params[1].evaluate(NullNode
-						.getInstance()));
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return RangeConstraint.class;
-		}
-
-	}
-
-	private static class WhiteListRuleMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length > 0) {
-				List<IJsonNode> possibleValues = new LinkedList<IJsonNode>();
-				for (EvaluationExpression expr : params) {
-					convertToList(expr, possibleValues);
-				}
-				return new WhiteListConstraint(possibleValues);
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@SuppressWarnings("unchecked")
-		private void convertToList(EvaluationExpression value,
-				List<IJsonNode> possibleValues) {
-			if (value.evaluate(NullNode.getInstance()) instanceof IArrayNode) {
-				for (IJsonNode node : (IArrayNode<IJsonNode>) value
-						.evaluate(NullNode.getInstance())) {
-					possibleValues.add(node);
-				}
-			} else {
-				possibleValues.add(value.evaluate(NullNode.getInstance()));
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return WhiteListConstraint.class;
-		}
-	}
-
-	private static class BlackListRuleMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length > 0) {
-				List<IJsonNode> forbiddenValues = new LinkedList<IJsonNode>();
-				for (EvaluationExpression expr : params) {
-					convertToList(expr, forbiddenValues);
-				}
-				return new BlackListConstraint(forbiddenValues);
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@SuppressWarnings("unchecked")
-		private void convertToList(EvaluationExpression value,
-				List<IJsonNode> forbiddenValues) {
-			if (value.evaluate(NullNode.getInstance()) instanceof IArrayNode) {
-				for (IJsonNode node : (IArrayNode<IJsonNode>) value
-						.evaluate(NullNode.getInstance())) {
-					forbiddenValues.add(node);
-				}
-			} else {
-				forbiddenValues.add(value.evaluate(NullNode.getInstance()));
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return BlackListConstraint.class;
-		}
-	}
-
-	private static class IllegalCharacterRuleMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length > 0) {
-				TextNode illegalCharacters = new TextNode();
-				for (EvaluationExpression expr : params) {
-					illegalCharacters.append((TextNode) expr.evaluate(NullNode
-							.getInstance()));
-				}
-				return new IllegalCharacterConstraint(illegalCharacters);
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return IllegalCharacterConstraint.class;
-		}
-	}
-
-	private static class DefaultValueCorrectionMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length == 1) {
-				return new DefaultValueCorrection(params[0].evaluate(NullNode
-						.getInstance()));
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return DefaultValueCorrection.class;
-		}
-
-	}
-
-	private static class TypeRuleMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length == 1) {
-				Class<? extends IJsonNode> allowedClass = TypeConstraint.availableTypes
-						.get(params[0].evaluate(NullNode.getInstance())
-								.toString());
-				return new TypeConstraint(allowedClass);
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return TypeConstraint.class;
-		}
-
-	}
-
-	private static class DefaultValueResolutionMacro extends CleansingMacro {
-
-		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			// TODO Auto-generated method stub
-		}
-
-		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			if (params.length == 1) {
-				return new DefaultValueResolution(params[0].evaluate(NullNode
-						.getInstance()));
-			} else {
-				throw new IllegalArgumentException("Wrong number of arguments.");
-			}
-		}
-
-		@Override
-		public Class<? extends EvaluationExpression> getWrappedExpressionClass() {
-			return DefaultValueResolution.class;
-		}
-	}
 
 	/**
 	 * @author Arvid Heise
@@ -507,63 +236,56 @@ public class CleansFunctions implements BuiltinProvider,
 		 * 
 		 * @param similarity
 		 */
-		public SimilarityMacro(Similarity<?> similarity) {
+		public SimilarityMacro(final Similarity<?> similarity) {
+			super(1, 2);
 			this.similarity = similarity;
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * 
 		 * @see
 		 * eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable
 		 * )
 		 */
 		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
+		public void appendAsString(final Appendable appendable) throws IOException {
 			this.similarity.appendAsString(appendable);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * 
-		 * @see eu.stratosphere.sopremo.function.Callable#call(java.lang.Object)
+		 * @see
+		 * eu.stratosphere.sopremo.function.MacroBase#process(eu.stratosphere.sopremo.expressions.EvaluationExpression
+		 * [])
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
-		public EvaluationExpression call(EvaluationExpression[] params) {
-			for (EvaluationExpression evaluationExpression : params)
+		protected EvaluationExpression process(EvaluationExpression[] params) {
+			for (final EvaluationExpression evaluationExpression : params)
 				if (!(evaluationExpression instanceof PathSegmentExpression))
 					throw new IllegalArgumentException(
-							"Can only expand simple path expressions");
+						"Can only expand simple path expressions");
 
 			Similarity<IJsonNode> similarity;
 			if (params.length > 1) {
-				final InputSelection input0 = params[0]
-						.findFirst(InputSelection.class);
-				final InputSelection input1 = params[1]
-						.findFirst(InputSelection.class);
+				final InputSelection input0 = params[0].findFirst(InputSelection.class);
+				final InputSelection input1 = params[1].findFirst(InputSelection.class);
 				if (input0 == null || input1 == null)
-					throw new IllegalArgumentException(
-							"Paths are incomplete (source is unknown) "
-									+ Arrays.asList(params));
+					throw new IllegalArgumentException("Paths are incomplete (source is unknown) " +
+						Arrays.asList(params));
 				if (input0.getIndex() == input1.getIndex())
-					throw new IllegalArgumentException(
-							"Paths are using the same source "
-									+ Arrays.asList(params));
-				PathSegmentExpression left = (PathSegmentExpression) (input0
-						.getIndex() == 0 ? params[0] : params[1])
-						.remove(InputSelection.class);
-				PathSegmentExpression right = (PathSegmentExpression) (input1
-						.getIndex() == 0 ? params[0] : params[1])
-						.remove(InputSelection.class);
+					throw new IllegalArgumentException("Paths are using the same source " + Arrays.asList(params));
+				final PathSegmentExpression left =
+					(PathSegmentExpression) (input0.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
+				final PathSegmentExpression right =
+					(PathSegmentExpression) (input1.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
 
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity, left, right, true);
+				similarity =
+					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, left, right, true);
 			} else {
-				final PathSegmentExpression path = (PathSegmentExpression) params[0]
-						.remove(InputSelection.class);
-				similarity = (Similarity<IJsonNode>) SimilarityFactory.INSTANCE
-						.create(this.similarity, path, path, true);
+				final PathSegmentExpression path = (PathSegmentExpression) params[0].remove(InputSelection.class);
+				similarity =
+					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, path, path, true);
 			}
 			return new SimilarityExpression(similarity);
 		}
@@ -573,8 +295,8 @@ public class CleansFunctions implements BuiltinProvider,
 	 * This correction is a fix for {@link RangeRule}. To solve a violation this
 	 * correction simply chooses the nearest bound (lower bound if the actual
 	 * value was lower than the lower bound, upper bound if the actual value was
-	 * higher than the upper bound). To specify this correction for a
-	 * {@link RangeRule} use the following syntax: <code><pre>
+	 * higher than the upper bound). To specify this correction for a {@link RangeRule} use the following syntax:
+	 * <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
@@ -590,15 +312,14 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@Override
-		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+		public IJsonNode fix(final IJsonNode value, final ValidationRule violatedRule) {
 			if (violatedRule instanceof RangeConstraint) {
 				final RangeConstraint that = (RangeConstraint) violatedRule;
 				if (that.getMin().compareTo(value) > 0)
 					return that.getMin();
 				return that.getMax();
-			} else {
-				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
+			return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 		}
 	};
 
@@ -608,24 +329,23 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@Override
-		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+		public IJsonNode fix(final IJsonNode value, final ValidationRule violatedRule) {
 			if (violatedRule instanceof TypeConstraint) {
-				Class<? extends IJsonNode> type = ((TypeConstraint) violatedRule)
-						.getType();
-				NodeCache cache = ((TypeConstraint) violatedRule)
-						.getNodeCache();
+				final Class<? extends IJsonNode> type = ((TypeConstraint) violatedRule)
+					.getType();
+				final NodeCache cache = ((TypeConstraint) violatedRule)
+					.getNodeCache();
 				try {
 					if (value instanceof TextNode)
 						return LenientParser.INSTANCE.parse((TextNode) value,
-								type, LenientParser.ELIMINATE_NOISE);
+							type, LenientParser.ELIMINATE_NOISE);
 					return TypeCoercer.INSTANCE.coerce(value, cache, type);
 				} catch (final Exception e) {
 					return UnresolvableCorrection.INSTANCE.fix(value,
-							violatedRule);
+						violatedRule);
 				}
-			} else {
-				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
+			return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 		}
 	};
 
@@ -649,21 +369,19 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@Override
-		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+		public IJsonNode fix(final IJsonNode value, final ValidationRule violatedRule) {
 			if (violatedRule instanceof WhiteListConstraint) {
 				final WhiteListConstraint that = (WhiteListConstraint) violatedRule;
 				return that.getPossibleValues().get(0);
-			} else {
-				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
+			return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 		}
 	};
 
 	/**
 	 * This correction is a fix for {@link IllegalCharacterRule}. To solve a
 	 * violation this correction simply removes all violating characters from
-	 * the value. To specify this correction for a {@link IllegalCharacterRule}
-	 * use the following syntax: <code><pre>
+	 * the value. To specify this correction for a {@link IllegalCharacterRule} use the following syntax: <code><pre>
 	 * ...
 	 * $persons_scrubbed = scrub $persons_sample with rules {
 	 * 	...
@@ -679,27 +397,25 @@ public class CleansFunctions implements BuiltinProvider,
 		}
 
 		@Override
-		public IJsonNode fix(IJsonNode value, ValidationRule violatedRule) {
+		public IJsonNode fix(final IJsonNode value, final ValidationRule violatedRule) {
 			if (violatedRule instanceof IllegalCharacterConstraint) {
 				final IllegalCharacterConstraint that = (IllegalCharacterConstraint) violatedRule;
-				TextNode fixedValue = new TextNode();
-				char[] illegalCharacters = that.getIllegalCharacters();
+				final TextNode fixedValue = new TextNode();
+				final char[] illegalCharacters = that.getIllegalCharacters();
 				boolean append = true;
-				for (char c : value.toString().toCharArray()) {
-					for (char ic : illegalCharacters) {
+				for (final char c : value.toString().toCharArray()) {
+					for (final char ic : illegalCharacters)
 						if (c == ic) {
 							append = false;
 							break;
 						}
-					}
 					if (append)
 						fixedValue.append(c);
 					append = true;
 				}
 				return fixedValue;
-			} else {
-				return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 			}
+			return UnresolvableCorrection.INSTANCE.fix(value, violatedRule);
 		}
 	};
 

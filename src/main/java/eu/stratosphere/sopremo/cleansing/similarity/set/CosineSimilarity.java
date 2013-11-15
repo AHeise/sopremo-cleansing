@@ -40,7 +40,7 @@ public class CosineSimilarity extends SetSimilarity {
 	 * IArrayNode, eu.stratosphere.sopremo.type.IArrayNode, eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	protected double getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
-		return this.getNumberOfCommonTokens(node1, node2) / Math.pow(node1.size(), 0.5) / Math.pow(node2.size(), 0.5);
+	protected float getSetSimilarity(IArrayNode<IJsonNode> node1, IArrayNode<IJsonNode> node2) {
+		return (float) (this.getNumberOfCommonTokens(node1, node2) / Math.pow(node1.size(), 0.5) / Math.pow(node2.size(), 0.5));
 	}
 }
