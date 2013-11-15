@@ -12,7 +12,15 @@ import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class EntityMapping2IT extends MeteorIT {
+/**
+ * This IT simply does the same as {@link EntityMappingIT}, but it takes the
+ * script as well as the input and expected outputs from files.
+ * 
+ * @author fabian
+ * 
+ */
+
+public class EntityMappingITfromFileInput extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {
