@@ -55,7 +55,7 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 			candidateSelection.addPass(this.leftBlockingKeys[index], this.rightBlockingKeys[index]);
 		return candidateSelection;
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 * @see
@@ -67,13 +67,10 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	protected void generateExpectedPairs(Input leftInput, Input rightInput, CandidateComparison candidateComparison) {
 		for (final IJsonNode left : leftInput)
 			for (final IJsonNode right : rightInput) {
-				boolean inSameBlockingBin = false;
-				for (int index = 0; index < this.leftBlockingKeys.length && !inSameBlockingBin; index++)
+				for (int index = 0; index < this.leftBlockingKeys.length; index++)
 					if (this.leftBlockingKeys[index].evaluate(left).equals(
 						this.rightBlockingKeys[index].evaluate(right)))
-						inSameBlockingBin = true;
-				if (inSameBlockingBin)
-					this.emitCandidate(left, right);
+						this.emitCandidate(left, right);
 			}
 
 	}

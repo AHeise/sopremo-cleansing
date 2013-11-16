@@ -21,7 +21,7 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Sel
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -43,18 +43,15 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	private CandidateComparison comparison = new CandidateComparison().withInnerSource(true);
 
-	private DuplicateDetectionImplementation implementation = null;
+	private CompositeDuplicateDetectionAlgorithm<?> algorithm = new NaiveDuplicateDetection();
 
-	private SortedNeighborhood snm = new SortedNeighborhood();
-	
 	/**
 	 * Initializes DuplicateDetection.
-	 *
 	 */
 	public DuplicateDetection() {
-		addPropertiesFrom(snm);
+		addPropertiesFrom(this.algorithm);
 	}
-	
+
 	/**
 	 * Returns the candidateSelection.
 	 * 
@@ -75,6 +72,7 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 			throw new NullPointerException("candidateSelection must not be null");
 
 		this.candidateSelection = candidateSelection;
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 1));
 	}
 
 	public DuplicateDetection withCandidateSelection(CandidateSelection candidateSelection) {
@@ -93,6 +91,16 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	public void setSortingKeyExpression(EvaluationExpression expression) {
 		this.candidateSelection.parse(expression, 1);
 		this.candidateSelection.setSelectionHint(SelectionHint.SORT);
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 1));
+	}
+
+	/**
+	 * @param matchingAlgorithm
+	 */
+	private void changeAlgorithm(CompositeDuplicateDetectionAlgorithm<?> matchingAlgorithm) {
+		removePropertiesFrom(this.algorithm);
+		this.algorithm = matchingAlgorithm;
+		addPropertiesFrom(matchingAlgorithm);
 	}
 
 	@Property
@@ -100,6 +108,7 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	public void setPartitionKeyExpression(EvaluationExpression expression) {
 		this.candidateSelection.parse(expression, 1);
 		this.candidateSelection.setSelectionHint(SelectionHint.BLOCK);
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 1));
 	}
 
 	@Property
@@ -112,7 +121,7 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	@Property
 	@Name(preposition = "with")
 	public void setImplementation(DuplicateDetectionImplementation implementation) {
-		this.implementation = implementation;
+		this.algorithm = ReflectUtil.newInstance(implementation.getType());
 	}
 
 	public DuplicateDetection withImplementation(DuplicateDetectionImplementation implementation) {
@@ -126,7 +135,10 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 * @return the implementation
 	 */
 	public DuplicateDetectionImplementation getImplementation() {
-		return this.implementation;
+		for (DuplicateDetectionImplementation implementation : DuplicateDetectionImplementation.values())
+			if (implementation.getType().isInstance(this.algorithm))
+				return implementation;
+		return null;
 	}
 
 	/**
@@ -168,13 +180,8 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 */
 	@Override
 	public void addImplementation(SopremoModule module, EvaluationContext context) {
-		final CompositeDuplicateDetectionAlgorithm<?> algorithm;
-		if (this.implementation != null)
-			algorithm = ReflectUtil.newInstance(this.implementation.getType());
-		else
-			algorithm = DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 1);
-		algorithm.setCandidateSelection(this.candidateSelection);
-		algorithm.setComparison(this.comparison);
-		module.embed(algorithm);
+		this.algorithm.setCandidateSelection(this.candidateSelection);
+		this.algorithm.setComparison(this.comparison);
+		module.embed(this.algorithm);
 	}
 }

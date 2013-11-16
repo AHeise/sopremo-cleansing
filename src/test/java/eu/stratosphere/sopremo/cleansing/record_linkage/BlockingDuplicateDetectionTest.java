@@ -10,7 +10,7 @@ import org.junit.runners.Parameterized.Parameters;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -53,31 +53,32 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 		return candidateSelection;
 	}
 
-	/* (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere.sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere
+	 * .sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
 	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
 		if (comparison.getIdProjection() == null) {
 			comparison.setPreselect(new NodeOrderSelector(input));
 		}
-		
+
 		final BooleanExpression condition = comparison.asCondition(true);
 		for (final IJsonNode left : input) {
 			for (final IJsonNode right : input) {
-				boolean inSameBlockingBin = false;
-				for (int index = 0; index < this.blockingKeys.length && !inSameBlockingBin; index++)
+				for (int index = 0; index < this.blockingKeys.length; index++)
 					if (this.blockingKeys[index].evaluate(left).equals(this.blockingKeys[index].evaluate(right)))
-						inSameBlockingBin = true;
-				if (inSameBlockingBin && condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
-						this.emitCandidate(left, right);
+						if (condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
+							this.emitCandidate(left, right);
 			}
 		}
 	}
 
 	@Override
-	protected DuplicateDetectionImplementation getImplementation() {
-		return DuplicateDetectionImplementation.BLOCKING;
+	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
+		return new Blocking();
 	}
 
 	@Override
@@ -93,7 +94,7 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 	@Parameters
 	public static Collection<Object[]> getParameters() {
 		final EvaluationExpression[] projections = { null, getAggregativeProjection() };
-		final boolean[] useIds = { /*false,*/ true };
+		final boolean[] useIds = { /* false, */true };
 
 		final ArrayList<Object[]> parameters = new ArrayList<Object[]>();
 		for (final EvaluationExpression projection : projections)

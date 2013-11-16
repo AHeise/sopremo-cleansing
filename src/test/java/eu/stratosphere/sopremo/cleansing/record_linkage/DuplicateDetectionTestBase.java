@@ -11,15 +11,22 @@ import com.google.common.collect.Lists;
 
 import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
+import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ArrayProjection;
+import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -89,9 +96,9 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	@Test
 	public void pactCodeShouldPerformLikeStandardImplementation() {
 
-		final DuplicateDetection dd = new DuplicateDetection();
+		final CompositeDuplicateDetectionAlgorithm<?> dd = getImplementation();
+		dd.getComparison().setInnerSource(true);
 		dd.setCandidateSelection(getCandidateSelection());
-		dd.setImplementation(getImplementation());
 		dd.setDegreeOfParallelism(2);
 		if (this.useId) {
 			dd.getComparison().setIdProjection(new ObjectAccess("id"));
@@ -154,7 +161,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	 * 
 	 * @return the configured algorithm
 	 */
-	protected abstract DuplicateDetectionImplementation getImplementation();
+	protected abstract CompositeDuplicateDetectionAlgorithm<?> getImplementation();
 
 	/**
 	 * Creates a test plan for the record linkage operator.
@@ -164,7 +171,16 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	 * @param projection
 	 * @return the generated test plan
 	 */
-	protected SopremoTestPlan createTestPlan(DuplicateDetection dd) {
+	protected SopremoTestPlan createTestPlan(CompositeDuplicateDetectionAlgorithm<?> dd) {
+		if (!this.useId) {
+			ArrayCreation swap = new ArrayCreation(new ArrayAccess(1), new ArrayAccess(0));
+			TernaryExpression smallerIdFirst = new TernaryExpression(
+				new ComparativeExpression(JsonUtil.createPath("[0]", "id"), BinaryOperator.LESS_EQUAL, JsonUtil.createPath("[1]", "id")),
+				EvaluationExpression.VALUE, swap
+				);
+			dd.getComparison().setResultProjection(new ChainedSegmentExpression(
+				smallerIdFirst, dd.getComparison().getResultProjection()));
+		}
 
 		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(dd);
 		sopremoTestPlan.getInput(0).

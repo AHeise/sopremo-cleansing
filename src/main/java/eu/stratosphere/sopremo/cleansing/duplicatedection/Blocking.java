@@ -27,7 +27,7 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 		return new DirectBlocking().
 			withKeyExpression(0, pass.getBlockingKeys().get(0)).
 			withKeyExpression(1, pass.getBlockingKeys().get(comparison.isInnerSource() ? 0 : 1)).
-			withCandidateComparison(comparison).
+			withCandidateComparison(comparison.withOmitSmallerPairs(true)).
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
 			withInputs(inputs);
 	}
