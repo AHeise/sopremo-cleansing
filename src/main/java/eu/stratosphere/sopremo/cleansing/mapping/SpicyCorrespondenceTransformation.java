@@ -37,6 +37,7 @@ import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -50,16 +51,6 @@ import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
  *
  */
 public class SpicyCorrespondenceTransformation {
-	
-	private transient EvaluationContext context;
-
-	public EvaluationContext getContext() {
-		return context;
-	}
-
-	public void setContext(EvaluationContext context) {
-		this.context = context;
-	}
 
 	public ObjectCreation createNestedObjectFromSpicyPaths(TreeMap<PathExpression, IValueGenerator> st_map, SetAlias setAlias) {
 		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
@@ -138,7 +129,7 @@ public class SpicyCorrespondenceTransformation {
 		if(topNode instanceof ASTVarNode ) { //usual 1:1-mapping without a function
 			return createFunctionSourcePath( ((ASTVarNode) topNode).getVarName(), sourcePaths ); 
 		} else if(topNode instanceof ASTFunNode ) { //uses a function
-			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths, this.context);
+			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths);
 		} else if(topNode instanceof ASTConstant) {
 			return new ConstantExpression( ((ASTConstant) topNode).getValue() );
 		} 

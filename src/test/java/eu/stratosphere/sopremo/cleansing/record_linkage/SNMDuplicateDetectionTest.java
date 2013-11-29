@@ -13,7 +13,9 @@ import org.junit.runners.Parameterized.Parameters;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -86,8 +88,8 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	}
 
 	@Override
-	protected DuplicateDetectionImplementation getImplementation() {
-		return DuplicateDetectionImplementation.SNM;
+	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
+		return new SortedNeighborhood().withWindowSize(windowSize);
 	}
 
 	@Override

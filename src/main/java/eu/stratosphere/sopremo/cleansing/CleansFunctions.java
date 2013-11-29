@@ -228,7 +228,7 @@ public class CleansFunctions implements BuiltinProvider,
 	/**
 	 * @author Arvid Heise
 	 */
-	private static class SimilarityMacro extends MacroBase {
+	static class SimilarityMacro extends MacroBase {
 		private final Similarity<?> similarity;
 
 		/**
@@ -239,6 +239,14 @@ public class CleansFunctions implements BuiltinProvider,
 		public SimilarityMacro(final Similarity<?> similarity) {
 			super(1, 2);
 			this.similarity = similarity;
+		}
+		
+		/**
+		 * Initializes CleansFunctions.SimilarityMacro.
+		 *
+		 */
+		SimilarityMacro() {
+			this(null);
 		}
 
 		/*

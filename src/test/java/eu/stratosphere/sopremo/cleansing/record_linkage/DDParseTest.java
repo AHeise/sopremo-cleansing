@@ -16,28 +16,10 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.io.IOException;
 
-import org.junit.Assert;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
-import eu.stratosphere.sopremo.cleansing.FilterRecord;
-import eu.stratosphere.sopremo.cleansing.Scrubbing;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.scrubbing.MeteorScrubTest;
-import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullConstraint;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.io.Sink;
-import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * @author arv

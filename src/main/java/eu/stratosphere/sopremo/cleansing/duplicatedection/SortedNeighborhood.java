@@ -21,8 +21,8 @@ import java.util.List;
 import javolution.util.FastList;
 import eu.stratosphere.nephele.configuration.Configuration;
 import eu.stratosphere.pact.common.contract.Order;
-import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.base.ContextualProjection;
 import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
@@ -253,11 +253,13 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					this.ringBuffer.add(value);
 				}
 
+				if (this.ringBuffer.size() >= this.bufferSize)
+					this.ringBuffer.removeFirst();
 				while (!this.ringBuffer.isEmpty()) {
 					final IJsonNode value = this.ringBuffer.removeFirst();
 					for (FastList.Node<IJsonNode> n = this.ringBuffer.head(), end = this.ringBuffer.tail(); (n =
 						n.getNext()) != end;)
-						this.candidateComparison.performComparison(n.getValue(), value, collector);
+						this.candidateComparison.performComparison(value, n.getValue(), collector);
 				}
 			}
 		}

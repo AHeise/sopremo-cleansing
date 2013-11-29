@@ -25,6 +25,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  * @author Tommy Neubert
  */
 public class ConstraintMacro extends MacroBase {
+
 	private final Class<? extends EvaluationExpression> constraintClass;
 
 	public ConstraintMacro(Class<? extends EvaluationExpression> constraintClass, int numberOfParameters) {

@@ -465,6 +465,27 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	}
 
 	public BooleanExpression asCondition(boolean omitSmallerPairs) {
+		return new ComparisonCondition(createSmallerPairFilter(omitSmallerPairs), this.duplicateRules);
+	}
+
+	public void setOmitSmallerPairs(boolean omitSmallerPairs) {
+		this.preselect = createSmallerPairFilter(omitSmallerPairs);
+	}
+	
+	public boolean isOmitSmallerPairs() {
+		return this.preselect instanceof OrderedPairsFilter;
+	}
+	
+	public CandidateComparison withOmitSmallerPairs(boolean omitSmallerPairs) {
+		setOmitSmallerPairs(omitSmallerPairs);
+		return this;
+	}
+
+	/**
+	 * @param omitSmallerPairs
+	 * @return
+	 */
+	private Preselection createSmallerPairFilter(boolean omitSmallerPairs) {
 		Preselection preselect = this.preselect;
 		if (omitSmallerPairs && preselect == null) {
 			if (this.innerSource) {
@@ -475,8 +496,7 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 			} else
 				preselect = new NoPreselection();
 		}
-
-		return new ComparisonCondition(preselect, this.duplicateRules);
+		return preselect;
 	}
 
 	public EvaluationExpression getResultProjectionWithSimilarity() {

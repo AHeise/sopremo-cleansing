@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.runners.Parameterized.Parameters;
 
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
@@ -33,15 +33,15 @@ public class NaiveDuplicateDetectionTest extends DuplicateDetectionTestBase<Naiv
 	}
 
 	@Override
-	protected DuplicateDetectionImplementation getImplementation() {
-		return DuplicateDetectionImplementation.NAIVE;
+	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
+		return new NaiveDuplicateDetection();
 	}
 
 	@Override
 	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
 		if (comparison.getIdProjection() == null) {
 			comparison.setPreselect(new NodeOrderSelector(input));
-		}
+		} 
 		
 		final BooleanExpression condition = comparison.asCondition(true);
 		for (final IJsonNode left : input) {
