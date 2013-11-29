@@ -29,6 +29,9 @@ public class SpicyMappingFactory {
 	boolean createJoinWithConcat = false;
 	boolean createTargetJoinSwitch = false;
 	boolean createSourceJoinSwitch = false;
+	
+	boolean targetJoinMandatory = true;
+	boolean sourceJoinMandatory = true;
 
 	public static void main(String[] args) {
 		SpicyMappingFactory factory = new SpicyMappingFactory();
@@ -166,7 +169,7 @@ public class SpicyMappingFactory {
 		} else {
 			sourceJoinCondition = new JoinCondition(slp2, slp1, true);
 		}
-		sourceJoinCondition.setMandatory(true);
+		sourceJoinCondition.setMandatory(sourceJoinMandatory);
 		sourceJoinCondition.setMonodirectional(true);
 
 		List<String> list3 = new ArrayList<String>();
@@ -187,7 +190,7 @@ public class SpicyMappingFactory {
 		} else {
 			targetJoinCondition = new JoinCondition(tlp2, tlp1, true);
 		}
-		targetJoinCondition.setMandatory(true);
+		targetJoinCondition.setMandatory(targetJoinMandatory);
 		targetJoinCondition.setMonodirectional(true);
 
 		task.getSourceProxy().addJoinCondition(sourceJoinCondition);
@@ -557,5 +560,13 @@ public class SpicyMappingFactory {
 				targetPath, exp); // 2 source paths, 1 target path
 
 		return corr;
+	}
+
+	public void setTargetJoinMandatory(boolean targetJoinMandatory) {
+		this.targetJoinMandatory = targetJoinMandatory;
+	}
+
+	public void setSourceJoinMandatory(boolean sourceJoinMandatory) {
+		this.sourceJoinMandatory = sourceJoinMandatory;
 	}
 }
