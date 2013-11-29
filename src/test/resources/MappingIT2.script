@@ -1,18 +1,17 @@
 using cleansing;
 
-$usCongressMembers = read from 'MappingITTestUsCongressMembers2.json';
-$usCongressBiographies = read from 'MappingITTestUsCongressBiography2.json';
+$originalPersons = read from 'MappingIT2TestOriginalPersons.json';
 
-$person, $legalEntity  = map entities from $usCongressMembers, $usCongressBiographies where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])
+$persons, $companies  = map entities from $originalPersons
 	as [
-	    group $usCongressMembers by $usCongressMembers.id into {
-	    	name: $usCongressMembers.name,
-	    	worksFor: $legalEntity.id
+	    group $originalPersons by $originalPersons.id into {
+	    	name: $originalPersons.name,
+	    	worksFor: $companies.id
 	    },
-	    group $usCongressBiographies by $usCongressBiographies.worksFor into {
-	       name: $usCongressBiographies.worksFor
+	    group $originalPersons by $originalPersons.worksFor into {
+	       name: $originalPersons.worksFor
 	    }
 	];
 
-write $person to 'file:///tmp/MappingITTestOutputPersons2.json';
-write $legalEntity to 'file:///tmp/MappingITTestOutputLegalEntities2.json';
+write $persons to 'file:///tmp/MappingIT2TestOutputPersons.json';
+write $companies to 'file:///tmp/MappingIT2TestOutputCompanies.json';

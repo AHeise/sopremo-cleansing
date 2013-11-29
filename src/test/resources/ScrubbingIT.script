@@ -8,8 +8,8 @@ $persons_scrubbed = scrub $persons with rules {
 	number: range(500, 1500),
 	whitelist: containedIn(["A", "B", "C"]),
 	blacklist: notContainedIn(["D", "E", "F"]),
-	illChar: illegalCharacters("%", "$", "&")?: removeIllegalCharacters,
-	whitespace: [normalize_whitespaces(), illegalCharacters("f", "o")?: removeIllegalCharacters],
+	illChar: illegalCharacters("%$&")?: removeIllegalCharacters,
+	whitespace: [normalize_whitespaces(), illegalCharacters("fo")?: removeIllegalCharacters],
 	substr: substring(1,3)
 	//type: ofType("int")?: default(0) //excluded temporarily because of syntax discussions
 };

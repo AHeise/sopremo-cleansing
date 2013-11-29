@@ -14,9 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.meteor.syntax;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
@@ -35,6 +32,7 @@ import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.query.AdditionalInfoResolver;
 import eu.stratosphere.sopremo.query.IConfObjectRegistry;
 
 /**
@@ -49,7 +47,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 	@Override
 	protected void initParser(QueryParser queryParser) {
 		final IConfObjectRegistry<Operator<?>> operatorRegistry = queryParser.getPackageManager().getOperatorRegistry();
-		operatorRegistry.put(SchemaMapping.class);
+		operatorRegistry.put(SchemaMapping.class, new AdditionalInfoResolver.None());
 		super.initParser(queryParser);
 	}
 	

@@ -15,19 +15,16 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  *
  */
 
-public class EntityMappingIT2 extends MeteorIT {
+public class EntityMappingIT3 extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {
-		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT2.script"));
+		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT3.script"));
 
 		this.client.submit(plan, null, true);
+
 		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT3TestOutputPersons.json");
 
-		IJsonNode[] leArray = getContentsToCheckFrom("src/test/resources/MappingIT2TestOutputCompanies.json");
-
 		this.testServer.checkContentsOf("MappingIT2TestOutputPersons.json", personsArray);
-
-		this.testServer.checkContentsOf("MappingIT2TestOutputCompanies.json", leArray);
 	}
 }

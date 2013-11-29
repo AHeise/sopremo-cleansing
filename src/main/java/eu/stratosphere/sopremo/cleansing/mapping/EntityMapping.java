@@ -1,9 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
-import it.unibas.spicy.model.paths.PathExpression;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +34,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @Name(noun = "map entities from")
 @InputCardinality(min = 1)
-@OutputCardinality(min = 1)
+@OutputCardinality(min = 1, max = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 	protected static final String type = "XML";
@@ -52,8 +50,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	protected static final String idStr = "id";
 
 	protected static final String inputPrefixStr = "in";
-	//FIXME
-	protected static final String outputPrefixStr = "in";
 
 	protected static INode dummy = new LeafNode("dummy");
 
@@ -327,57 +323,12 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private void createDefaultSourceSchema(final int size) {
-		// INode sourceEntities;
-		//
-		// // source : SequenceNode
-		// // entities_in0 : SetNode
-		// // entity_in0 : SequenceNode
-		// // entities_in1 : SetNode
-		// // entity_in1 : SequenceNode
-		//
-		// for (int index = 0; index < size; index++) {
-		// final String input = EntityMapping.inputPrefixStr
-		// + String.valueOf(index);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setSourceEntity(
-		// new SequenceNode(EntityMapping.entityStr + input));
-		// sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
-		// sourceEntities.addChild(this.spicyMappingTransformation
-		// .getMappingInformation().getSourceEntity());
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema().addChild(sourceEntities);
-		// }
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema().setRoot(true);
-
 		this.spicyMappingTransformation.getMappingInformation()
 			.setSourceSchema(
 				new MappingSchema(size, EntityMapping.sourceStr));
 	}
 
 	private void createDefaultTargetSchema(final int size) {
-		// INode targetEntities;
-		//
-		// // target : SequenceNode
-		// // entities_in0 : SetNode
-		// // entity_in0 : SequenceNode
-		// // entities_in1 : SetNode
-		// // entity_in1 : SequenceNode
-		//
-		// for (int index = 0; index < size; index++) {
-		// final String input = EntityMapping.inputPrefixStr
-		// + String.valueOf(index);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setTargetEntity(
-		// new SequenceNode(EntityMapping.entityStr + input));
-		// targetEntities = new SetNode(EntityMapping.entitiesStr + input);
-		// targetEntities.addChild(this.spicyMappingTransformation
-		// .getMappingInformation().getTargetEntity());
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema().addChild(targetEntities);
-		// }
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema().setRoot(true);
 		this.spicyMappingTransformation
 			.getMappingInformation()
 			.getTarget()
@@ -387,40 +338,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private void extendSourceSchemaBy(final String attr, final String inputStr) {
-		// INode sourceAttr;
-		//
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setSourceEntity(
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema()
-		// .getChild(EntityMapping.entitiesStr + inputStr)
-		// .getChild(EntityMapping.entityStr + inputStr));
-		// if (this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceEntity().getChild(attr) == null) {
-		// sourceAttr = new AttributeNode(attr);
-		// sourceAttr.addChild(EntityMapping.dummy);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceEntity().addChild(sourceAttr);
-		// }
 		this.spicyMappingTransformation.getMappingInformation()
 			.getSourceSchema().addKeyToInput(inputStr, attr);
 	}
 
 	private void extendTargetSchemaBy(final String attr, final String inputStr) {
-		// INode targetAttr;
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setTargetEntity(
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema()
-		// .getChild(EntityMapping.entitiesStr + inputStr)
-		// .getChild(EntityMapping.entityStr + inputStr));
-		// if (this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetEntity().getChild(attr) == null) {
-		// targetAttr = new AttributeNode(attr);
-		// targetAttr.addChild(EntityMapping.dummy);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetEntity().addChild(targetAttr);
-		// }
 		this.spicyMappingTransformation.getMappingInformation().getTarget()
 			.getTargetSchema().addKeyToInput(inputStr, attr);
 	}
@@ -444,14 +366,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		final SpicyPathExpression targetSteps = new SpicyPathExpression(targetNesting, targetAttr);
 
 		return new MappingValueCorrespondence(sourceSteps, targetSteps);
-	}
-
-	private MappingValueCorrespondence createValueCorrespondence(
-			final String source, final String target) {
-		final SpicyPathExpression sourcePath = new SpicyPathExpression(source);
-		final SpicyPathExpression targetPath = new SpicyPathExpression(target);
-
-		return new MappingValueCorrespondence(sourcePath, targetPath);
 	}
 
 	private MappingJoinCondition createJoinCondition(
@@ -511,8 +425,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			inputIndex.put(entitiesStr + inputPrefixStr + i, i);
 		}
 		Map<String, Integer> outputIndex = new HashMap<String, Integer>();
+		//FIXME hack to solve #output problem 
+		this.getOutputs();
+		
 		for (int i = 0; i < this.getNumOutputs(); i++) {
-			outputIndex.put(entitiesStr + outputPrefixStr + i, i);
+			outputIndex.put(entitiesStr + inputPrefixStr + i, i);
 		}
 		this.spicyMappingTransformation.setInputIndex(inputIndex);
 		this.spicyMappingTransformation.setOutputIndex(outputIndex);

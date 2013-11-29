@@ -27,6 +27,7 @@ import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.query.AdditionalInfoResolver;
 import eu.stratosphere.sopremo.query.IConfObjectRegistry;
 
 /**
@@ -41,7 +42,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	@Override
 	protected void initParser(QueryParser queryParser) {
 		final IConfObjectRegistry<Operator<?>> operatorRegistry = queryParser.getPackageManager().getOperatorRegistry();
-		operatorRegistry.put(EntityMapping.class);
+		operatorRegistry.put(EntityMapping.class, new AdditionalInfoResolver.None());
 		super.initParser(queryParser);
 	}
 	

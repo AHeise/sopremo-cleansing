@@ -302,8 +302,6 @@ public class SpicyMappingTransformationWithKeysTest extends
 				.addObject("id", "CompanyABC", "name", "CompanyABC")
 				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
-		// TODO used skolem function here in worksFor
-
 		sopremoPlan.trace();
 		sopremoPlan.run();
 	}

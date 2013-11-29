@@ -46,7 +46,8 @@ public class EntityMappingIT extends MeteorIT {
 	@Test
 	public void testNaive() throws IOException {
 
-		String query = "$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+		String query = "using cleansing;"+
+				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
 				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
 				"where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])\n" + 
