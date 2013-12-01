@@ -1,9 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
-import it.unibas.spicy.model.paths.PathExpression;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,7 +34,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @Name(noun = "map entities from")
 @InputCardinality(min = 1)
-@OutputCardinality(min = 1)
+@OutputCardinality(min = 1, max = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 	protected static final String type = "XML";
@@ -136,7 +134,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 		MappingValueCorrespondence corr = null;
 
-		HashMap<String, String> foreignKeys = new HashMap<String, String>();
+		HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys = new HashMap<SpicyPathExpression, SpicyPathExpression>();
 
 		this.createDefaultSourceSchema(this.getInputs().size());
 		this.createDefaultTargetSchema(this.getNumOutputs());
@@ -237,8 +235,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 					// store foreign keys to add missing (transitive) value
 					// correspondences later
-					foreignKeys.put(targetJoinCondition.getFromPaths().get(0).toString(),
-						targetJoinCondition.getToPaths().get(0).toString());
+					foreignKeys.put(targetJoinCondition.getFromPaths().get(0),
+						targetJoinCondition.getToPaths().get(0));
 
 				} else { // no foreign key
 
@@ -286,8 +284,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 		// create transitive value correspondences from foreign keys
 		List<MappingValueCorrespondence> transitiveValueCorrespondences = createTransitiveValueCorrespondences(
-			corr, mappingInformation
-				.getValueCorrespondences(), foreignKeys);
+				this.spicyMappingTransformation.getMappingInformation()
+						.getValueCorrespondences(), foreignKeys);
 
 		for (MappingValueCorrespondence cond : transitiveValueCorrespondences) {
 			mappingInformation
@@ -325,57 +323,12 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private void createDefaultSourceSchema(final int size) {
-		// INode sourceEntities;
-		//
-		// // source : SequenceNode
-		// // entities_in0 : SetNode
-		// // entity_in0 : SequenceNode
-		// // entities_in1 : SetNode
-		// // entity_in1 : SequenceNode
-		//
-		// for (int index = 0; index < size; index++) {
-		// final String input = EntityMapping.inputPrefixStr
-		// + String.valueOf(index);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setSourceEntity(
-		// new SequenceNode(EntityMapping.entityStr + input));
-		// sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
-		// sourceEntities.addChild(this.spicyMappingTransformation
-		// .getMappingInformation().getSourceEntity());
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema().addChild(sourceEntities);
-		// }
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema().setRoot(true);
-
 		this.spicyMappingTransformation.getMappingInformation()
 			.setSourceSchema(
 				new MappingSchema(size, EntityMapping.sourceStr));
 	}
 
 	private void createDefaultTargetSchema(final int size) {
-		// INode targetEntities;
-		//
-		// // target : SequenceNode
-		// // entities_in0 : SetNode
-		// // entity_in0 : SequenceNode
-		// // entities_in1 : SetNode
-		// // entity_in1 : SequenceNode
-		//
-		// for (int index = 0; index < size; index++) {
-		// final String input = EntityMapping.inputPrefixStr
-		// + String.valueOf(index);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setTargetEntity(
-		// new SequenceNode(EntityMapping.entityStr + input));
-		// targetEntities = new SetNode(EntityMapping.entitiesStr + input);
-		// targetEntities.addChild(this.spicyMappingTransformation
-		// .getMappingInformation().getTargetEntity());
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema().addChild(targetEntities);
-		// }
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema().setRoot(true);
 		this.spicyMappingTransformation
 			.getMappingInformation()
 			.getTarget()
@@ -385,40 +338,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private void extendSourceSchemaBy(final String attr, final String inputStr) {
-		// INode sourceAttr;
-		//
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setSourceEntity(
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceSchema()
-		// .getChild(EntityMapping.entitiesStr + inputStr)
-		// .getChild(EntityMapping.entityStr + inputStr));
-		// if (this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceEntity().getChild(attr) == null) {
-		// sourceAttr = new AttributeNode(attr);
-		// sourceAttr.addChild(EntityMapping.dummy);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getSourceEntity().addChild(sourceAttr);
-		// }
 		this.spicyMappingTransformation.getMappingInformation()
 			.getSourceSchema().addKeyToInput(inputStr, attr);
 	}
 
 	private void extendTargetSchemaBy(final String attr, final String inputStr) {
-		// INode targetAttr;
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .setTargetEntity(
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetSchema()
-		// .getChild(EntityMapping.entitiesStr + inputStr)
-		// .getChild(EntityMapping.entityStr + inputStr));
-		// if (this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetEntity().getChild(attr) == null) {
-		// targetAttr = new AttributeNode(attr);
-		// targetAttr.addChild(EntityMapping.dummy);
-		// this.spicyMappingTransformation.getMappingInformation()
-		// .getTargetEntity().addChild(targetAttr);
-		// }
 		this.spicyMappingTransformation.getMappingInformation().getTarget()
 			.getTargetSchema().addKeyToInput(inputStr, attr);
 	}
@@ -444,14 +368,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return new MappingValueCorrespondence(sourceSteps, targetSteps);
 	}
 
-	private MappingValueCorrespondence createValueCorrespondence(
-			final String source, final String target) {
-		final SpicyPathExpression sourcePath = new SpicyPathExpression(source);
-		final SpicyPathExpression targetPath = new SpicyPathExpression(target);
-
-		return new MappingValueCorrespondence(sourcePath, targetPath);
-	}
-
 	private MappingJoinCondition createJoinCondition(
 			final String sourceNesting, final String sourceAttr,
 			final String targetNesting, final String targetAttr) {
@@ -464,26 +380,20 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private List<MappingValueCorrespondence> createTransitiveValueCorrespondences(
-			MappingValueCorrespondence corr,
 			List<MappingValueCorrespondence> valueCorrespondences,
-			HashMap<String, String> foreignKeys) {
+			HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys) {
 
 		List<MappingValueCorrespondence> transitiveValueCorrespondences = new ArrayList<MappingValueCorrespondence>();
-		for (String fk : foreignKeys.keySet()) {
-			String value = foreignKeys.get(fk).toString();
+		for (SpicyPathExpression fk : foreignKeys.keySet()) {
+			SpicyPathExpression value = foreignKeys.get(fk);
 
 			for (MappingValueCorrespondence mvc : valueCorrespondences) {
 				// we use a real ValueCorrespondence here, because the container
 				// type MappingValueCorrespondence only stores one single
 				// sourcePath
-				ValueCorrespondence vc = mvc.generateSpicyType();
-				if (vc.getTargetPath().toString().equals(value)) {
-
-					for (PathExpression pe : vc.getSourcePaths()) {
-						corr = this
-							.createValueCorrespondence(pe.toString(), fk);
-						transitiveValueCorrespondences.add(corr);
-					}
+				if (mvc.getTargetPath().equals(value)) {
+						MappingValueCorrespondence correspondence = new MappingValueCorrespondence(mvc.getSourcePath(), fk);
+						transitiveValueCorrespondences.add(correspondence);
 				}
 			}
 		}
@@ -515,6 +425,9 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			inputIndex.put(entitiesStr + inputPrefixStr + i, i);
 		}
 		Map<String, Integer> outputIndex = new HashMap<String, Integer>();
+		//FIXME hack to solve #output problem 
+		this.getOutputs();
+		
 		for (int i = 0; i < this.getNumOutputs(); i++) {
 			outputIndex.put(entitiesStr + inputPrefixStr + i, i);
 		}

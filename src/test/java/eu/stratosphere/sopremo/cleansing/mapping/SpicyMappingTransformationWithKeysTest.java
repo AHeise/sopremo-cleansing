@@ -125,11 +125,51 @@ public class SpicyMappingTransformationWithKeysTest extends
 		sopremoPlan.run();
 	}
 
+
+	@Test
+	public void shouldPerformMappingWithSwitchedTargetAndSource() {
+
+		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		taskFactory.setCreateTargetJoinSwitch(true);
+		taskFactory.setCreateSourceJoinSwitch(true);
+		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
+				.create());
+
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan
+				.getExpectedOutput(0)
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress1"))
+						.put("name", TextNode.valueOf("Andrew Adams"))
+						.put("worksFor", TextNode.valueOf("CompanyXYZ"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)))
+				.addObject("id", "usCongress2", "name", "John Adams", "income", new ArrayNode<IJsonNode>().add(IntNode.ONE), "worksFor", NullNode.getInstance())
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress3"))
+						.put("name", TextNode.valueOf("John Doe"))
+						.put("worksFor", TextNode.valueOf("CompanyUVW"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)));
+		sopremoPlan.getExpectedOutput(1)
+				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
+				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		// sopremoPlan.trace();
+		sopremoPlan.run();
+	}
+	
 	@Test
 	public void shouldPerformMappingWithSwitchedSource() {
 
 		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
 		taskFactory.setCreateSourceJoinSwitch(true);
+		taskFactory.setTargetJoinMandatory(true);
 		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
 				.create());
 
@@ -167,6 +207,100 @@ public class SpicyMappingTransformationWithKeysTest extends
 				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		// TODO used skolem function here in worksFor
+
+		sopremoPlan.trace();
+		sopremoPlan.run();
+	}
+	
+	@Test
+	public void shouldPerformMappingWithSwitchedSourceTargetJoinNotMandatory() {
+
+		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		taskFactory.setCreateSourceJoinSwitch(true);
+		taskFactory.setTargetJoinMandatory(false);
+		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
+				.create());
+
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan
+				.getExpectedOutput(0)
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress1"))
+						.put("name", TextNode.valueOf("Andrew Adams"))
+						.put("worksFor", TextNode.valueOf("CompanyXYZ"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)))
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress2"))
+						.put("name", TextNode.valueOf("John Adams"))
+						.put("worksFor", NullNode.getInstance())
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)))
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress3"))
+						.put("name", TextNode.valueOf("John Doe"))
+						.put("worksFor", TextNode.valueOf("CompanyUVW"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)));
+		sopremoPlan
+				.getExpectedOutput(1)
+				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
+				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		// TODO used skolem function here in worksFor
+
+		sopremoPlan.trace();
+		sopremoPlan.run();
+	}
+	
+	/**
+	 * Full outer join semantics
+	 */
+	@Test
+	public void shouldPerformMappingSourceAndTargetJoinNotMandatory() {
+
+		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		taskFactory.setTargetJoinMandatory(false);
+		taskFactory.setSourceJoinMandatory(false);
+		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
+				.create());
+
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan
+				.getExpectedOutput(0)
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress1"))
+						.put("name", TextNode.valueOf("Andrew Adams"))
+						.put("worksFor", TextNode.valueOf("CompanyXYZ"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)))
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress2"))
+						.put("name", TextNode.valueOf("John Adams"))
+						.put("worksFor", NullNode.getInstance())
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)))
+				.add(new ObjectNode()
+						.put("id", TextNode.valueOf("usCongress3"))
+						.put("name", TextNode.valueOf("John Doe"))
+						.put("worksFor", TextNode.valueOf("CompanyUVW"))
+						.put("income",
+								new ArrayNode<IJsonNode>().add(IntNode.ONE)));
+		sopremoPlan
+				.getExpectedOutput(1)
+				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
+				.addObject("id", "CompanyABC", "name", "CompanyABC")
+				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();

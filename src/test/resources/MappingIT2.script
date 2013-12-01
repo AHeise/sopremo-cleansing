@@ -1,0 +1,17 @@
+using cleansing;
+
+$originalPersons = read from 'MappingIT2TestOriginalPersons.json';
+
+$persons, $companies  = map entities from $originalPersons
+	as [
+	    group $originalPersons by $originalPersons.id into {
+	    	name: $originalPersons.name,
+	    	worksFor: $companies.id
+	    },
+	    group $originalPersons by $originalPersons.worksFor into {
+	       name: $originalPersons.worksFor
+	    }
+	];
+
+write $persons to 'file:///tmp/MappingIT2TestOutputPersons.json';
+write $companies to 'file:///tmp/MappingIT2TestOutputCompanies.json';

@@ -20,11 +20,11 @@ import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javolution.text.TextFormat;
 import javolution.text.TypeFormat;
@@ -35,8 +35,7 @@ public class MappingSchema extends AbstractSopremoType {
 	private int size = 0;
 
 	private String label;
-
-	private Map<String, List<String>> groupings = new HashMap<String, List<String>>();
+	private Map<String, Set<String>> groupings = new HashMap<String, Set<String>>();
 
 	MappingSchema() {
 
@@ -51,15 +50,15 @@ public class MappingSchema extends AbstractSopremoType {
 		return this.size;
 	}
 
-	public Map<String, List<String>> getGroupings() {
+	public Map<String, Set<String>> getGroupings() {
 		return this.groupings;
 	}
 
 	public void addKeyToInput(String input, String key) {
 		if (this.groupings.containsKey(input)) {
 			this.groupings.get(input).add(key);
-		} else {
-			this.groupings.put(input, new ArrayList<String>());
+		}else{
+			this.groupings.put(input, new HashSet<String>());
 			addKeyToInput(input, key);
 		}
 	}
@@ -87,7 +86,7 @@ public class MappingSchema extends AbstractSopremoType {
 
 		// ##### extend schema #####
 
-		for (Entry<String, List<String>> grouping : this.groupings.entrySet()) {
+		for (Entry<String, Set<String>> grouping : this.groupings.entrySet()) {
 			for (String value : grouping.getValue()) {
 
 				INode sourceAttr;

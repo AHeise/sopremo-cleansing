@@ -1,8 +1,10 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -37,6 +39,13 @@ public class BlackListConstraint extends ValidationRule {
 			IJsonNode defaultValue) {
 		this.blacklistedValues = (List<IJsonNode>) blacklistedValues;
 		this.setValueCorrection(new DefaultValueCorrection(defaultValue));
+	}
+	
+	public BlackListConstraint(ArrayNode<IJsonNode> blacklistedValues) {
+		this.blacklistedValues = new LinkedList<IJsonNode>();
+		for (IJsonNode node : blacklistedValues) {
+			this.blacklistedValues.add(node);
+		}
 	}
 
 	BlackListConstraint() {
