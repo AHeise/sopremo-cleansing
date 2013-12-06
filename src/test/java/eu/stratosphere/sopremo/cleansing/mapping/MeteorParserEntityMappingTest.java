@@ -14,6 +14,14 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -159,7 +167,83 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		MappingInformation mappingInformation = null;
+		
+		MappingInformation mappingInformation = new MappingInformation();
+		
+		//sourceJoinCondition
+		List<SpicyPathExpression> sourceJoinConditionSourcePaths = Collections.singletonList(new SpicyPathExpression("source.entities_in0.entity_in0","biography"));
+		List<SpicyPathExpression> targetJoinConditionSourcePaths = Collections.singletonList(new SpicyPathExpression("source.entities_in1.entity_in1","biographyId"));
+		
+		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(
+				sourceJoinConditionSourcePaths,
+				targetJoinConditionSourcePaths,
+				true,
+				true
+				);
+		
+		mappingInformation.setSourceJoinCondition(sourceJoinCondition);
+		
+		//sourceSchema
+		MappingSchema sourceSchema = new MappingSchema(2, "source");
+		
+		mappingInformation.setSourceSchema(sourceSchema);
+		
+		sourceSchema.addKeyToInput("in1","biographyId");
+		sourceSchema.addKeyToInput("in1","worksFor_o");
+		
+		sourceSchema.addKeyToInput("in0","id_o");
+		sourceSchema.addKeyToInput("in0","name_o");
+		sourceSchema.addKeyToInput("in0","biography");
+		
+		//target
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(
+				new MappingKeyConstraint("target.entities_in0.entity_in0", "id")
+				);
+		target.addKeyConstraint(
+				new MappingKeyConstraint("target.entities_in1.entity_in1", "id")
+				);
+		
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		
+		target.setTargetSchema(targetSchema);
+		
+		mappingInformation.setTarget(target);
+		
+		//valueCorrespondences
+		List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","id")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","name_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","name_p")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","worksFor_p")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","id")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","name_l")));
+		
+		mappingInformation.setValueCorrespondences(valueCorrespondences);
+		
+		
+		
 		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(mappingInformation);
 
 		assertPlanEquals(expectedPlan, actualPlan);

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javolution.text.TextFormat;
 import javolution.text.TypeFormat;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 
@@ -117,7 +116,8 @@ public class MappingSchema extends AbstractSopremoType {
 		appendable.append(", label=");
 		appendable.append(this.label);
 		appendable.append(", groupings=");
-		TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
+		appendable.append(this.groupings.toString());
+		//TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
 		appendable.append("]");
 	}
 
