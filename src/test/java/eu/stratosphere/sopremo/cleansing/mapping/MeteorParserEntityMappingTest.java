@@ -14,12 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.mapping.MappingTask;
-
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.esotericsoftware.kryo.Kryo;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.meteor.QueryParser;
@@ -52,6 +48,20 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
 		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		expectedPlan.setSinks(output1, output2);
+		
+		return expectedPlan;
+	}
+	
+	private SopremoPlan getExpectedPlanForDefaultInputOutput(MappingInformation mappingInformation) {
+		
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input1 = new Source("file://usCongressMembers.json");
+		final Source input2 = new Source("file://usCongressBiographies.json");
+		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
+		extract.getSpicyMappingTransformation().setMappingInformation(mappingInformation);
 		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
 		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
@@ -149,7 +159,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			"write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		MappingInformation mappingInformation = null;
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(mappingInformation);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}

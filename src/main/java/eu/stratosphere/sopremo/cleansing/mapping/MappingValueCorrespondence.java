@@ -1,31 +1,53 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.correspondence.ValueCorrespondence;
+import it.unibas.spicy.model.expressions.Expression;
+import it.unibas.spicy.model.paths.PathExpression;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
 
 public class MappingValueCorrespondence extends AbstractSopremoType {
-	private SpicyPathExpression sourcePath;
+	private List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
 
 	private SpicyPathExpression targetPath;
+	
+	private String expression;
 
 	MappingValueCorrespondence() {
 	}
 
 	public MappingValueCorrespondence(SpicyPathExpression sourcePath,
 			SpicyPathExpression targetPath) {
-		this.sourcePath = sourcePath;
+		this.sourcePaths.add(sourcePath);
 		this.targetPath = targetPath;
+	}
+	
+	public MappingValueCorrespondence(List<SpicyPathExpression> sourcePath,
+			SpicyPathExpression targetPath, String transformationFunctionExpression) {
+		this.sourcePaths = sourcePath;
+		this.targetPath = targetPath;
+		this.expression = transformationFunctionExpression;
 	}
 
 	public ValueCorrespondence generateSpicyType() {
-		return new ValueCorrespondence(this.sourcePath.getPathExpression(), this.targetPath.getPathExpression());
+		if(this.sourcePaths.size()==1){
+			return new ValueCorrespondence(this.sourcePaths.get(0).getPathExpression(), this.targetPath.getPathExpression());
+		} else{
+			List<PathExpression> spicyTypeSourcesPathes = new ArrayList<PathExpression>();
+			for(SpicyPathExpression spe : this.sourcePaths){
+				spicyTypeSourcesPathes.add(spe.getPathExpression());
+			}
+			return new ValueCorrespondence(spicyTypeSourcesPathes, this.targetPath.getPathExpression(), new Expression(this.expression));
+		}
+		
 	}
 
-	public SpicyPathExpression getSourcePath() {
-		return this.sourcePath;
+	public List<SpicyPathExpression> getSourcePaths() {
+		return this.sourcePaths;
 	}
 
 	public SpicyPathExpression getTargetPath() {
@@ -39,9 +61,12 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		appendable.append("MappingValueCorrespondence [");
-		if (this.sourcePath != null) {
+		if (this.sourcePaths != null) {
 			appendable.append("sourcePath=");
-			this.sourcePath.appendAsString(appendable);
+			for(SpicyPathExpression spe : this.sourcePaths){
+				spe.appendAsString(appendable);
+			}
+			
 			appendable.append(", ");
 		}
 		if (this.targetPath != null) {
@@ -55,7 +80,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + this.sourcePath.hashCode();
+		result = prime * result + this.sourcePaths.hashCode();
 		result = prime * result + this.targetPath.hashCode();
 		return result;
 	}
@@ -69,7 +94,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		MappingValueCorrespondence other = (MappingValueCorrespondence) obj;
-		return this.sourcePath.equals(other.sourcePath) && this.targetPath.equals(other.targetPath);
+		return this.sourcePaths.equals(other.sourcePaths) && this.targetPath.equals(other.targetPath);
 	}
 
 }

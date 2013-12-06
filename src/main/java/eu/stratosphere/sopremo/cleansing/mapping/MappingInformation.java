@@ -20,7 +20,7 @@ public class MappingInformation extends AbstractSopremoType {
 
 	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 
-	private MappingSchema sourceSchema;
+	private MappingSchema sourceSchema = new MappingSchema();
 
 	private MappingDataSource target = new MappingDataSource();
 

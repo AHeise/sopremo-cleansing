@@ -34,7 +34,7 @@ public class MappingSchema extends AbstractSopremoType {
 
 	private int size = 0;
 
-	private String label;
+	private String label = "";
 	private Map<String, Set<String>> groupings = new HashMap<String, Set<String>>();
 
 	MappingSchema() {
