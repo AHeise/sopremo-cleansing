@@ -105,7 +105,53 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		
+		MappingInformation info = new MappingInformation();
+
+		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		info.setSourceSchema(schema);
+
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in0.entity_in0", "id"));
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in1.entity_in1", "id"));
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		target.setTargetSchema(targetSchema);
+		info.setTarget(target);
+
+		List<MappingValueCorrespondence> valueCorrespondences = new LinkedList<MappingValueCorrespondence>();
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"id_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"name_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "name_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"id_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "worksFor_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "name_l")));
+		info.setValueCorrespondences(valueCorrespondences);
+		
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(info);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
@@ -156,6 +202,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		info.setTargetJoinConditions(targetJoinConditions);
 
 		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in1", "biographyId_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		schema.addKeyToInput("in0", "biography_o");
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
@@ -164,6 +215,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		target.addKeyConstraint(new MappingKeyConstraint(
 				"target.entities_in1.entity_in1", "id"));
 		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -339,7 +395,65 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		
+		MappingInformation info = new MappingInformation();
+
+		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
+		sourcePaths2.add(new SpicyPathExpression(
+				"target.entities_in0.entity_in0", "worksFor_p"));
+		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
+		targetPaths2.add(new SpicyPathExpression(
+				"target.entities_in1.entity_in1", "id"));
+		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(
+				sourcePaths2, targetPaths2, true, true);
+		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		targetJoinConditions.add(targetJoinCondition);
+		info.setTargetJoinConditions(targetJoinConditions);
+
+		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in1", "biographyId_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		info.setSourceSchema(schema);
+
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in0.entity_in0", "id"));
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in1.entity_in1", "id"));
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		targetSchema.addKeyToInput("in0", "biography_p");
+		target.setTargetSchema(targetSchema);
+		info.setTarget(target);
+
+		List<MappingValueCorrespondence> valueCorrespondences = new LinkedList<MappingValueCorrespondence>();
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","name_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "name_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","biographyId_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "biography_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1", "name_l")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "worksFor_p")));
+		info.setValueCorrespondences(valueCorrespondences);
+
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(info);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
