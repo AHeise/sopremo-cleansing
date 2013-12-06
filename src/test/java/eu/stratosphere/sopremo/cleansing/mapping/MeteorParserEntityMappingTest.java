@@ -16,6 +16,7 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.junit.Assert;
@@ -35,109 +36,238 @@ import eu.stratosphere.sopremo.query.IConfObjectRegistry;
  * 
  */
 public class MeteorParserEntityMappingTest extends MeteorParseTest {
-	
+
 	/*
 	 * (non-Javadoc)
-	 * @see eu.stratosphere.meteor.MeteorParseTest#initParser(eu.stratosphere.meteor.QueryParser)
+	 * 
+	 * @see
+	 * eu.stratosphere.meteor.MeteorParseTest#initParser(eu.stratosphere.meteor
+	 * .QueryParser)
 	 */
 	@Override
 	protected void initParser(QueryParser queryParser) {
-		final IConfObjectRegistry<Operator<?>> operatorRegistry = queryParser.getPackageManager().getOperatorRegistry();
-		operatorRegistry.put(EntityMapping.class, new AdditionalInfoResolver.None());
+		final IConfObjectRegistry<Operator<?>> operatorRegistry = queryParser
+				.getPackageManager().getOperatorRegistry();
+		operatorRegistry.put(EntityMapping.class,
+				new AdditionalInfoResolver.None());
 		super.initParser(queryParser);
 	}
-	
+
 	private SopremoPlan getExpectedPlanForDefaultInputOutput() {
-		
+
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		final EntityMapping extract = new EntityMapping().withInputs(input1,
+				input2);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
-		
+
 		return expectedPlan;
 	}
-	
-	private SopremoPlan getExpectedPlanForDefaultInputOutput(MappingInformation mappingInformation) {
-		
+
+	private SopremoPlan getExpectedPlanForDefaultInputOutput(
+			MappingInformation mappingInformation) {
+
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
-		extract.getSpicyMappingTransformation().setMappingInformation(mappingInformation);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		final EntityMapping extract = new EntityMapping().withInputs(input1,
+				input2);
+		extract.getSpicyMappingTransformation().setMappingInformation(
+				mappingInformation);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
-		
+
 		return expectedPlan;
 	}
 
 	@Test
 	public void testMinimalSchemaMapping() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-			"as [\n" +
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $usCongressMembers.id_o" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $usCongressMembers.id_o"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		
+		MappingInformation info = new MappingInformation();
+
+		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		info.setSourceSchema(schema);
+
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in0.entity_in0", "id"));
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in1.entity_in1", "id"));
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		target.setTargetSchema(targetSchema);
+		info.setTarget(target);
+
+		List<MappingValueCorrespondence> valueCorrespondences = new LinkedList<MappingValueCorrespondence>();
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"id_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"name_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "name_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"id_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "worksFor_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "name_l")));
+		info.setValueCorrespondences(valueCorrespondences);
+		
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(info);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testFinalSchemaMapping() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
-			"where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n" + 
-			"as [\n" +  
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-//			"    biography_p: $usCongressBiographies.biographyId_o,\n" + 
-			"    worksFor_p: $legalEntity.id" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+
+				// "    biography_p: $usCongressBiographies.biographyId_o,\n" +
+				"    worksFor_p: $legalEntity.id"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
-		
+		MappingInformation info = new MappingInformation();
+
+		List<SpicyPathExpression> sourcePaths = new LinkedList<SpicyPathExpression>();
+		sourcePaths.add(new SpicyPathExpression(
+				"source.entities_in0.entity_in0", "biography_o"));
+		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
+		targetPaths.add(new SpicyPathExpression(
+				"source.entities_in1.entity_in1", "biographyId_o"));
+		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(
+				sourcePaths, targetPaths, true, true);
+		info.setSourceJoinCondition(sourceJoinCondition);
+
+		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
+		sourcePaths2.add(new SpicyPathExpression(
+				"target.entities_in0.entity_in0", "worksFor_p"));
+		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
+		targetPaths2.add(new SpicyPathExpression(
+				"target.entities_in1.entity_in1", "id"));
+		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(
+				sourcePaths2, targetPaths2, true, true);
+		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		targetJoinConditions.add(targetJoinCondition);
+		info.setTargetJoinConditions(targetJoinConditions);
+
+		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in1", "biographyId_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		schema.addKeyToInput("in0", "biography_o");
+		info.setSourceSchema(schema);
+
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in0.entity_in0", "id"));
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in1.entity_in1", "id"));
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		target.setTargetSchema(targetSchema);
+		info.setTarget(target);
+
+		List<MappingValueCorrespondence> valueCorrespondences = new LinkedList<MappingValueCorrespondence>();
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"id_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0",
+						"name_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "name_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in1.entity_in1", "name_l")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1",
+						"worksFor_o"), new SpicyPathExpression(
+						"target.entities_in0.entity_in0", "worksFor_p")));
+		info.setValueCorrespondences(valueCorrespondences);
+
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(info);
+
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testRenamedOperator() { // map entities from ... as ...
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-			"as [\n" +
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $usCongressMembers.id_o" +
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $usCongressMembers.id_o"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
 		
@@ -206,24 +336,24 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testWhereClause() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-			"where ($usCongressMembers.biography[0:1] == $usCongressBiographies.biographyId[1:1])\n" + 
-			"as [\n" +
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $usCongressMembers.id_o" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "where ($usCongressMembers.biography[0:1] == $usCongressBiographies.biographyId[1:1])\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $usCongressMembers.id_o"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
 		
@@ -307,53 +437,114 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testMultipleSourcesPerGroupBy() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-			"as [\n" +
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    biography_p: $usCongressBiographies.biographyId_o,\n" + 
-			"    worksFor_p: $legalEntity.id" + //included
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    biography_p: $usCongressBiographies.biographyId_o,\n"
+				+ "    worksFor_p: $legalEntity.id"
+				+ // included
+				"  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		
+		MappingInformation info = new MappingInformation();
+
+		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
+		sourcePaths2.add(new SpicyPathExpression(
+				"target.entities_in0.entity_in0", "worksFor_p"));
+		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
+		targetPaths2.add(new SpicyPathExpression(
+				"target.entities_in1.entity_in1", "id"));
+		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(
+				sourcePaths2, targetPaths2, true, true);
+		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		targetJoinConditions.add(targetJoinCondition);
+		info.setTargetJoinConditions(targetJoinConditions);
+
+		MappingSchema schema = new MappingSchema(2, "source");
+		schema.addKeyToInput("in1", "worksFor_o");
+		schema.addKeyToInput("in1", "biographyId_o");
+		schema.addKeyToInput("in0", "id_o");
+		schema.addKeyToInput("in0", "name_o");
+		info.setSourceSchema(schema);
+
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in0.entity_in0", "id"));
+		target.addKeyConstraint(new MappingKeyConstraint(
+				"target.entities_in1.entity_in1", "id"));
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		targetSchema.addKeyToInput("in0", "biography_p");
+		target.setTargetSchema(targetSchema);
+		info.setTarget(target);
+
+		List<MappingValueCorrespondence> valueCorrespondences = new LinkedList<MappingValueCorrespondence>();
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","name_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "name_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","biographyId_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "biography_p")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1", "id")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1", "name_l")));
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0", "worksFor_p")));
+		info.setValueCorrespondences(valueCorrespondences);
+
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(info);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testOneInputMultipleOutput() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers\n" +
-			"as [\n" +  
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $legalEntity.id" + 
-			"  }," + 
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_l: $usCongressMembers.id_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $legalEntity.id"
+				+ "  },"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_l: $usCongressMembers.id_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file://usCongressMembers.json");
 		final EntityMapping extract = new EntityMapping().withInputs(input);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
 		
 		MappingInformation mappingInformation = new MappingInformation();
@@ -432,94 +623,163 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testSwitchedOutputs() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$legalEntity, $person = map entities from $usCongressMembers, $usCongressBiographies\n" +
-			"where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n" + 
-			"as [\n" +  
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" +  //switched output order and group by
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }," + 			
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $legalEntity.id" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$legalEntity, $person = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n"
+				+ "as [\n"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ // switched output order and group by
+				"    name_l: $usCongressBiographies.worksFor_o"
+				+ "  },"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $legalEntity.id"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
-		final SopremoPlan actualPlan = parseScript(query);		
+		final SopremoPlan actualPlan = parseScript(query);
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(0));
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(1));
+		final EntityMapping extract = new EntityMapping().withInputs(input1,
+				input2);
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(0));
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
-		
+
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
-//	@Ignore
+
 	@Test
 	public void testSwitchedJoinOrder() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
-			"where ($usCongressBiographies.biographyId_o[1:1] == $usCongressMembers.biography_o[0:1])\n" + //if switched, spicy creates foreign keys on source in reversed order
-			"as [\n" +  
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" +
-			"    worksFor_p: $legalEntity.id" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "where ($usCongressBiographies.biographyId_o[1:1] == $usCongressMembers.biography_o[0:1])\n"
+				+ // if switched, spicy creates foreign keys on source in
+					// reversed order
+				"as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $legalEntity.id"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
-		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput();
+		MappingInformation mappingInformation = new MappingInformation();
 		
+		//sourceSchema
+		MappingSchema sourceSchema = new MappingSchema(2, "source");
+		
+		mappingInformation.setSourceSchema(sourceSchema);
+		
+		sourceSchema.addKeyToInput("in1","worksFor_o");
+		
+		sourceSchema.addKeyToInput("in0","id_o");
+		sourceSchema.addKeyToInput("in0","name_o");
+		sourceSchema.addKeyToInput("in0","biography");
+		
+		//target
+		MappingDataSource target = new MappingDataSource();
+		target.addKeyConstraint(
+				new MappingKeyConstraint("target.entities_in0.entity_in0", "id")
+				);
+		target.addKeyConstraint(
+				new MappingKeyConstraint("target.entities_in1.entity_in1", "id")
+				);
+		
+		MappingSchema targetSchema = new MappingSchema(2, "target");
+		
+		targetSchema.addKeyToInput("in1", "id");
+		targetSchema.addKeyToInput("in1", "name_l");
+		
+		targetSchema.addKeyToInput("in0", "id");
+		targetSchema.addKeyToInput("in0", "worksFor_p");
+		targetSchema.addKeyToInput("in0", "name_p");
+		
+		target.setTargetSchema(targetSchema);
+		
+		mappingInformation.setTarget(target);
+		
+		//valueCorrespondences
+		List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","id")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","name_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","name_p")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in0.entity_in0","id_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","worksFor_p")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","id")));
+		
+		valueCorrespondences.add(new MappingValueCorrespondence(
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","name_l")));
+		
+		mappingInformation.setValueCorrespondences(valueCorrespondences);
+		
+		
+		
+		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(mappingInformation);
+
 		assertPlanEquals(expectedPlan, actualPlan);
-		//TODO need to test output cardinalities with integration test
 	}
-	
+
 	@Test
 	public void testThreeInputs() {
-		String query = 
-			"$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$states = read from 'file://states.json';\n" +		
-			
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies, $states\n" +
-			"where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1]) " +
-			"		and ($usCongressMembers.state[0:1] == $states.letterCode[1:1])\n" + 
-			"as [\n" +  
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" + 
-			"    worksFor_p: $legalEntity.id,\n" +
-			"	 state_p: $states.name" +
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$states = read from 'file://states.json';\n"
+				+
+
+				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies, $states\n"
+				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1]) "
+				+ "		and ($usCongressMembers.state[0:1] == $states.letterCode[1:1])\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $legalEntity.id,\n"
+				+ "	 state_p: $states.name"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
 		final Source input3 = new Source("file://states.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1, input2, input3);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
+		final EntityMapping extract = new EntityMapping().withInputs(input1,
+				input2, input3);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(1));
 		expectedPlan.setSinks(output1, output2);
 		
 		MappingInformation mappingInformation = new MappingInformation();
@@ -613,58 +873,63 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testThreeOutputs() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity, $personNames = map entities from $usCongressMembers, $usCongressBiographies\n" +
-			"where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n" + 
-			"as [\n" +  
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: $usCongressMembers.name_o,\n" + 
-			"    worksFor_p: $legalEntity.id" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }," + 
-			"  group $usCongressMembers by $usCongressMembers.name_o into {" + //Only include id field
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';\n" +
-			"write $personNames to 'file://personNames.json';";
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity, $personNames = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $legalEntity.id"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  },"
+				+ "  group $usCongressMembers by $usCongressMembers.name_o into {"
+				+ // Only include id field
+				"  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';\n"
+				+ "write $personNames to 'file://personNames.json';";
 
 		final SopremoPlan actualPlan = parseScript(query);
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file://usCongressMembers.json");
 		final Source input2 = new Source("file://usCongressBiographies.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1, input2);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json").withInputs(extract.getOutput(1));
-		final Sink output3 = new Sink("file://personNames.json").withInputs(extract.getOutput(2));
+		final EntityMapping extract = new EntityMapping().withInputs(input1,
+				input2);
+		final Sink output1 = new Sink("file://person.json").withInputs(extract
+				.getOutput(0));
+		final Sink output2 = new Sink("file://legalEntity.json")
+				.withInputs(extract.getOutput(1));
+		final Sink output3 = new Sink("file://personNames.json")
+				.withInputs(extract.getOutput(2));
 		expectedPlan.setSinks(output1, output2, output3);
-		
+
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
 	@Test @Ignore
 	public void testMinimalSchemaMappingWithFunction() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-			"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-			"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-			"as [\n" +
-			"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-			"    name_p: concat([$usCongressMembers.name_o, \"---\"]),\n" +
-			"    worksFor_p: $usCongressMembers.id_o" + 
-			"  }," + 
-			"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-			"    name_l: $usCongressBiographies.worksFor_o" + 
-			"  }" + 
-			"];\n" + 
-			"write $person to 'file://person.json';\n" +
-			"write $legalEntity to 'file://legalEntity.json';";
-		
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: concat([$usCongressMembers.name_o, \"---\"]),\n"
+				+ "    worksFor_p: $usCongressMembers.id_o"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
+
 		final SopremoPlan actualPlan = parseScript(query);
 		
 		MappingInformation mappingInformation = new MappingInformation();
@@ -733,32 +998,32 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Test
 	public void testMappingTaskEquals() {
-		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n" +
-				"$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" +
-				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" + 
-				"as [\n" +
-				"  group $usCongressMembers by $usCongressMembers.id_o into {" + 
-				"    name_p: $usCongressMembers.name_o,\n" +
-				"    worksFor_p: $usCongressMembers.id_o" + 
-				"  }," + 
-				"  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {" + 
-				"    name_l: $usCongressBiographies.worksFor_o" + 
-				"  }" + 
-				"];\n" + 
-				"write $person to 'file://person.json';\n" +
-				"write $legalEntity to 'file://legalEntity.json';";
-		
+		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
+				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
+				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
+				+ "as [\n"
+				+ "  group $usCongressMembers by $usCongressMembers.id_o into {"
+				+ "    name_p: $usCongressMembers.name_o,\n"
+				+ "    worksFor_p: $usCongressMembers.id_o"
+				+ "  },"
+				+ "  group $usCongressBiographies by $usCongressBiographies.worksFor_o into {"
+				+ "    name_l: $usCongressBiographies.worksFor_o"
+				+ "  }"
+				+ "];\n"
+				+ "write $person to 'file://person.json';\n"
+				+ "write $legalEntity to 'file://legalEntity.json';";
+
 		final SopremoPlan actualPlan = parseScript(query);
-		
+
 		EntityMapping mapping1 = null;
 		EntityMapping mapping2 = null;
-		for(Operator<?> operator : actualPlan.getContainedOperators()) {
-			if(operator instanceof EntityMapping) {
-				mapping1 = (EntityMapping)operator;
-				mapping2 = ((EntityMapping)operator).copy();
+		for (Operator<?> operator : actualPlan.getContainedOperators()) {
+			if (operator instanceof EntityMapping) {
+				mapping1 = (EntityMapping) operator;
+				mapping2 = ((EntityMapping) operator).copy();
 				break;
 			}
 		}
