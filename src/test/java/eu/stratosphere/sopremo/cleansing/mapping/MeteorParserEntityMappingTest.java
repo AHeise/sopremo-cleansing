@@ -766,18 +766,38 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		final SopremoPlan actualPlan = parseScript(query);
 		MappingInformation mappingInformation = new MappingInformation();
 
+		// sourceJoinCondition
+		List<SpicyPathExpression> sourceJoinConditionSourcePaths1 = Collections
+				.singletonList(new SpicyPathExpression("source.entities_in1.entity_in1","biographyId_o"));
+		List<SpicyPathExpression> targetJoinConditionSourcePaths1 = Collections.singletonList(new SpicyPathExpression("source.entities_in0.entity_in0","biography_o"));
+
+		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
+
+		mappingInformation.setSourceJoinCondition(sourceJoinCondition);
+
+		// targetJoinCondition
+		List<SpicyPathExpression> sourceJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_in0.entity_in0","worksFor_p"));
+		List<SpicyPathExpression> targetJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_in1.entity_in1", "id"));
+
+		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
+
+		List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
+		targetJoinConditions.add(targetJoinCondition);
+		mappingInformation.setTargetJoinConditions(targetJoinConditions);
+
 		// sourceSchema
 		MappingSchema sourceSchema = new MappingSchema(2, "source");
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
 		sourceSchema.addKeyToInput("in1", "worksFor_o");
+		sourceSchema.addKeyToInput("in1", "biographyId_o");
 
 		sourceSchema.addKeyToInput("in0", "id_o");
-		sourceSchema.addKeyToInput("in0", "name_o");
-		sourceSchema.addKeyToInput("in0", "biography");
-
-		// target
+		sourceSchema.addKeyToInput("in0", "biography_o");
+		sourceSchema.addKeyToInput("in0","name_o");
+		
+		//target
 		MappingDataSource target = new MappingDataSource();
 		target.addKeyConstraint(new MappingKeyConstraint(
 				"target.entities_in0.entity_in0", "id"));
@@ -811,20 +831,17 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 						"target.entities_in0.entity_in0", "name_p")));
 
 		valueCorrespondences.add(new MappingValueCorrespondence(
-				new SpicyPathExpression("source.entities_in0.entity_in0",
-						"id_o"), new SpicyPathExpression(
-						"target.entities_in0.entity_in0", "worksFor_p")));
-
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","id")));
+		
 		valueCorrespondences.add(new MappingValueCorrespondence(
-				new SpicyPathExpression("source.entities_in1.entity_in1",
-						"worksFor_o"), new SpicyPathExpression(
-						"target.entities_in1.entity_in1", "id")));
-
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in1.entity_in1","name_l")));
+		
 		valueCorrespondences.add(new MappingValueCorrespondence(
-				new SpicyPathExpression("source.entities_in1.entity_in1",
-						"worksFor_o"), new SpicyPathExpression(
-						"target.entities_in1.entity_in1", "name_l")));
-
+				new SpicyPathExpression("source.entities_in1.entity_in1","worksFor_o"),
+				new SpicyPathExpression("target.entities_in0.entity_in0","worksFor_p")));
+		
 		mappingInformation.setValueCorrespondences(valueCorrespondences);
 
 		final SopremoPlan expectedPlan = getExpectedPlanForDefaultInputOutput(mappingInformation);
