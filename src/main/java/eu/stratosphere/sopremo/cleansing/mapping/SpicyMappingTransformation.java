@@ -163,7 +163,7 @@ public class SpicyMappingTransformation extends
 	// return fieldSerializer.copy(kryo, original);
 	// }
 	// }
-
+	
 	private MappingInformation mappingInformation = new MappingInformation();
 
 	private transient SopremoModule module;

@@ -29,7 +29,7 @@ public class SpicyMappingFactory {
 	boolean createJoinWithConcat = false;
 	boolean createTargetJoinSwitch = false;
 	boolean createSourceJoinSwitch = false;
-	
+
 	boolean targetJoinMandatory = true;
 	boolean sourceJoinMandatory = true;
 
@@ -101,8 +101,7 @@ public class SpicyMappingFactory {
 		// ### soure and target
 
 		INode sourceSchema = createSourceSchema();
-		INode targetSchema = createNesting ? createNestedTargetSchema()
-				: createTargetSchema();
+		INode targetSchema = createNesting ? createNestedTargetSchema() : createTargetSchema();
 		String type = null; // "XML";
 
 		DataSource source = new DataSource(type, sourceSchema);
@@ -129,8 +128,7 @@ public class SpicyMappingFactory {
 		// sourceKeyConstraint1);
 		// source.addForeignKeyConstraint(foreignKeyConstraint1);
 		//
-		ForeignKeyConstraint foreignKeyConstraint2 = createForeignKeyConstraint(
-				"usCongress.persons.person.worksFor", targetKeyConstraint2);
+		ForeignKeyConstraint foreignKeyConstraint2 = createForeignKeyConstraint("usCongress.persons.person.worksFor", targetKeyConstraint2);
 		target.addForeignKeyConstraint(foreignKeyConstraint2);
 
 		// ### value correspondences
@@ -368,8 +366,7 @@ public class SpicyMappingFactory {
 		return keyConstraint;
 	}
 
-	private ForeignKeyConstraint createForeignKeyConstraint(String foreignKey,
-			KeyConstraint key) {
+	private ForeignKeyConstraint createForeignKeyConstraint(String foreignKey, KeyConstraint key) {
 
 		List<String> list = new ArrayList<String>();
 		list.add(foreignKey);
@@ -379,8 +376,7 @@ public class SpicyMappingFactory {
 		List<PathExpression> fk = new ArrayList<PathExpression>();
 		fk.add(path);
 
-		ForeignKeyConstraint foreignKeyConstraint = new ForeignKeyConstraint(
-				key, fk);
+		ForeignKeyConstraint foreignKeyConstraint = new ForeignKeyConstraint(key, fk);
 
 		return foreignKeyConstraint;
 	}
@@ -390,63 +386,45 @@ public class SpicyMappingFactory {
 		// draw 5 arrows
 		ValueCorrespondence wfCorrespondence1, wfCorrespondence2, wfCorrespondence3;
 		if (!createJoinWithConcat) {
-			wfCorrespondence1 = createValueCorrespondence(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
+			wfCorrespondence1 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor",
 					"usCongress.legalEntities.legalEntity.id");
-			wfCorrespondence2 = createValueCorrespondence(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
+			wfCorrespondence2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor",
 					"usCongress.legalEntities.legalEntity.name");
-			wfCorrespondence3 = createValueCorrespondence(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
-					"usCongress.persons.person.worksFor");
+			wfCorrespondence3 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor", "usCongress.persons.person.worksFor");
 		} else {
-			wfCorrespondence1 = createValueCorrespondenceWithConcats(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
+			wfCorrespondence1 = createValueCorrespondenceWithConcats("usCongress.usCongressBiographies.usCongressBiography.worksFor",
 					"usCongress.legalEntities.legalEntity.id");
-			wfCorrespondence3 = createValueCorrespondenceWithConcats(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
+			wfCorrespondence3 = createValueCorrespondenceWithConcats("usCongress.usCongressBiographies.usCongressBiography.worksFor",
 					"usCongress.persons.person.worksFor");
-			wfCorrespondence2 = createValueCorrespondence(
-					"usCongress.usCongressBiographies.usCongressBiography.worksFor",
+			wfCorrespondence2 = createValueCorrespondence("usCongress.usCongressBiographies.usCongressBiography.worksFor",
 					"usCongress.legalEntities.legalEntity.name");
 		}
 
 		ValueCorrespondence nameCorrespondence;
 		if (createNesting) {
-			nameCorrespondence = createValueCorrespondence(
-					"usCongress.usCongressMembers.usCongressMember.name",
+			nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name",
 					"usCongress.persons.person.fullName.nestedName");
 		} else if (createSubstring) {
-			nameCorrespondence = createValueCorrespondenceWithSubstring(
-					"usCongress.usCongressMembers.usCongressMember.name",
-					"usCongress.persons.person.name");
+			nameCorrespondence = createValueCorrespondenceWithSubstring("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.name");
 		} else {
-			nameCorrespondence = createValueCorrespondence(
-					"usCongress.usCongressMembers.usCongressMember.name",
-					"usCongress.persons.person.name");
+			nameCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.name");
 		}
 
 		ValueCorrespondence idCorrespondence;
+		
 		if (createConcat) {
-			idCorrespondence = createValueCorrespondenceWithConcats(
-					"usCongress.usCongressMembers.usCongressMember.id",
-					"usCongress.usCongressMembers.usCongressMember.name",
-					"usCongress.persons.person.id");
-		} else {
-			idCorrespondence = createValueCorrespondence(
-					"usCongress.usCongressMembers.usCongressMember.id",
-					"usCongress.persons.person.id");
+			idCorrespondence = createValueCorrespondenceWithConcats("usCongress.usCongressMembers.usCongressMember.id",
+					"usCongress.usCongressMembers.usCongressMember.name", "usCongress.persons.person.id");
+		}else{
+			idCorrespondence = createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.id", "usCongress.persons.person.id");
 		}
-
+		
 		ValueCorrespondence incomeCorrespondence;
 		if (createSum) {
-			incomeCorrespondence = this.createValueCorrespondenceWithSum(
-					"usCongress.usCongressMembers.usCongressMember.incomes",
+			incomeCorrespondence = this.createValueCorrespondenceWithSum("usCongress.usCongressMembers.usCongressMember.incomes",
 					"usCongress.persons.person.income");
 		} else {
-			incomeCorrespondence = this.createValueCorrespondence(
-					"usCongress.usCongressMembers.usCongressMember.incomes",
-					"usCongress.persons.person.income");
+			incomeCorrespondence = this.createValueCorrespondence("usCongress.usCongressMembers.usCongressMember.incomes", "usCongress.persons.person.income");
 		}
 
 		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
@@ -460,8 +438,7 @@ public class SpicyMappingFactory {
 		return valueCorrespondences;
 	}
 
-	private ValueCorrespondence createValueCorrespondence(String str1,
-			String str2) {
+	private ValueCorrespondence createValueCorrespondence(String str1, String str2) {
 
 		List<String> sourcePathSteps = new ArrayList<String>();
 		List<String> targetPathSteps = new ArrayList<String>();
@@ -472,14 +449,12 @@ public class SpicyMappingFactory {
 		PathExpression sourcePath = new PathExpression(sourcePathSteps);
 		PathExpression targetPath = new PathExpression(targetPathSteps);
 
-		ValueCorrespondence corr = new ValueCorrespondence(sourcePath,
-				targetPath);
+		ValueCorrespondence corr = new ValueCorrespondence(sourcePath, targetPath);
 
 		return corr;
 	}
 
-	private ValueCorrespondence createValueCorrespondenceWithConcats(
-			String str1a, String str1b, String str2) {
+	private ValueCorrespondence createValueCorrespondenceWithConcats(String str1a, String str1b, String str2) {
 
 		List<String> sourcePathStepsA = new ArrayList<String>();
 		List<String> sourcePathStepsB = new ArrayList<String>();
@@ -494,17 +469,21 @@ public class SpicyMappingFactory {
 		List<String> targetPathSteps = new ArrayList<String>();
 		targetPathSteps.add(str2);
 		PathExpression targetPath = new PathExpression(targetPathSteps);
-
+		
+		//TODO allow functions with more than two parameters
 		String dashes = "\"---\"";
-		Expression exp = new Expression(str1a + " +" + dashes + " + " + str1b);
-		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths,
-				targetPath, exp); // 2 source paths, 1 target path
+		Expression exp = new Expression(str1a + " + " + str1b);
+		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths, targetPath, exp); // 2
+																							// source
+																							// paths,
+																							// 1
+																							// target
+																							// path
 
 		return corr;
 	}
 
-	private ValueCorrespondence createValueCorrespondenceWithConcats(
-			String str1a, String str2) {
+	private ValueCorrespondence createValueCorrespondenceWithConcats(String str1a, String str2) {
 
 		List<String> sourcePathStepsA = new ArrayList<String>();
 		sourcePathStepsA.add(str1a);
@@ -518,14 +497,19 @@ public class SpicyMappingFactory {
 
 		String dashes = "\"---\"";
 		Expression exp = new Expression(str1a + " +" + dashes);
-		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths,
-				targetPath, exp); // 1 source path + "---", 1 target path
+		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths, targetPath, exp); // 1
+																							// source
+																							// path
+																							// +
+																							// "---",
+																							// 1
+																							// target
+																							// path
 
 		return corr;
 	}
 
-	private ValueCorrespondence createValueCorrespondenceWithSubstring(
-			String source, String target) {
+	private ValueCorrespondence createValueCorrespondenceWithSubstring(String source, String target) {
 		List<String> sourcePathStepsA = new ArrayList<String>();
 		sourcePathStepsA.add(source);
 		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
@@ -537,14 +521,17 @@ public class SpicyMappingFactory {
 		PathExpression targetPath = new PathExpression(targetPathSteps);
 
 		Expression exp = new Expression("substring(" + source + ", 2)");
-		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths,
-				targetPath, exp); // 2 source paths, 1 target path
+		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths, targetPath, exp); // 2
+																							// source
+																							// paths,
+																							// 1
+																							// target
+																							// path
 
 		return corr;
 	}
 
-	private ValueCorrespondence createValueCorrespondenceWithSum(String source,
-			String target) {
+	private ValueCorrespondence createValueCorrespondenceWithSum(String source, String target) {
 		List<String> sourcePathStepsA = new ArrayList<String>();
 		sourcePathStepsA.add(source);
 		PathExpression sourcePathA = new PathExpression(sourcePathStepsA);
@@ -556,8 +543,12 @@ public class SpicyMappingFactory {
 		PathExpression targetPath = new PathExpression(targetPathSteps);
 
 		Expression exp = new Expression("sum(" + source + ")");
-		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths,
-				targetPath, exp); // 2 source paths, 1 target path
+		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths, targetPath, exp); // 2
+																							// source
+																							// paths,
+																							// 1
+																							// target
+																							// path
 
 		return corr;
 	}

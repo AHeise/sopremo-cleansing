@@ -34,7 +34,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @Name(noun = "map entities from")
 @InputCardinality(min = 1)
-@OutputCardinality(min = 1, max = 1)
+@OutputCardinality(min = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 	protected static final String type = "XML";
@@ -58,6 +58,14 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	private BooleanExpression foreignKeys;
 
 	private ArrayCreation mappingExpression;
+	
+	public SpicyMappingTransformation getSpicyMappingTransformation() {
+		return spicyMappingTransformation;
+	}
+
+	public void setSpicyMappingTransformation(SpicyMappingTransformation spicyMappingTransformation) {
+		this.spicyMappingTransformation = spicyMappingTransformation;
+	}
 
 	@Property
 	@Name(preposition = "where")
@@ -392,7 +400,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				// type MappingValueCorrespondence only stores one single
 				// sourcePath
 				if (mvc.getTargetPath().equals(value)) {
-						MappingValueCorrespondence correspondence = new MappingValueCorrespondence(mvc.getSourcePath(), fk);
+						MappingValueCorrespondence correspondence = new MappingValueCorrespondence(mvc.getSourcePaths().get(0), fk);
 						transitiveValueCorrespondences.add(correspondence);
 				}
 			}

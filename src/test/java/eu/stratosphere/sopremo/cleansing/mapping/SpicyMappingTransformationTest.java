@@ -3,6 +3,7 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 import it.unibas.spicy.model.mapping.MappingTask;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Test;
 
@@ -20,8 +21,11 @@ public class SpicyMappingTransformationTest extends
 
 	@Override
 	protected SpicyMappingTransformation createDefaultInstance(final int index) {
-		return new SpicyMappingTransformation();
-		// setter, e.g. condition
+		SpicyMappingTransformation foo = new SpicyMappingTransformation();
+		Map<String, Integer> inputIndices = new HashMap<String, Integer>();
+		inputIndices.put("key", index);
+		foo.setInputIndex(inputIndices);
+		return foo;
 	}
 
 	private void addDefaultPersonsToPlan(SopremoTestPlan plan) {
@@ -169,13 +173,13 @@ public class SpicyMappingTransformationTest extends
 
 		sopremoPlan
 				.getExpectedOutput(0)
-				.addObject("id", "usCongress1---Andrew Adams", "worksFor",
+				.addObject("id", "usCongress1Andrew Adams", "worksFor",
 						"CompanyXYZ", "name", "Andrew Adams", "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE))
 				.addObject("id", NullNode.getInstance(), "worksFor",
 						"CompanyABC", "name", NullNode.getInstance(), "income",
 						NullNode.getInstance())
-				.addObject("id", "usCongress3---John Doe", "worksFor",
+				.addObject("id", "usCongress3John Doe", "worksFor",
 						"CompanyUVW", "name", "John Doe", "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE));
 
