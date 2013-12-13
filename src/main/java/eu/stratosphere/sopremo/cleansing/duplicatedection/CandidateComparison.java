@@ -23,6 +23,7 @@ import com.google.common.collect.Lists;
 import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
+import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.expressions.AndExpression;
@@ -172,6 +173,20 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 			this.threshold = threshold;
 		}
 
+		/**
+		 * Initializes CandidateComparison.DuplicateRule.
+		 */
+		DuplicateRule() {
+			this(null, 0);
+		}
+
+		@SuppressWarnings("unchecked")
+		public static DuplicateRule valueOf(Similarity<? extends IJsonNode> similarityMeasure, float threshold) {
+			if (similarityMeasure.getExpectedType() == IJsonNode.class)
+				return new DuplicateRule((Similarity<IJsonNode>) similarityMeasure, threshold);
+			return new DuplicateRule(new CoercingSimilarity(similarityMeasure), threshold);
+		}
+
 		public boolean apply(IJsonNode left, IJsonNode right) {
 			return (this.lastSim = this.similarityMeasure.getSimilarity(left, right)) >= this.threshold;
 		}
@@ -215,11 +230,9 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 				return false;
 			DuplicateRule other = (DuplicateRule) obj;
 			return Float.floatToIntBits(this.threshold) == Float.floatToIntBits(other.threshold) &&
-					this.similarityMeasure.equals(other.similarityMeasure);
+				this.similarityMeasure.equals(other.similarityMeasure);
 		}
 
-		
-		
 	}
 
 	private List<DuplicateRule> duplicateRules = new ArrayList<DuplicateRule>();
@@ -471,11 +484,11 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	public void setOmitSmallerPairs(boolean omitSmallerPairs) {
 		this.preselect = createSmallerPairFilter(omitSmallerPairs);
 	}
-	
+
 	public boolean isOmitSmallerPairs() {
 		return this.preselect instanceof OrderedPairsFilter;
 	}
-	
+
 	public CandidateComparison withOmitSmallerPairs(boolean omitSmallerPairs) {
 		setOmitSmallerPairs(omitSmallerPairs);
 		return this;
