@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
@@ -426,8 +425,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(final SopremoModule module,
-			final EvaluationContext context) {
+	public void addImplementation(final SopremoModule module) {
 		Map<String, Integer> inputIndex = new HashMap<String, Integer>();
 		for (int i = 0; i < this.getNumInputs(); i++) {
 			inputIndex.put(entitiesStr + inputPrefixStr + i, i);
@@ -441,6 +439,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 		this.spicyMappingTransformation.setInputIndex(inputIndex);
 		this.spicyMappingTransformation.setOutputIndex(outputIndex);
-		this.spicyMappingTransformation.addImplementation(module, context);
+		this.spicyMappingTransformation.addImplementation(module);
 	}
 }

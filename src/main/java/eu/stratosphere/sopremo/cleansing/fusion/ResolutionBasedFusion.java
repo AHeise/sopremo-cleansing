@@ -31,7 +31,7 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
@@ -147,15 +147,14 @@ public class ResolutionBasedFusion extends CompositeOperator<ResolutionBasedFusi
 	// }
 
 	@Override
-	public void addImplementation(final SopremoModule module,
-			final EvaluationContext context) {
+	public void addImplementation(final SopremoModule module) {
 		if (this.resolutions.isEmpty()) {
 			// short circuit
 			module.getOutput(0).setInput(0, module.getInput(0));
 			return;
 		}
 
-		context.putParameter("weights", this.weights);
+		SopremoEnvironment.getInstance().getEvaluationContext().putParameter("weights", this.weights);
 		final FusionPreprocessingProjection preProceccingProjection = new FusionPreprocessingProjection()
 			.withInputs(module.getInput(0));
 		final Projection normalization = new Projection().withResultProjection(

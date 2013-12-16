@@ -16,6 +16,11 @@ package eu.stratosphere.sopremo.cleansing;
 
 import org.junit.Test;
 
+import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.base.Projection;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.function.FunctionUtil;
+import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 
 /**
@@ -24,7 +29,8 @@ import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 public class TransitiveClosureTest {
 	@Test
 	public void shouldCloseTriad() {
-		SopremoTestPlan testPlan = new SopremoTestPlan(new TransitiveClosure());
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
 
 		testPlan.getInput(0).
 			addArray("a", "b").
@@ -32,7 +38,66 @@ public class TransitiveClosureTest {
 		testPlan.getExpectedOutput(0).
 			addArray("a", "b", "c");
 
-		testPlan.trace();
 		testPlan.run();
+	}
+
+	@Test
+	public void shouldCloseTranstively() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray("a", "b").
+			addArray("b", "c").
+			addArray("c", "d").
+			addArray("d", "e");
+		testPlan.getExpectedOutput(0).
+			addArray("a", "b", "c", "d", "e");
+
+		testPlan.run();
+	}
+
+	@Test
+	public void shouldClose2Components() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray("a", "b").
+			addArray("b", "c").
+			addArray("c", "d").
+			addArray("w", "x").
+			addArray("u", "v").
+			addArray("u", "x");
+		testPlan.getExpectedOutput(0).
+			addArray("a", "b", "c", "d").
+			addArray("u", "v", "w", "x");
+
+		testPlan.run();
+	}
+
+	@Test
+	public void shouldClose2UnorderedComponents() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray("a", "b").
+			addArray("b", "c").
+			addArray("c", "d").
+			addArray("w", "x").
+			addArray("v", "u").
+			addArray("x", "u");
+		testPlan.getExpectedOutput(0).
+			addArray("a", "b", "c", "d").
+			addArray("u", "v", "w", "x");
+
+		testPlan.run();
+	}
+
+	private Operator<?> getSortedResults(TransitiveClosure transitiveClosure) {
+		return new Projection().
+			withInputs(transitiveClosure).
+			withResultProjection(FunctionUtil.createFunctionCall(CoreFunctions.SORT, EvaluationExpression.VALUE));
 	}
 }

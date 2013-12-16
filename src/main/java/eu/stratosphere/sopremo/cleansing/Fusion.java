@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.fusion.CompositeEvidence;
 import eu.stratosphere.sopremo.cleansing.fusion.ResolutionBasedFusion;
 import eu.stratosphere.sopremo.cleansing.fusion.SingleOutputResolution;
@@ -169,9 +168,8 @@ public class Fusion extends CompositeOperator<Fusion> {
 	}
 
 	@Override
-	public void addImplementation(SopremoModule module,
-			EvaluationContext context) {
-		this.resolutionBasedFusion.addImplementation(module, context);
+	public void addImplementation(SopremoModule module) {
+		this.resolutionBasedFusion.addImplementation(module);
 	}
 
 }

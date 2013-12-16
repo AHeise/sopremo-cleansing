@@ -16,7 +16,6 @@ package eu.stratosphere.sopremo.cleansing;
 
 import java.io.IOException;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
@@ -205,7 +204,7 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		module.embed(this.algorithm);
 	}
 

@@ -17,7 +17,6 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 import java.util.ArrayList;
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
 import eu.stratosphere.sopremo.operator.Operator;
@@ -61,7 +60,7 @@ public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDupl
 	protected abstract Operator<?> createPass(List<Operator<?>> inputs, Pass pass, CandidateComparison comparison);
 
 	@Override
-	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection, CandidateComparison comparison, EvaluationContext context) {
+	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection, CandidateComparison comparison) {
 		if (selection.getPasses().size() == 1)
 			return createPass(inputs, selection.getPasses().get(0), comparison);
 	

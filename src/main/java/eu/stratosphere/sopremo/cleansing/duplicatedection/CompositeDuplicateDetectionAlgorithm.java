@@ -16,7 +16,6 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoModule;
@@ -105,7 +104,7 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	 * .sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		final CandidateComparison comparison = this.getComparison().copy();
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
@@ -115,7 +114,7 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 		// duplicate input
 		if (comparison.isInnerSource())
 			inputs.add(inputs.get(0));
-		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison, context));
+		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison));
 	}
 
 	protected boolean requiresEnumeration() {
@@ -123,5 +122,5 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	}
 
 	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison, EvaluationContext context);
+			CandidateComparison comparison);
 }
