@@ -14,10 +14,12 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import javolution.text.TypeFormat;
 import javolution.util.FastList;
 import eu.stratosphere.nephele.configuration.Configuration;
 import eu.stratosphere.pact.common.contract.Order;
@@ -90,6 +92,36 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	public SortedNeighborhood withWindowSize(int windowSize) {
 		setWindowSize(windowSize);
 		return this;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.windowSize;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SortedNeighborhood other = (SortedNeighborhood) obj;
+		return this.windowSize == other.windowSize;
+	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		appendable.append(", window size: ");
+		TypeFormat.format(this.windowSize, appendable);
 	}
 
 	/**

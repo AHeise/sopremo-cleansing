@@ -17,9 +17,7 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.google.common.base.Predicates;
 
@@ -97,8 +95,6 @@ public class CandidateSelection extends AbstractSopremoType {
 	public static class Pass extends AbstractSopremoType {
 
 		private List<EvaluationExpression> blockingKeys = new ArrayList<EvaluationExpression>();
-
-		private Map<String, EvaluationExpression> parameters = new HashMap<String, EvaluationExpression>();
 		
 		/**
 		 * Initializes Pass.

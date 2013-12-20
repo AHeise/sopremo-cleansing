@@ -19,6 +19,13 @@ import java.io.IOException;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
+import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
+import eu.stratosphere.sopremo.io.Sink;
+import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 
 /**
@@ -29,43 +36,72 @@ public class DDParseTest extends MeteorParseTest {
 	@Test
 	public void testNaive() throws IOException {
 		final SopremoPlan actualPlan = parseScript("using cleansing;" +
-			"$persons = read from 'file:///input';" +
+			"$persons = read from 'file:///input.json';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7;" +
-			"write $duplicates to 'file:///output';");
+			"write $duplicates to 'file:///output.json';");
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
-//		final Source input = new Source("file://person.json");
-//		final DuplicateDetection duplicateDetection = new DuplicateDetection().
-//				withInputs(input).
-//				withComparison(new CandidateComparison().withInnerSource(true).)
-//				
-//		final Sink output = new Sink("file://output.json").withInputs(duplicateDetection);
-//		expectedPlan.setSinks(output);
+		final Source input = new Source("file:/input.json");
+		final DuplicateDetection duplicateDetection = new DuplicateDetection().
+			withInputs(input).
+			withComparison(getComparison());
+
+		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
+		expectedPlan.setSinks(output);
 
 		assertPlanEquals(expectedPlan, actualPlan);
+	}
+
+	private CandidateComparison getComparison() {
+		return new CandidateComparison().
+			withInnerSource(true).
+			withRules(CandidateComparison.DuplicateRule.valueOf(new LevenshteinSimilarity(), 0.7f));
 	}
 
 	@Test
 	public void testBlocking() throws IOException {
 		final SopremoPlan actualPlan = parseScript("using cleansing;" +
-			"$persons = read from 'file:///input';" +
+			"$persons = read from 'file:///input.json';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
 			"  partition on $persons.age;" +
-			"write $duplicates to 'file:///output';");
+			"write $duplicates to 'file:///output.json';");
 
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input = new Source("file:/input.json");
+		final DuplicateDetection duplicateDetection = new DuplicateDetection().
+			withImplementation(DuplicateDetectionImplementation.BLOCKING).
+			withInputs(input).
+			withComparison(getComparison());
+
+		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
+		expectedPlan.setSinks(output);
+
+		assertPlanEquals(expectedPlan, actualPlan);
 	}
 
 	@Test
 	public void testSorting() throws IOException {
 		final SopremoPlan actualPlan = parseScript("using cleansing;" +
-			"$persons = read from 'file:///input';" +
+			"$persons = read from 'file:///input.json';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
 			"  sort on $persons.age" +
 			"  with window 20;" +
-			"write $duplicates to 'file:///output';");
+			"write $duplicates to 'file:///output.json';");
 
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input = new Source("file:/input.json");
+		final DuplicateDetection duplicateDetection = new DuplicateDetection().
+			withImplementation(DuplicateDetectionImplementation.SNM).
+			withInputs(input).
+			withComparison(getComparison());
+		((SortedNeighborhood) duplicateDetection.getAlgorithm()).setWindowSize(20);
+
+		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
+		expectedPlan.setSinks(output);
+
+		assertPlanEquals(expectedPlan, actualPlan);
 	}
 }
