@@ -5,11 +5,11 @@ $usCongressBiographies = read from 'MappingITTestUsCongressBiography.json';
 
 $person, $legalEntity  = map entities from $usCongressMembers, $usCongressBiographies where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])
 	as [
-	    group $usCongressMembers by $usCongressMembers.id into {
+	    identified $usCongressMembers by $usCongressMembers.id into {
 	    	name: $usCongressMembers.name,
 	    	worksFor: $legalEntity.id
 	    },
-	    group $usCongressBiographies by $usCongressBiographies.worksFor into {
+	    identified $usCongressBiographies by $usCongressBiographies.worksFor into {
 	       name: $usCongressBiographies.worksFor
 	    }
 	];

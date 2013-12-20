@@ -4,12 +4,9 @@ $originalPersons = read from 'MappingIT3TestOriginalPersons.json';
 
 $persons  = map entities from $originalPersons
 	as [
-	    group $originalPersons by $originalPersons.id into {
-	    	name: $originalPersons.name,
-	    	address: {
-	    		street: $originalPersons.street,
-	    		zip: $originalPersons.zip
-	    	}
+	    identified $originalPersons by $originalPersons.id into {
+	    	name: concat($originalPersons.name, '-')
+	    	
 	    }
 	];
 

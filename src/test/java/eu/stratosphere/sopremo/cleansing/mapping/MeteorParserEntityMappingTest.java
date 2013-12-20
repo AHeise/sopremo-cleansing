@@ -52,22 +52,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		super.initParser(queryParser);
 	}
 
-	private SopremoPlan getExpectedPlanForDefaultInputOutput() {
-
-		final SopremoPlan expectedPlan = new SopremoPlan();
-		final Source input1 = new Source("file://usCongressMembers.json");
-		final Source input2 = new Source("file://usCongressBiographies.json");
-		final EntityMapping extract = new EntityMapping().withInputs(input1,
-				input2);
-		final Sink output1 = new Sink("file://person.json").withInputs(extract
-				.getOutput(0));
-		final Sink output2 = new Sink("file://legalEntity.json")
-				.withInputs(extract.getOutput(1));
-		expectedPlan.setSinks(output1, output2);
-
-		return expectedPlan;
-	}
-
 	private SopremoPlan getExpectedPlanForDefaultInputOutput(
 			MappingInformation mappingInformation) {
 
@@ -1114,7 +1098,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				+ "$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n"
 				+ "as [\n"
 				+ "  identified $usCongressMembers by $usCongressMembers.id_o into {"
-				+ "    name_p: concat($usCongressMembers.name_o, \"---\", $usCongressBiographies.worksFor_o),\n"
+				+ "    name_p: concat($usCongressMembers.name_o, '---', $usCongressBiographies.worksFor_o),\n"
 				+ "    worksFor_p: $usCongressMembers.id_o"
 				+ "  },"
 				+ "  identified $usCongressBiographies by $usCongressBiographies.worksFor_o into {"

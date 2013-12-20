@@ -36,10 +36,9 @@ import org.nfunk.jep.ASTFunNode;
 import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
@@ -87,7 +86,8 @@ public class SpicyCorrespondenceTransformation {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					//TODO
+					//SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen();
 					sopremoSourcePath = ConstantExpression.NULL;
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
@@ -126,13 +126,18 @@ public class SpicyCorrespondenceTransformation {
 	}
 	
 	private EvaluationExpression processJepFunctionNode(Node topNode, List<VariablePathExpression> sourcePaths) {
-		if(topNode instanceof ASTVarNode ) { //usual 1:1-mapping without a function
-			return createFunctionSourcePath( ((ASTVarNode) topNode).getVarName(), sourcePaths ); 
-		} else if(topNode instanceof ASTFunNode ) { //uses a function
-			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths);
-		} else if(topNode instanceof ASTConstant) {
-			return new ConstantExpression( ((ASTConstant) topNode).getValue() );
-		} 
+		if (topNode instanceof ASTVarNode) { // usual 1:1-mapping without a
+												// function
+			return createFunctionSourcePath(((ASTVarNode) topNode).getVarName(), sourcePaths);
+			// TODO remove JepFunctionFactory?!
+		} else if (topNode instanceof FunctionNode) {
+			FunctionNode fnNode = (FunctionNode) topNode;
+			return fnNode.getFunction();
+		} else if (topNode instanceof ASTConstant) {
+			return new ConstantExpression(((ASTConstant) topNode).getValue());
+		} else if (topNode instanceof ASTFunNode) { // uses a function
+			return JepFunctionFactory.create((ASTFunNode) topNode, sourcePaths);
+		}
 		return null;
 	}
 
