@@ -22,7 +22,7 @@ public class EntityMappingIT2 extends MeteorIT {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT2.script"));
 
 		this.client.submit(plan, null, true);
-		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT3TestOutputPersons.json");
+		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT2TestOutputPersons.json");
 
 		IJsonNode[] leArray = getContentsToCheckFrom("src/test/resources/MappingIT2TestOutputCompanies.json");
 
