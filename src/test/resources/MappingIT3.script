@@ -5,8 +5,7 @@ $originalPersons = read from 'MappingIT3TestOriginalPersons.json';
 $persons  = map entities from $originalPersons
 	as [
 	    identified $originalPersons by $originalPersons.id into {
-	    	name: concat($originalPersons.name, '-')
-	    	
+	    	name: concat($originalPersons.name, '-', $originalPersons.id)
 	    }
 	];
 

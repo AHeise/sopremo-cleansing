@@ -9,7 +9,6 @@ import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.function.SopremoFunction;
 
 public class MappingValueCorrespondence extends AbstractSopremoType {
 	private List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
@@ -68,6 +67,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 			appendable.append("sourcePath=");
 			for (SpicyPathExpression spe : this.sourcePaths) {
 				spe.appendAsString(appendable);
+				appendable.append(", ");
 			}
 
 			appendable.append(", ");

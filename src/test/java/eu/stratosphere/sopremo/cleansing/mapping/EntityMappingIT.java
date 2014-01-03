@@ -52,11 +52,11 @@ public class EntityMappingIT extends MeteorIT {
 				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
 				"where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])\n" + 
 				"as [\n" +  
-				"  group $usCongressMembers by $usCongressMembers.id into {" + 
+				"  identified $usCongressMembers by $usCongressMembers.id into {" + 
 				"    name: $usCongressMembers.name,\n" +
 				"    worksFor: $legalEntity.id" + 
 				"  }," + 
-				"  group $usCongressBiographies by $usCongressBiographies.worksFor into {" + 
+				"  identified $usCongressBiographies by $usCongressBiographies.worksFor into {" + 
 				"    name: $usCongressBiographies.worksFor" + 
 				"  }" + 
 				"];\n" + 

@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
@@ -22,7 +23,6 @@ import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
-import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Name;
@@ -421,7 +421,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return joinCondition;
 	}
 
-	private List<MappingValueCorrespondence> createTransitiveValueCorrespondences(List<MappingValueCorrespondence> valueCorrespondences,
+	private List<MappingValueCorrespondence> createTransitiveValueCorrespondences(Set<MappingValueCorrespondence> valueCorrespondences,
 			HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys) {
 
 		List<MappingValueCorrespondence> transitiveValueCorrespondences = new ArrayList<MappingValueCorrespondence>();
