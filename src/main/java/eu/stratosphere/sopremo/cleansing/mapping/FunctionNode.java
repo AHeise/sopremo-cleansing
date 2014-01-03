@@ -2,7 +2,13 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 
 import org.nfunk.jep.ASTFunNode;
 
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
+
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
 
 public class FunctionNode extends ASTFunNode{
 	
@@ -14,6 +20,17 @@ public class FunctionNode extends ASTFunNode{
 	
 	public FunctionNode(int id, FunctionCall function) {
 		super(id);
+		for(EvaluationExpression param : function.getParameters()){
+			
+			param.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
+				public EvaluationExpression apply(EvaluationExpression ee){
+					InputSelection is = (InputSelection) ee;
+					EvaluationExpression oa = new ObjectAccess("v"+is.getIndex()).withInputExpression(is.getInputExpression()); 
+					return oa;
+				}
+			});
+			
+		}
 		this.function = function;
 	}
 	
