@@ -8,7 +8,7 @@ import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.pact.JsonCollector;
-import eu.stratosphere.sopremo.pact.SopremoMatch;
+import eu.stratosphere.sopremo.pact.SopremoJoin;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 @InputCardinality(min = 1, max = 2)
@@ -42,7 +42,7 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 
 	@InputCardinality(2)
 	public static class DirectBlocking extends ElementaryDuplicateDetectionAlgorithm<DirectBlocking> {
-		public static class Implementation extends SopremoMatch {
+		public static class Implementation extends SopremoJoin {
 			private CandidateComparison candidateComparison;
 
 			/*

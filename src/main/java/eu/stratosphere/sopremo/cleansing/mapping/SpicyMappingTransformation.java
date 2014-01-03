@@ -163,7 +163,7 @@ public class SpicyMappingTransformation extends
 	// return fieldSerializer.copy(kryo, original);
 	// }
 	// }
-	
+
 	private MappingInformation mappingInformation = new MappingInformation();
 
 	private transient SopremoModule module;
@@ -502,10 +502,8 @@ public class SpicyMappingTransformation extends
 			arrayRight.add(EntityMappingUtil.convertSpicyPath("1", path));
 		}
 
-		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1)
-			.withCondition(
-				new ElementInSetExpression(arrayLeft,
-					Quantor.EXISTS_NOT_IN, arrayRight));
+		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).withCondition(
+			new ElementInSetExpression(arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -576,13 +574,12 @@ public class SpicyMappingTransformation extends
 		// BinaryOperator.EQUAL, arrayRight)
 		// );
 		//
-		TwoSourceJoin sopremoJoin = new TwoSourceJoin().withInputs(child0,
-			child1).withCondition(
-			new ComparativeExpression(EntityMappingUtil
-				.convertSpicyPath("0", spicyJoin.getJoinCondition()
-					.getFromPaths().get(0)), BinaryOperator.EQUAL,
-				EntityMappingUtil.convertSpicyPath("1", spicyJoin
-					.getJoinCondition().getToPaths().get(0))));
+		TwoSourceJoin sopremoJoin =
+			new TwoSourceJoin().withInputs(child0, child1).
+				withCondition(
+					new ComparativeExpression(EntityMappingUtil.convertSpicyPath("0",
+						spicyJoin.getJoinCondition().getFromPaths().get(0)), BinaryOperator.EQUAL,
+						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))));
 
 		this.reuseJoins.put(spicyJoin.getId(), sopremoJoin);
 		return sopremoJoin;
