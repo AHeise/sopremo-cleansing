@@ -40,11 +40,13 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.base.ArrayUnion;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.TwoSourceJoin;
 import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.base.UnionAll;
+import eu.stratosphere.sopremo.expressions.AggregationExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
@@ -416,6 +418,7 @@ public class SpicyMappingTransformation extends
 
 		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).withCondition(
 			new ElementInSetExpression(arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight));
+		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -492,6 +495,7 @@ public class SpicyMappingTransformation extends
 					new ComparativeExpression(EntityMappingUtil.convertSpicyPath("0",
 						spicyJoin.getJoinCondition().getFromPaths().get(0)), BinaryOperator.EQUAL,
 						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))));
+		sopremoJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(spicyJoin.getId(), sopremoJoin);
 		return sopremoJoin;
