@@ -254,7 +254,7 @@ public class ResolutionBasedFusion extends CompositeOperator<ResolutionBasedFusi
 	@InputCardinality(1)
 	public static class FusionPreprocessingProjection extends ElementaryOperator<FusionPreprocessingProjection> {
 
-		public static class ProjectionStub extends GenericSopremoMap<IArrayNode<IObjectNode>, IObjectNode> {
+		public static class Implementation extends GenericSopremoMap<IArrayNode<IObjectNode>, IObjectNode> {
 			@SuppressWarnings("unchecked")
 			@Override
 			protected void map(final IArrayNode<IObjectNode> values, final JsonCollector<IObjectNode> out) {

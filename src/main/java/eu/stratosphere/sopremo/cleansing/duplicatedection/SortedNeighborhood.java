@@ -21,10 +21,10 @@ import java.util.List;
 
 import javolution.text.TypeFormat;
 import javolution.util.FastList;
-import eu.stratosphere.nephele.configuration.Configuration;
-import eu.stratosphere.pact.common.contract.Order;
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.api.common.operators.Order;
+import eu.stratosphere.configuration.Configuration;
 import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.ContextualProjection;
 import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;

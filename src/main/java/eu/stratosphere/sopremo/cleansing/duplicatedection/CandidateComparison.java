@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 
-import eu.stratosphere.pact.common.stubs.Collector;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
@@ -47,6 +46,7 @@ import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.INumericNode;
+import eu.stratosphere.util.Collector;
 
 /**
  * @author Arvid Heise
