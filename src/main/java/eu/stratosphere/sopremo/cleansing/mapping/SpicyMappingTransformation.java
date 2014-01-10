@@ -214,9 +214,7 @@ public class SpicyMappingTransformation extends
 		// pass on objectCreationForTargets until end of "OnTargetValues" is
 		// reached
 		if (treeElement instanceof it.unibas.spicy.model.algebra.JoinOnTargetValues) {
-			throw new UnsupportedOperationException("JoinOnTargetValues not supported so far...");
-//			return processJoinOnTargetValues(treeElement,
-//				objectCreationForTargets);
+			return processJoinOnTargetValues(treeElement);
 		} else if (treeElement instanceof it.unibas.spicy.model.algebra.DifferenceOnTargetValues) {
 			return processDifferenceOnTargetValues(treeElement,
 					arrayCreationForTargets);
@@ -502,57 +500,56 @@ public class SpicyMappingTransformation extends
 		return sopremoJoin;
 	}
 
-//	private Operator<?> processJoinOnTargetValues(IAlgebraOperator treeElement,
-//			ObjectCreation objectCreationForTargets) {
-//		it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin =
-//			(it.unibas.spicy.model.algebra.JoinOnTargetValues) treeElement;
-//
-//		if (this.reuseProjections.containsKey(spicyJoin.getId()))
-//			return this.reuseProjections.get(spicyJoin.getId());
-//
-//		// rewrite projections left and right with correspondences
-//		ObjectCreation objectCreationForTargetsLeft = this.correspondenceTransformation
-//			.createNestedObjectFromSpicyPaths(spicyJoin
-//				.getLeftCorrespondences());
-//		ObjectCreation objectCreationForTargetsRight = this.correspondenceTransformation
-//			.createNestedObjectFromSpicyPaths(spicyJoin
-//				.getRightCorrespondences());
-//
-//		Operator<?> child0 = processChild(spicyJoin.getChildren().get(0),
-//			objectCreationForTargetsLeft);
-//		Operator<?> child1 = processChild(spicyJoin.getChildren().get(1),
-//			objectCreationForTargetsRight);
-//
-//		// join conditions
-//		// TODO
-//		// ArrayCreation arrayLeft = new ArrayCreation();
-//		// for(VariablePathExpression path :
-//		// spicyJoin.getJoinCondition().getFromPaths()) {
-//		// arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) );
-//		// }
-//		// ArrayCreation arrayRight = new ArrayCreation();
-//		// for(VariablePathExpression path :
-//		// spicyJoin.getJoinCondition().getToPaths()) {
-//		// arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) );
-//		// }
-//		//
-//		// TwoSourceJoin sopremoJoin = new TwoSourceJoin().
-//		// withInputs(child0, child1).
-//		// withCondition(new ComparativeExpression( arrayLeft,
-//		// BinaryOperator.EQUAL, arrayRight)
-//		// );
-//
-//		TwoSourceJoin sopremoJoin = new TwoSourceJoin().withInputs(child0,
-//			child1).withCondition(
-//			new ComparativeExpression(EntityMappingUtil
-//				.convertSpicyPath("0", spicyJoin.getJoinCondition()
-//					.getFromPaths().get(0)), BinaryOperator.EQUAL,
-//				EntityMappingUtil.convertSpicyPath("1", spicyJoin
-//					.getJoinCondition().getToPaths().get(0))));
-//
-//		this.reuseJoins.put(spicyJoin.getId(), sopremoJoin);
-//		return sopremoJoin;
-//	}
+	private Operator<?> processJoinOnTargetValues(IAlgebraOperator treeElement) {
+		it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin =
+			(it.unibas.spicy.model.algebra.JoinOnTargetValues) treeElement;
+
+		if (this.reuseProjections.containsKey(spicyJoin.getId()))
+			return this.reuseProjections.get(spicyJoin.getId());
+
+		// rewrite projections left and right with correspondences
+		ArrayCreation arrayCreationForTargetsLeft = this.correspondenceTransformation
+			.createArrayFromSpicyPaths(spicyJoin
+				.getLeftCorrespondences());
+		ArrayCreation arrayCreationForTargetsRight = this.correspondenceTransformation
+			.createArrayFromSpicyPaths(spicyJoin
+				.getRightCorrespondences());
+
+		Operator<?> child0 = processChild(spicyJoin.getChildren().get(0),
+				arrayCreationForTargetsLeft);
+		Operator<?> child1 = processChild(spicyJoin.getChildren().get(1),
+				arrayCreationForTargetsRight);
+
+		// join conditions
+		// TODO
+		// ArrayCreation arrayLeft = new ArrayCreation();
+		// for(VariablePathExpression path :
+		// spicyJoin.getJoinCondition().getFromPaths()) {
+		// arrayLeft.add( EntityMappingUtil.convertSpicyPath("0", path) );
+		// }
+		// ArrayCreation arrayRight = new ArrayCreation();
+		// for(VariablePathExpression path :
+		// spicyJoin.getJoinCondition().getToPaths()) {
+		// arrayRight.add( EntityMappingUtil.convertSpicyPath("1", path) );
+		// }
+		//
+		// TwoSourceJoin sopremoJoin = new TwoSourceJoin().
+		// withInputs(child0, child1).
+		// withCondition(new ComparativeExpression( arrayLeft,
+		// BinaryOperator.EQUAL, arrayRight)
+		// );
+
+		TwoSourceJoin sopremoJoin = new TwoSourceJoin().withInputs(child0,
+			child1).withCondition(
+			new ComparativeExpression(EntityMappingUtil
+				.convertSpicyPath("0", spicyJoin.getJoinCondition()
+					.getFromPaths().get(0)), BinaryOperator.EQUAL,
+				EntityMappingUtil.convertSpicyPath("1", spicyJoin
+					.getJoinCondition().getToPaths().get(0))));
+
+		this.reuseJoins.put(spicyJoin.getId(), sopremoJoin);
+		return sopremoJoin;
+	}
 
 	private Operator<?> processUnnest(IAlgebraOperator treeElement) {
 		Unnest unnest = (Unnest) treeElement; // e.g.
