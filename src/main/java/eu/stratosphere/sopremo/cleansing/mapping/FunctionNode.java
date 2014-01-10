@@ -5,6 +5,7 @@ import org.nfunk.jep.ASTFunNode;
 import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;
@@ -25,7 +26,7 @@ public class FunctionNode extends ASTFunNode{
 			param.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
 				public EvaluationExpression apply(EvaluationExpression ee){
 					InputSelection is = (InputSelection) ee;
-					EvaluationExpression oa = new ObjectAccess("v"+is.getIndex()).withInputExpression(is.getInputExpression()); 
+					EvaluationExpression oa = new ArrayAccess(is.getIndex()).withInputExpression(is.getInputExpression()); 
 					return oa;
 				}
 			});
