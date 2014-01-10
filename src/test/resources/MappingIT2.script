@@ -2,13 +2,13 @@ using cleansing;
 
 $originalPersons = read from 'MappingIT2TestOriginalPersons.json';
 
-$persons, $companies  = map entities from $originalPersons
-	as [
-	    identified $originalPersons by $originalPersons.id into {
+$persons, $companies  = map entities of $originalPersons
+	into [
+	    entity $originalPersons identified by $originalPersons.id with {
 	    	name: $originalPersons.name,
 	    	worksFor: $companies.id
 	    },
-	    identified $originalPersons by $originalPersons.worksFor into {
+	    entity $originalPersons identified by $originalPersons.worksFor with {
 	       name: $originalPersons.worksFor
 	    }
 	];

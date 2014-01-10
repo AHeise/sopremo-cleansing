@@ -23,7 +23,7 @@ public class EntityMappingTest extends SopremoOperatorTestBase<EntityMapping> {
 
 		identifyOperator1.setResultProjection(mapping1);
 
-		identifyOperator1.setGroupingKey(0, JsonUtil.createPath("0", "id"));
+		identifyOperator1.setGroupingKey(JsonUtil.createPath("0", "id"));
 
 		final ArrayCreation assignments = new ArrayCreation(new NestedOperatorExpression(identifyOperator1));
 
@@ -40,7 +40,7 @@ public class EntityMappingTest extends SopremoOperatorTestBase<EntityMapping> {
 
 			identifyOperator2.setResultProjection(mapping2);
 
-			identifyOperator2.setGroupingKey(0, JsonUtil.createPath("1", "id"));
+			identifyOperator2.setGroupingKey(JsonUtil.createPath("1", "id"));
 
 			assignments.add(new NestedOperatorExpression(identifyOperator2));
 			new Sink("file:///dummy").withInputs(entityMapping.getOutput(1));

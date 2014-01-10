@@ -33,7 +33,7 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 /**
  * @author Claudia Lehmann, Arvid Heise, Fabian Tschirschnitz, Tommy Neubert
  */
-@Name(noun = "map entities from")
+@Name(noun = "map entities of")
 @InputCardinality(min = 1)
 @OutputCardinality(min = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
@@ -130,7 +130,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	 * keys
 	 */
 	@Property
-	@Name(adjective = "as")
+	@Name(adjective = "into")
 	public void setMappingExpression(final ArrayCreation assignment) {
 
 		MappingValueCorrespondence corr = null;
@@ -148,7 +148,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			final NestedOperatorExpression nestedOperator = (NestedOperatorExpression) assignment.get(index);
 			final IdentifyOperator operator = (IdentifyOperator) nestedOperator.getOperator();
 			EvaluationExpression groupingKey = null;
-			groupingKey = operator.getKeyExpression(0);
+			groupingKey = operator.getKeyExpression();
 			final String targetInputStr = EntityMapping.inputPrefixStr + String.valueOf(index); // e.g.
 			// in0
 			final InputSelection sourceInput = groupingKey.findFirst(InputSelection.class); // e.g.
