@@ -355,10 +355,10 @@ public class SpicyMappingTransformation extends
 				.createNestedObjectFromSpicyPaths(st_map, setAlias);
 			//TODO bäääh
 			List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
-			while(currentElements.size()<setAlias.getId()){
+			while(currentElements.size()<=setAlias.getId()){
 				currentElements.add(ConstantExpression.MISSING);
 			}
-			currentElements.add(setAlias.getId(), objectVi);
+			currentElements.set(setAlias.getId(), objectVi);
 			arrayCreationForTargets= new ArrayCreation(currentElements); // e.g.
 																	// v3,
 																	// {target-attributes}
