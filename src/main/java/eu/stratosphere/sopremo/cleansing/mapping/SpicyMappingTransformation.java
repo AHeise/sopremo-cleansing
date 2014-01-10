@@ -455,6 +455,7 @@ public class SpicyMappingTransformation extends
 			.withCondition(
 				new ElementInSetExpression(arrayLeft,
 					Quantor.EXISTS_NOT_IN, arrayRight));
+		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
