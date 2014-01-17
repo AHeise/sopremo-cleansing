@@ -172,8 +172,8 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 	 * @param comparison
 	 *        the comparison to set
 	 */
-	public DuplicateDetection withComparison(CandidateComparison setComparison) {
-		setComparison(setComparison);
+	public DuplicateDetection withComparison(CandidateComparison comparison) {
+		setComparison(comparison);
 		return this;
 	}
 
