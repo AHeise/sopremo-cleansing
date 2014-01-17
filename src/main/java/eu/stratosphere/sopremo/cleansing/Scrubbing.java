@@ -3,7 +3,6 @@ package eu.stratosphere.sopremo.cleansing;
 import java.io.IOException;
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.cleansing.scrubbing.RuleBasedScrubbing;
 import eu.stratosphere.sopremo.cleansing.scrubbing.StatefulConstant;
 import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
@@ -152,9 +151,8 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 	 * eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module,
-			EvaluationContext context) {
-		this.ruleBasedScrubbing.addImplementation(module, context);
+	public void addImplementation(SopremoModule module) {
+		this.ruleBasedScrubbing.addImplementation(module);
 	}
 
 	public Scrubbing withRuleExpression(ObjectCreation ruleExpression) {

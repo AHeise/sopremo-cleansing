@@ -14,7 +14,6 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.ArraySplit;
 import eu.stratosphere.sopremo.base.Difference;
 import eu.stratosphere.sopremo.base.UnionAll;
@@ -36,7 +35,7 @@ public class DuplicateRemoval extends CompositeOperator<DuplicateRemoval> {
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		DuplicateDetection duplicates = new DuplicateDetection().withInputs(module.getInput(0));
 		Fusion fusedDuplicates = new Fusion().withInputs(duplicates);
 		Difference nonDuplicates =
