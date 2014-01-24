@@ -24,7 +24,6 @@ import javolution.util.FastList;
 import eu.stratosphere.api.common.operators.Order;
 import eu.stratosphere.configuration.Configuration;
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.ContextualProjection;
 import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
@@ -156,7 +155,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	 */
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison, EvaluationContext context) {
+			CandidateComparison comparison) {
 		if (!comparison.isInnerSource())
 			throw new UnsupportedOperationException();
 

@@ -51,7 +51,7 @@ public class Blocking extends MultipassDuplicateDetectionAlgorithm {
 			 * eu.stratosphere.sopremo.type.IJsonNode, eu.stratosphere.sopremo.pact.JsonCollector)
 			 */
 			@Override
-			protected void match(IJsonNode left, IJsonNode right, JsonCollector<IJsonNode> collector) {
+			protected void join(IJsonNode left, IJsonNode right, JsonCollector<IJsonNode> collector) {
 				this.candidateComparison.performComparison(left, right, collector);
 			}
 		}

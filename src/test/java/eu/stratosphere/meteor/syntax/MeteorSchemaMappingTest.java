@@ -18,7 +18,6 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.meteor.QueryParser;
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
@@ -234,7 +233,7 @@ public class MeteorSchemaMappingTest extends MeteorParseTest {
 		 * SopremoModule, eu.stratosphere.sopremo.EvaluationContext)
 		 */
 		@Override
-		public void addImplementation(SopremoModule module, EvaluationContext context) {
+		public void addImplementation(SopremoModule module) {
 		}
 	}
 }
