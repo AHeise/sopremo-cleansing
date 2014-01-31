@@ -39,11 +39,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.base.ArrayUnion;
+import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.TwoSourceJoin;
-import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.expressions.AggregationExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
@@ -54,9 +55,14 @@ import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression.Quantor;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
+import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -277,10 +283,10 @@ public class SpicyMappingTransformation extends
 		for (Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping
 			.entrySet()) {
 			int target = targetInput.getKey().getId();
-
+			
 			UnionAll unionAll = new UnionAll().withInputs(targetInput
 				.getValue());
-
+			
 			Selection selectAndTransform = new Selection()
 				.withInputs(unionAll)
 				.withCondition(
@@ -288,13 +294,11 @@ public class SpicyMappingTransformation extends
 				.withResultProjection(new ArrayAccess(target));
 			
 			// duplicate removal
-			/*ObjectCreation result = new ObjectCreation();
-//			for()
-//			result.addMapping("id", FunctionUtil.createFunctionCall(FIRST, new ObjectAccess("worksFor").withInputExpression(new InputSelection(0))));
+			ObjectCreation finalSchema = createTargetSchemaFromOperatorList(targetInput.getValue(), target);
+
 			Grouping grouping = new Grouping().withInputs(selectAndTransform).
 					withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
-					withResultProjection(result);*/
-			Union grouping = new Union().withInputs(selectAndTransform);
+					withResultProjection(finalSchema);
 			
 			finalOperatorsIndex.put(targetInput.getKey(), grouping);
 		}
@@ -310,6 +314,25 @@ public class SpicyMappingTransformation extends
 			this.module.getOutput(i).setInput(0, entry.getValue());
 		}
 		SopremoUtil.LOG.info("generated schema mapping module:\n " + this.module);
+	}
+
+	private  ObjectCreation createTargetSchemaFromOperatorList(List<Operator<?>> operatorList, int targetIndex) {
+		ObjectCreation finalSchema = new ObjectCreation();
+		for(Operator<?> op : operatorList){
+			ElementaryOperator<?> eop = (ElementaryOperator<?>)op;
+			ArrayCreation aa = eop.getResultProjection().findFirst(ArrayCreation.class);
+			if (aa != null) {
+				ObjectCreation oc = (ObjectCreation) aa.get(targetIndex);
+				if (oc != null) {
+					for (Mapping<?> mapping : oc.getMappings()) {
+						String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
+						finalSchema.addMapping(fieldName,
+								FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+					}
+				}
+			}
+		}
+		return finalSchema;
 	}
 
 	private List<SetAlias> getTargetsOfTGD(Nest nest) {

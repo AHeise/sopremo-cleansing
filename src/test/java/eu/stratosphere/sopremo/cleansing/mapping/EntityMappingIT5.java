@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class EntityMappingIT5 extends MeteorIT {
 
 	@Test
-	public void testSuccessfulExecutionA() throws IOException {
+	public void testGroupingForMapping1() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5a.script"));
 
 		this.client.submit(plan, null, true);
@@ -32,7 +32,7 @@ public class EntityMappingIT5 extends MeteorIT {
 	}
 	
 	@Test
-	public void testSuccessfulExecutionB() throws IOException {
+	public void testGroupingForMapping2() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5b.script"));
 
 		this.client.submit(plan, null, true);
