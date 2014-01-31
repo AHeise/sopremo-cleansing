@@ -276,7 +276,7 @@ public class SpicyMappingTransformation extends
 		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
 		for (Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping
 			.entrySet()) {
-			int sourceId = targetInput.getKey().getId();
+			int target = targetInput.getKey().getId();
 
 			UnionAll unionAll = new UnionAll().withInputs(targetInput
 				.getValue());
@@ -284,12 +284,19 @@ public class SpicyMappingTransformation extends
 			Selection selectAndTransform = new Selection()
 				.withInputs(unionAll)
 				.withCondition(
-					new UnaryExpression(new ArrayAccess(sourceId)))
-				.withResultProjection(new ArrayAccess(sourceId));
-
-			Union union = new Union().withInputs(selectAndTransform); // duplicate
-																		// removal
-			finalOperatorsIndex.put(targetInput.getKey(), union);
+					new UnaryExpression(new ArrayAccess(target)))
+				.withResultProjection(new ArrayAccess(target));
+			
+			// duplicate removal
+			/*ObjectCreation result = new ObjectCreation();
+//			for()
+//			result.addMapping("id", FunctionUtil.createFunctionCall(FIRST, new ObjectAccess("worksFor").withInputExpression(new InputSelection(0))));
+			Grouping grouping = new Grouping().withInputs(selectAndTransform).
+					withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
+					withResultProjection(result);*/
+			Union grouping = new Union().withInputs(selectAndTransform);
+			
+			finalOperatorsIndex.put(targetInput.getKey(), grouping);
 		}
 
 		for (Entry<SetAlias, Operator<?>> entry : finalOperatorsIndex
