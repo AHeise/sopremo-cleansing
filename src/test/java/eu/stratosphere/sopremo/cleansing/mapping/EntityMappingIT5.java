@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class EntityMappingIT5 extends MeteorIT {
 
 	@Test
-	public void testGroupingForMapping1() throws IOException {
+	public void testGroupingForEmptyMapping() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5a.script"));
 
 		this.client.submit(plan, null, true);
@@ -32,7 +32,7 @@ public class EntityMappingIT5 extends MeteorIT {
 	}
 	
 	@Test
-	public void testGroupingForMapping2() throws IOException {
+	public void testGroupingForMappingTakeFirst() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5b.script"));
 
 		this.client.submit(plan, null, true);
@@ -43,5 +43,19 @@ public class EntityMappingIT5 extends MeteorIT {
 		this.testServer.checkContentsOf("MappingIT5TestOutputPersons.json", personsArray);
 
 		this.testServer.checkContentsOf("MappingIT5bTestOutputCompanies.json", leArray);
+	}
+	
+	@Test
+	public void testGroupingForMappingTakeAll() throws IOException {
+		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5c.script"));
+
+		this.client.submit(plan, null, true);
+		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT5TestOutputPersons.json");
+
+		IJsonNode[] leArray = getContentsToCheckFrom("src/test/resources/MappingIT5cTestOutputCompanies.json");
+
+		this.testServer.checkContentsOf("MappingIT5TestOutputPersons.json", personsArray);
+
+		this.testServer.checkContentsOf("MappingIT5cTestOutputCompanies.json", leArray);
 	}
 }
