@@ -16,6 +16,8 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	private SpicyPathExpression targetPath;
 
 	private FunctionCall function;
+	
+	private boolean takeAllValuesOfGrouping;
 
 	MappingValueCorrespondence() {
 	}
@@ -54,6 +56,14 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	public FunctionCall getFunction() {
 		return function;
 	}
+	
+	public void setTakeAllValuesOfGrouping(boolean takeAllValuesOfGrouping) {
+		this.takeAllValuesOfGrouping = takeAllValuesOfGrouping;
+	}
+
+	public boolean isTakeAllValuesOfGrouping() {
+		return takeAllValuesOfGrouping;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -69,7 +79,6 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 				spe.appendAsString(appendable);
 				appendable.append(", ");
 			}
-
 			appendable.append(", ");
 		}
 		if (this.targetPath != null) {
@@ -80,6 +89,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 			appendable.append(", function=");
 			this.function.appendAsString(appendable);
 		}
+		appendable.append(", takeAllValuesOfGrouping="+takeAllValuesOfGrouping);
 		appendable.append("]");
 	}
 
@@ -89,6 +99,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		int result = 1;
 		result = prime * result + ((function == null) ? 0 : function.hashCode());
 		result = prime * result + ((sourcePaths == null) ? 0 : sourcePaths.hashCode());
+		result = prime * result + (takeAllValuesOfGrouping ? 1231 : 1237);
 		result = prime * result + ((targetPath == null) ? 0 : targetPath.hashCode());
 		return result;
 	}
@@ -111,6 +122,8 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 			if (other.sourcePaths != null)
 				return false;
 		} else if (!sourcePaths.equals(other.sourcePaths))
+			return false;
+		if (takeAllValuesOfGrouping != other.takeAllValuesOfGrouping)
 			return false;
 		if (targetPath == null) {
 			if (other.targetPath != null)

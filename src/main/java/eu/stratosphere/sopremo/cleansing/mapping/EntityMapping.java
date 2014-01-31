@@ -48,6 +48,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	protected static final String entityStr = "entity_";
 
 	protected static final String idStr = "id";
+	
+	protected static final String separator = ".";
 
 	protected static INode dummy = new LeafNode("dummy");
 
@@ -189,7 +191,9 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 					handleFunctionCall(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr);
 				} else if (expr instanceof ObjectAccess) {
 					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
-				} else {
+				} else if (expr instanceof ArrayCreation) {
+					handleArrayCreation(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ArrayCreation) expr);
+				}else {
 					throw new IllegalArgumentException("No valid value correspondence was given!");
 				}
 			}
@@ -204,9 +208,25 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 	}
 
-	private void handleObjectAccess(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
-			final Integer targetInputIndex, final String targetNesting, final Mapping<?> mapping, final ObjectAccess expr, boolean inFunctionCall) {
+	private void handleArrayCreation(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys2, MappingInformation mappingInformation,
+			Integer targetInputIndex, String targetNesting, Mapping<?> mapping, ArrayCreation expr) {
 		MappingValueCorrespondence corr;
+		if(expr.size()!=1){
+			throw new IllegalArgumentException("Inside an ArrayCreation only one Element is allowed for Mapping.");
+		}
+		if (expr.get(0) instanceof FunctionCall) {
+			corr = handleFunctionCall(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr.get(0));
+		} else if (expr.get(0) instanceof ObjectAccess) {
+			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr.get(0), false);
+		}else {
+			throw new IllegalArgumentException("No valid value correspondence was given!");
+		}
+		corr.setTakeAllValuesOfGrouping(true);
+	}
+
+	private MappingValueCorrespondence handleObjectAccess(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
+			final Integer targetInputIndex, final String targetNesting, final Mapping<?> mapping, final ObjectAccess expr, boolean skipValueCorrespondence) {
+		MappingValueCorrespondence corr = null;
 		String sourceNesting;
 
 		final EvaluationExpression sourceInputExpr = expr.getInputExpression();
@@ -251,7 +271,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			// create value correspondence: source attribute ->
 			// target
 			// attribute
-			if (!inFunctionCall) {
+			if (!skipValueCorrespondence) {
 				corr = this.createValueCorrespondence(sourceNesting, sourceExpr, targetNesting, targetExpr);
 				mappingInformation.getValueCorrespondences().add(corr);
 			}
@@ -275,18 +295,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			if (joinSource.contains(fkSource.toString()))
 				this.extendSourceSchemaBy(joinAttr, fkSource);
 		}
+		return corr;
 	}
 
-	private void handleFunctionCall(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
+	private MappingValueCorrespondence handleFunctionCall(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
 			final Integer targetInputIndex, final String targetNesting, final Mapping<?> mapping, FunctionCall functionCall) {
 		List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
 		for (EvaluationExpression ee : functionCall.getParameters()) {
 			handleFunctionParameter(foreignKeys, targetInputIndex, targetNesting, mappingInformation, mapping, ee, sourcePaths);
 		}
 		this.extendTargetSchemaBy(mapping.getTarget().toString(), targetInputIndex);
-		MappingValueCorrespondence corr;
-		corr = this.createValueCorrespondence(sourcePaths, targetNesting, mapping.getTarget().toString(), functionCall);
+		MappingValueCorrespondence corr = this.createValueCorrespondence(sourcePaths, targetNesting, mapping.getTarget().toString(), functionCall);
 		mappingInformation.getValueCorrespondences().add(corr);
+		return corr;
 	}
 
 	private void handleFunctionParameter(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, Integer targetInputIndex, String targetNesting, MappingInformation mappingInformation, Mapping<?> mapping, EvaluationExpression ee, List<SpicyPathExpression> sourcePaths) {
@@ -357,8 +378,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 
 	private String createNesting(final String type, final Integer inputIndex) {
-
-		final String separator = ".";
 
 		final StringBuilder builder = new StringBuilder().append(type).append(separator).append(EntityMapping.entitiesStr).append(inputIndex)
 				.append(separator).append(EntityMapping.entityStr).append(inputIndex);

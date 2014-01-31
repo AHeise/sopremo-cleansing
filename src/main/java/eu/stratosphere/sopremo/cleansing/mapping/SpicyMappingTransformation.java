@@ -61,6 +61,7 @@ import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
+import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -280,6 +281,7 @@ public class SpicyMappingTransformation extends
 
 		// build operator for every target using the input
 		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
+		int outputIndex = 0;
 		for (Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping
 			.entrySet()) {
 			int target = targetInput.getKey().getId();
@@ -294,13 +296,14 @@ public class SpicyMappingTransformation extends
 				.withResultProjection(new ArrayAccess(target));
 			
 			// duplicate removal
-			ObjectCreation finalSchema = createTargetSchemaFromOperatorList(targetInput.getValue(), target);
+			ObjectCreation finalSchema = createTargetSchemaFromOperatorList(targetInput.getValue(), target, outputIndex);
 
 			Grouping grouping = new Grouping().withInputs(selectAndTransform).
 					withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
 					withResultProjection(finalSchema);
 			
 			finalOperatorsIndex.put(targetInput.getKey(), grouping);
+			outputIndex++;
 		}
 
 		for (Entry<SetAlias, Operator<?>> entry : finalOperatorsIndex
@@ -316,7 +319,7 @@ public class SpicyMappingTransformation extends
 		SopremoUtil.LOG.info("generated schema mapping module:\n " + this.module);
 	}
 
-	private  ObjectCreation createTargetSchemaFromOperatorList(List<Operator<?>> operatorList, int targetIndex) {
+	private  ObjectCreation createTargetSchemaFromOperatorList(List<Operator<?>> operatorList, int targetIndex, int outputIndex) {
 		ObjectCreation finalSchema = new ObjectCreation();
 		for(Operator<?> op : operatorList){
 			ElementaryOperator<?> eop = (ElementaryOperator<?>)op;
@@ -326,8 +329,23 @@ public class SpicyMappingTransformation extends
 				if (oc != null) {
 					for (Mapping<?> mapping : oc.getMappings()) {
 						String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
-						finalSchema.addMapping(fieldName,
-								FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr + EntityMapping.separator + EntityMapping.entitiesStr
+								+ outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
+						
+						boolean takeAll = false;
+						for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
+							if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
+								takeAll = true;
+								break;
+							}
+						}
+						if(takeAll){
+							finalSchema.addMapping(fieldName,
+									FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						}else{
+							finalSchema.addMapping(fieldName,
+									FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						}
 					}
 				}
 			}
