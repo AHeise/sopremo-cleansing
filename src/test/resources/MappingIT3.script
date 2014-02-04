@@ -1,15 +1,12 @@
 using cleansing;
 
 $originalPersons = read from 'MappingIT3TestOriginalPersons.json';
+$originalJobs = read from 'MappingIT3TestOriginalJobs.json';
 
-$persons  = map entities from $originalPersons
-	as [
-	    group $originalPersons by $originalPersons.id into {
-	    	name: $originalPersons.name,
-	    	address: {
-	    		street: $originalPersons.street,
-	    		zip: $originalPersons.zip
-	    	}
+$persons  = map entities of $originalPersons, $originalJobs where ($originalPersons.job[1:1] == $originalJobs.id[1:1])
+	into [
+	    entity $originalPersons identified by $originalPersons.id with {
+	    	name: concat_strings($originalPersons.name, '-', $originalJobs.title)
 	    }
 	];
 

@@ -44,19 +44,19 @@ public class EntityMappingIT extends MeteorIT {
 	}
 	
 	@Test
-	public void testNaive() throws IOException {
+	public void testSimpleMapping() throws IOException {
 
 		String query = "using cleansing;"+
 				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-				"$person, $legalEntity = map entities from $usCongressMembers, $usCongressBiographies\n" +
+				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
 				"where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])\n" + 
-				"as [\n" +  
-				"  group $usCongressMembers by $usCongressMembers.id into {" + 
+				"into [\n" +  
+				"  entity $usCongressMembers identified by $usCongressMembers.id with {" + 
 				"    name: $usCongressMembers.name,\n" +
 				"    worksFor: $legalEntity.id" + 
 				"  }," + 
-				"  group $usCongressBiographies by $usCongressBiographies.worksFor into {" + 
+				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
 				"    name: $usCongressBiographies.worksFor" + 
 				"  }" + 
 				"];\n" + 

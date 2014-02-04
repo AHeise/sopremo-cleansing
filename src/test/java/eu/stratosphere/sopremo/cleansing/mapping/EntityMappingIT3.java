@@ -3,7 +3,6 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -18,14 +17,13 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 
 public class EntityMappingIT3 extends MeteorIT {
 
-	@Test @Ignore
-	public void testSuccessfulExecution() throws IOException {
+	@Test
+	public void testMappingWithFunction() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT3.script"));
-
 		this.client.submit(plan, null, true);
 
 		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT3TestOutputPersons.json");
 
-		this.testServer.checkContentsOf("MappingIT2TestOutputPersons.json", personsArray);
+		this.testServer.checkContentsOf("MappingIT3TestOutputPersons.json", personsArray);
 	}
 }

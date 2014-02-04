@@ -4,9 +4,13 @@ import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 /**
  * This class holds all relevant mapping information defined in a meteor script
@@ -24,7 +28,7 @@ public class MappingInformation extends AbstractSopremoType {
 
 	private MappingDataSource target = new MappingDataSource();
 
-	private List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
+	private Set<MappingValueCorrespondence> valueCorrespondences = new HashSet<MappingValueCorrespondence>();
 
 	MappingInformation() {
 
@@ -63,7 +67,7 @@ public class MappingInformation extends AbstractSopremoType {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
-	public List<MappingValueCorrespondence> getValueCorrespondences() {
+	public Set<MappingValueCorrespondence> getValueCorrespondences() {
 		return this.valueCorrespondences;
 	}
 
@@ -76,7 +80,7 @@ public class MappingInformation extends AbstractSopremoType {
 	}
 
 	public void setValueCorrespondences(
-			List<MappingValueCorrespondence> valueCorrespondences) {
+			Set<MappingValueCorrespondence> valueCorrespondences) {
 		this.valueCorrespondences = valueCorrespondences;
 	}
 
@@ -150,7 +154,5 @@ public class MappingInformation extends AbstractSopremoType {
 			return false;
 		return true;
 	}
-
 	
-
 }

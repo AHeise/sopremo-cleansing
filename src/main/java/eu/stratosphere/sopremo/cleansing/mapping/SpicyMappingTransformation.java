@@ -39,20 +39,31 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.base.ArrayUnion;
+import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.TwoSourceJoin;
-import eu.stratosphere.sopremo.base.Union;
 import eu.stratosphere.sopremo.base.UnionAll;
+import eu.stratosphere.sopremo.expressions.AggregationExpression;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression.Quantor;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
+import eu.stratosphere.sopremo.function.FunctionUtil;
+import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -70,99 +81,6 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
 // @DefaultSerializer(value = SpicyMappingTransformation.SpicyMappingTransformationSerializer.class)
 public class SpicyMappingTransformation extends
 		CompositeOperator<SpicyMappingTransformation> {
-	// public static class SpicyMappingTransformationSerializer extends
-	// Serializer<SpicyMappingTransformation> {
-	// FieldSerializer<SpicyMappingTransformation> fieldSerializer;
-	//
-	// public SpicyMappingTransformationSerializer(Kryo kryo,
-	// Class<SpicyMappingTransformation> type) {
-	// fieldSerializer = new FieldSerializer<SpicyMappingTransformation>(
-	// kryo, type);
-	//
-	// Registration registrySequenceNode = kryo.register(
-	// SequenceNode.class, new FieldSerializer<SequenceNode>(kryo,
-	// SequenceNode.class));
-	// registrySequenceNode.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new SequenceNode("");
-	// }
-	// });
-	// Registration registrySetNode = kryo.register(SetNode.class,
-	// new FieldSerializer<SetNode>(kryo, SetNode.class));
-	// registrySetNode.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new SetNode("");
-	// }
-	// });
-	// Registration registryAttributeNode = kryo.register(
-	// AttributeNode.class, new FieldSerializer<AttributeNode>(
-	// kryo, AttributeNode.class));
-	// registryAttributeNode.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new AttributeNode("");
-	// }
-	// });
-	// Registration registryLeafNode = kryo.register(LeafNode.class,
-	// new FieldSerializer<LeafNode>(kryo, LeafNode.class));
-	// registryLeafNode.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new LeafNode("");
-	// }
-	// });
-	// Registration registryKeyConstraint = kryo.register(
-	// KeyConstraint.class, new FieldSerializer<KeyConstraint>(
-	// kryo, KeyConstraint.class));
-	// registryKeyConstraint.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new KeyConstraint(new PathExpression(
-	// new ArrayList<String>()));
-	// }
-	// });
-	// Registration registryPathExpression = kryo.register(
-	// PathExpression.class, new FieldSerializer<PathExpression>(
-	// kryo, PathExpression.class));
-	// registryPathExpression.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new PathExpression(new ArrayList<String>());
-	// }
-	// });
-	// Registration registryDataSource = kryo.register(DataSource.class,
-	// new FieldSerializer<DataSource>(kryo, DataSource.class));
-	// registryDataSource.setInstantiator(new ObjectInstantiator() {
-	// @Override
-	// public Object newInstance() {
-	// return new DataSource("", null);
-	// }
-	// });
-	// }
-	//
-	// @Override
-	// public void write(Kryo kryo,
-	// com.esotericsoftware.kryo.io.Output output,
-	// SpicyMappingTransformation object) {
-	// fieldSerializer.write(kryo, output, object);
-	// }
-	//
-	// @Override
-	// public SpicyMappingTransformation read(Kryo kryo, Input input,
-	// Class<SpicyMappingTransformation> type) {
-	// return fieldSerializer.read(kryo, input, type);
-	//
-	// }
-	//
-	// @Override
-	// public SpicyMappingTransformation copy(Kryo kryo,
-	// SpicyMappingTransformation original) {
-	// return fieldSerializer.copy(kryo, original);
-	// }
-	// }
-
 	private MappingInformation mappingInformation = new MappingInformation();
 
 	private transient SopremoModule module;
@@ -181,7 +99,7 @@ public class SpicyMappingTransformation extends
 	private transient HashMap<String, FORule> tgdIndex = null;
 
 	// reuse sources
-	private transient HashMap<String, Projection> reuseProjections = null;
+	private transient HashMap<Integer, Projection> reuseProjections = null;
 
 	// to reuse joins and antijoins by their spicy id
 	private transient HashMap<String, TwoSourceJoin> reuseJoins = null;
@@ -263,7 +181,7 @@ public class SpicyMappingTransformation extends
 		// init
 		this.module = module;
 		this.correspondenceTransformation = new SpicyCorrespondenceTransformation();
-		this.reuseProjections = new HashMap<String, Projection>(this.inputIndex.size());
+		this.reuseProjections = new HashMap<Integer, Projection>(this.inputIndex.size());
 		this.reuseJoins = new HashMap<String, TwoSourceJoin>(4);
 		this.tgdIndex = new HashMap<String, FORule>();
 		for (FORule tgd : this.mappingTask.getMappingData().getRewrittenRules()) {
@@ -298,18 +216,17 @@ public class SpicyMappingTransformation extends
 	}
 
 	private Operator<?> processChild(IAlgebraOperator treeElement,
-			ObjectCreation objectCreationForTargets) {
+			ArrayCreation arrayCreationForTargets) {
 		// pass on objectCreationForTargets until end of "OnTargetValues" is
 		// reached
 		if (treeElement instanceof it.unibas.spicy.model.algebra.JoinOnTargetValues) {
-			return processJoinOnTargetValues(treeElement,
-				objectCreationForTargets);
+			return processJoinOnTargetValues(treeElement);
 		} else if (treeElement instanceof it.unibas.spicy.model.algebra.DifferenceOnTargetValues) {
 			return processDifferenceOnTargetValues(treeElement,
-				objectCreationForTargets);
+					arrayCreationForTargets);
 		} else if (treeElement instanceof SelectOnTargetValues) {
 			return processSelectOnTargetValues(treeElement,
-				objectCreationForTargets);
+					arrayCreationForTargets);
 		}
 
 		// projection is included the first time that no "onTargetValues" is
@@ -327,15 +244,15 @@ public class SpicyMappingTransformation extends
 					+ treeElement);
 		}
 
-		if (objectCreationForTargets != null) {
+		if (arrayCreationForTargets != null) {
 			Projection tgd = new Projection().withResultProjection(
-				objectCreationForTargets).withInputs(child);
+					arrayCreationForTargets).withInputs(child);
 			return tgd; // don't save tgd-projection for reuse
 		} else {
 			return child;
 		}
 	}
-
+	
 	private void processTree(IAlgebraOperator treeRoot) {
 		Compose compose = (Compose) treeRoot;
 		Merge merge = (Merge) compose.getChildren().get(0); // always one merge
@@ -364,25 +281,29 @@ public class SpicyMappingTransformation extends
 
 		// build operator for every target using the input
 		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
+		int outputIndex = 0;
 		for (Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping
 			.entrySet()) {
-			String targetName = EntityMappingUtil.getSourceId(targetInput
-				.getKey());
-
+			int target = targetInput.getKey().getId();
+			
 			UnionAll unionAll = new UnionAll().withInputs(targetInput
 				.getValue());
-
+			
 			Selection selectAndTransform = new Selection()
 				.withInputs(unionAll)
 				.withCondition(
-					new UnaryExpression(new ObjectAccess(targetName)))
-				.withResultProjection(
-					new ObjectCreation(new ObjectCreation.CopyFields(
-						createPath(targetName))));
+					new UnaryExpression(new ArrayAccess(target)))
+				.withResultProjection(new ArrayAccess(target));
+			
+			// duplicate removal
+			ObjectCreation finalSchema = createTargetSchemaFromOperatorList(targetInput.getValue(), target, outputIndex);
 
-			Union union = new Union().withInputs(selectAndTransform); // duplicate
-																		// removal
-			finalOperatorsIndex.put(targetInput.getKey(), union);
+			Grouping grouping = new Grouping().withInputs(selectAndTransform).
+					withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
+					withResultProjection(finalSchema);
+			
+			finalOperatorsIndex.put(targetInput.getKey(), grouping);
+			outputIndex++;
 		}
 
 		for (Entry<SetAlias, Operator<?>> entry : finalOperatorsIndex
@@ -396,6 +317,40 @@ public class SpicyMappingTransformation extends
 			this.module.getOutput(i).setInput(0, entry.getValue());
 		}
 		SopremoUtil.LOG.info("generated schema mapping module:\n " + this.module);
+	}
+
+	private  ObjectCreation createTargetSchemaFromOperatorList(List<Operator<?>> operatorList, int targetIndex, int outputIndex) {
+		ObjectCreation finalSchema = new ObjectCreation();
+		for(Operator<?> op : operatorList){
+			ElementaryOperator<?> eop = (ElementaryOperator<?>)op;
+			ArrayCreation aa = eop.getResultProjection().findFirst(ArrayCreation.class);
+			if (aa != null) {
+				ObjectCreation oc = (ObjectCreation) aa.get(targetIndex);
+				if (oc != null) {
+					for (Mapping<?> mapping : oc.getMappings()) {
+						String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
+						SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr + EntityMapping.separator + EntityMapping.entitiesStr
+								+ outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
+						
+						boolean takeAll = false;
+						for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
+							if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
+								takeAll = true;
+								break;
+							}
+						}
+						if(takeAll){
+							finalSchema.addMapping(fieldName,
+									FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						}else{
+							finalSchema.addMapping(fieldName,
+									FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						}
+					}
+				}
+			}
+		}
+		return finalSchema;
 	}
 
 	private List<SetAlias> getTargetsOfTGD(Nest nest) {
@@ -413,7 +368,7 @@ public class SpicyMappingTransformation extends
 		 * "worksFor_old")) // );
 		 */
 
-		ObjectCreation objectCreationForTargets = new ObjectCreation();
+		ArrayCreation arrayCreationForTargets = new ArrayCreation();
 		TGDGeneratorsMap generators = tgd.getGenerators();
 		for (SetAlias setAlias : getTargetsOfTGD(tgd)) { // generate
 															// source-to-target
@@ -443,8 +398,13 @@ public class SpicyMappingTransformation extends
 			}
 			ObjectCreation objectVi = this.correspondenceTransformation
 				.createNestedObjectFromSpicyPaths(st_map, setAlias);
-			objectCreationForTargets.addMapping(
-				EntityMappingUtil.getSourceId(setAlias), objectVi); // e.g.
+			//TODO bäääh
+			List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
+			while(currentElements.size()<=setAlias.getId()){
+				currentElements.add(ConstantExpression.MISSING);
+			}
+			currentElements.set(setAlias.getId(), objectVi);
+			arrayCreationForTargets= new ArrayCreation(currentElements); // e.g.
 																	// v3,
 																	// {target-attributes}
 		}
@@ -458,7 +418,7 @@ public class SpicyMappingTransformation extends
 																// projection,
 																// too
 		Operator<?> child = processChild(project.getChildren().get(0),
-			objectCreationForTargets); // tgd
+				arrayCreationForTargets); // tgd
 										// needs
 										// to
 										// be
@@ -475,9 +435,9 @@ public class SpicyMappingTransformation extends
 
 	private Operator<?> processSelectOnTargetValues(
 			IAlgebraOperator treeElement,
-			ObjectCreation objectCreationForTargets) {
+			ArrayCreation arrayCreationForTargets) {
 		Operator<?> child = processChild(treeElement.getChildren().get(0),
-			objectCreationForTargets); // nothin
+			arrayCreationForTargets); // nothin
 										// todo
 		return child;
 	}
@@ -503,6 +463,7 @@ public class SpicyMappingTransformation extends
 
 		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).withCondition(
 			new ElementInSetExpression(arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight));
+		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -510,7 +471,7 @@ public class SpicyMappingTransformation extends
 
 	private Operator<?> processDifferenceOnTargetValues(
 			IAlgebraOperator treeElement,
-			ObjectCreation objectCreationForTargets) {
+			ArrayCreation arrayCreationForTargets) {
 		it.unibas.spicy.model.algebra.DifferenceOnTargetValues difference =
 			(it.unibas.spicy.model.algebra.DifferenceOnTargetValues) treeElement;
 
@@ -518,9 +479,9 @@ public class SpicyMappingTransformation extends
 			return this.reuseProjections.get(difference.getId());
 
 		Operator<?> child0 = processChild(difference.getChildren().get(0),
-			objectCreationForTargets);
+			arrayCreationForTargets);
 		Operator<?> child1 = processChild(difference.getChildren().get(1),
-			objectCreationForTargets);
+			arrayCreationForTargets);
 
 		// antijoin condition
 		ArrayCreation arrayLeft = new ArrayCreation();
@@ -539,6 +500,7 @@ public class SpicyMappingTransformation extends
 			.withCondition(
 				new ElementInSetExpression(arrayLeft,
 					Quantor.EXISTS_NOT_IN, arrayRight));
+		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
@@ -579,13 +541,13 @@ public class SpicyMappingTransformation extends
 					new ComparativeExpression(EntityMappingUtil.convertSpicyPath("0",
 						spicyJoin.getJoinCondition().getFromPaths().get(0)), BinaryOperator.EQUAL,
 						EntityMappingUtil.convertSpicyPath("1", spicyJoin.getJoinCondition().getToPaths().get(0))));
+		sopremoJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
 		this.reuseJoins.put(spicyJoin.getId(), sopremoJoin);
 		return sopremoJoin;
 	}
 
-	private Operator<?> processJoinOnTargetValues(IAlgebraOperator treeElement,
-			ObjectCreation objectCreationForTargets) {
+	private Operator<?> processJoinOnTargetValues(IAlgebraOperator treeElement) {
 		it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin =
 			(it.unibas.spicy.model.algebra.JoinOnTargetValues) treeElement;
 
@@ -593,17 +555,17 @@ public class SpicyMappingTransformation extends
 			return this.reuseProjections.get(spicyJoin.getId());
 
 		// rewrite projections left and right with correspondences
-		ObjectCreation objectCreationForTargetsLeft = this.correspondenceTransformation
-			.createNestedObjectFromSpicyPaths(spicyJoin
+		ArrayCreation arrayCreationForTargetsLeft = this.correspondenceTransformation
+			.createArrayFromSpicyPaths(spicyJoin
 				.getLeftCorrespondences());
-		ObjectCreation objectCreationForTargetsRight = this.correspondenceTransformation
-			.createNestedObjectFromSpicyPaths(spicyJoin
+		ArrayCreation arrayCreationForTargetsRight = this.correspondenceTransformation
+			.createArrayFromSpicyPaths(spicyJoin
 				.getRightCorrespondences());
 
 		Operator<?> child0 = processChild(spicyJoin.getChildren().get(0),
-			objectCreationForTargetsLeft);
+				arrayCreationForTargetsLeft);
 		Operator<?> child1 = processChild(spicyJoin.getChildren().get(1),
-			objectCreationForTargetsRight);
+				arrayCreationForTargetsRight);
 
 		// join conditions
 		// TODO
@@ -640,7 +602,7 @@ public class SpicyMappingTransformation extends
 		Unnest unnest = (Unnest) treeElement; // e.g.
 												// "unnest v0 in usCongress.usCongressMembers"
 		SetAlias sourceAlias = unnest.getVariable();
-		String sourceId = EntityMappingUtil.getSourceId(sourceAlias); // v0
+		int sourceId = sourceAlias.getId(); // v0
 		String sourceName = sourceAlias.getBindingPathExpression()
 			.getLastStep(); // usCongressMembers
 
@@ -650,9 +612,13 @@ public class SpicyMappingTransformation extends
 		// TODO unnest can have selectionCondition and provenanceCondition,
 		// research: what is this
 
-		Projection projection = new Projection().withResultProjection(
-			new ObjectCreation().addMapping(sourceId, new ObjectCreation(
-				new ObjectCreation.CopyFields(createPath("0")))))
+		ArrayCreation positionEncodedArray = new ArrayCreation();
+		for(int i = 0; i<sourceId; i++){
+			positionEncodedArray.add(ConstantExpression.MISSING);
+		}
+		positionEncodedArray.add(new ObjectCreation(new ObjectCreation.CopyFields(createPath("0"))));
+		
+		Projection projection = new Projection().withResultProjection(positionEncodedArray)
 			.withInputs(this.module.getInput(this.inputIndex.get(sourceName)));
 
 		SopremoUtil.LOG.debug("Source Projection from: " + unnest.toString()
