@@ -180,7 +180,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 				final EvaluationExpression expr = mapping.getExpression();
 
-				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression) {
+				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression || expr instanceof ObjectCreation) {
 					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, expr);
 				} else if (expr instanceof ObjectAccess) {
 					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
