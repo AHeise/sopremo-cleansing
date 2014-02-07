@@ -10,4 +10,4 @@ $persons  = map entities of $originalPersons, $originalJobs where ($originalPers
 	    }
 	];
 
-write $persons to 'file:///tmp/MappingIT3TestOutputPersons.json';
+write $persons to 'file:///tmp/MappingIT3aTestOutputPersons.json';
