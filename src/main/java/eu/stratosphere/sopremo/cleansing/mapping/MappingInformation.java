@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Set;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 /**
  * This class holds all relevant mapping information defined in a meteor script

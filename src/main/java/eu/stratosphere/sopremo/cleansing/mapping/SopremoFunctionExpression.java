@@ -7,7 +7,7 @@ import java.lang.reflect.Field;
 
 import org.nfunk.jep.JEP;
 
-import eu.stratosphere.sopremo.expressions.FunctionCall;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 public class SopremoFunctionExpression extends Expression{
 	
@@ -16,7 +16,7 @@ public class SopremoFunctionExpression extends Expression{
 		throw new UnsupportedOperationException("calling constructor with expression string is forbidden on "+SopremoFunctionExpression.class);
 	}
 	
-	public SopremoFunctionExpression(FunctionCall function){
+	public SopremoFunctionExpression(EvaluationExpression expr){
 		super("sum(1,1)");
 		
 		Field topNodeField = null;
@@ -31,7 +31,7 @@ public class SopremoFunctionExpression extends Expression{
 		}
 		
 		topNodeField.setAccessible(true);
-		FunctionNode fnNode = new FunctionNode(0, function);
+		FunctionNode fnNode = new FunctionNode(0, expr);
 		
 		try {
 			topNodeField.set(this.getJepExpression(), fnNode);

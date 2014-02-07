@@ -7,6 +7,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -30,10 +31,10 @@ public class EntityMappingIT3 extends MeteorIT {
 	@Test
 	public void testMappingWithArrayAccess() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT3b.script"));
+		SopremoUtil.trace();
 		this.client.submit(plan, null, true);
 
 		IJsonNode[] personsArray = getContentsToCheckFrom("src/test/resources/MappingIT3bTestOutputPersons.json");
-
 		this.testServer.checkContentsOf("MappingIT3bTestOutputPersons.json", personsArray);
 	}
 	

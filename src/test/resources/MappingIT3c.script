@@ -7,7 +7,7 @@ $persons  = map entities of $originalPersons, $originalJobs where ($originalPers
 	into [
 	    entity $originalPersons identified by $originalPersons.id with {
 	    	name: concat_strings($originalPersons.name, '-', $originalJobs.title),
-	    	firstJob: $originalPersons.pastJobs[0] ? : null
+	    	firstJob: $originalPersons.pastJobs[1] ? : null
 	    }
 	];
 

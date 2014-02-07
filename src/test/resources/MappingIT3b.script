@@ -11,4 +11,4 @@ $persons  = map entities of $originalPersons, $originalJobs where ($originalPers
 	    }
 	];
 
-write $persons to 'file:///tmp/MappingIT3cTestOutputPersons.json';
+write $persons to 'file:///tmp/MappingIT3bTestOutputPersons.json';
