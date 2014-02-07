@@ -61,7 +61,6 @@ import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
-import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -73,7 +72,7 @@ import eu.stratosphere.sopremo.pact.SopremoUtil;
 /**
  * Reads a Spicy MappingTask and create Sopremo Operator
  * 
- * @author Andrina Mascher, Arvid Heise
+ * @author Andrina Mascher, Arvid Heise, Fabian Tschirschnitz, Tommy Neubert
  */
 @InputCardinality(2)
 // TODO arbitrary in-/output
