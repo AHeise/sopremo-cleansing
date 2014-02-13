@@ -20,6 +20,7 @@ import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
@@ -177,24 +178,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			final List<Mapping<?>> mappings = resultProjection.getMappings();
 			for (final Mapping<?> mapping : mappings) { // mapping level
 
-				final EvaluationExpression expr = mapping.getExpression(); // TODO:
-																			// can
-																			// be
-																			// expression
-																			// or
-																			// ObjectCreation
-																			// for
-																			// nested
-																			// object
+				final EvaluationExpression expr = mapping.getExpression();
 
-				if (expr instanceof FunctionCall) {
-					handleFunctionCall(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr);
+				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression) {
+					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, expr);
 				} else if (expr instanceof ObjectAccess) {
 					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
 				} else if (expr instanceof ArrayCreation) {
 					handleArrayCreation(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ArrayCreation) expr);
 				}else {
-					throw new IllegalArgumentException("No valid value correspondence was given!");
+					throw new IllegalArgumentException("No valid value correspondence was given: "+expr);
 				}
 			}
 		}
@@ -214,8 +207,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		if(expr.size()!=1){
 			throw new IllegalArgumentException("Inside an ArrayCreation only one Element is allowed for Mapping.");
 		}
-		if (expr.get(0) instanceof FunctionCall) {
-			corr = handleFunctionCall(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr.get(0));
+		if (expr.get(0) instanceof FunctionCall || expr.get(0) instanceof ArrayAccess || expr.get(0) instanceof TernaryExpression) {
+			corr = handleSpecialExpression(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr.get(0));
 		} else if (expr.get(0) instanceof ObjectAccess) {
 			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr.get(0), false);
 		}else {
@@ -298,29 +291,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		return corr;
 	}
 
-	private MappingValueCorrespondence handleFunctionCall(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
-			final Integer targetInputIndex, final String targetNesting, final Mapping<?> mapping, FunctionCall functionCall) {
+	private MappingValueCorrespondence handleSpecialExpression(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, final MappingInformation mappingInformation,
+			final Integer targetInputIndex, final String targetNesting, final Mapping<?> mapping, EvaluationExpression expr) {
 		List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
-		for (EvaluationExpression ee : functionCall.getParameters()) {
-			handleFunctionParameter(foreignKeys, targetInputIndex, targetNesting, mappingInformation, mapping, ee, sourcePaths);
+		for (ObjectAccess oa : expr.findAll(ObjectAccess.class)) {
+			handleObjectAccessInSpecialExpression(foreignKeys, targetInputIndex, targetNesting, mappingInformation, mapping, oa, sourcePaths);
 		}
 		this.extendTargetSchemaBy(mapping.getTarget().toString(), targetInputIndex);
-		MappingValueCorrespondence corr = this.createValueCorrespondence(sourcePaths, targetNesting, mapping.getTarget().toString(), functionCall);
+		MappingValueCorrespondence corr = this.createValueCorrespondence(sourcePaths, targetNesting, mapping.getTarget().toString(), expr);
 		mappingInformation.getValueCorrespondences().add(corr);
 		return corr;
 	}
-
-	private void handleFunctionParameter(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, Integer targetInputIndex, String targetNesting, MappingInformation mappingInformation, Mapping<?> mapping, EvaluationExpression ee, List<SpicyPathExpression> sourcePaths) {
-		if (ee instanceof ObjectAccess) {
-			handleObjectAccessInFunctionCall(foreignKeys, targetInputIndex,targetNesting, mappingInformation, mapping, (ObjectAccess) ee, sourcePaths);
-		} else if (ee instanceof ArrayCreation) {
-				for (EvaluationExpression aee : (ArrayCreation) ee) {
-					handleFunctionParameter(foreignKeys, targetInputIndex,targetNesting, mappingInformation, mapping, aee, sourcePaths);
-				}
-		}
-	}
 	
-	private void handleObjectAccessInFunctionCall(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, Integer targetInputIndex, String targetNesting, MappingInformation mappingInformation, Mapping<?> mapping, ObjectAccess oa, List<SpicyPathExpression> sourcePaths) {
+	private void handleObjectAccessInSpecialExpression(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys, Integer targetInputIndex, String targetNesting, MappingInformation mappingInformation, Mapping<?> mapping, ObjectAccess oa, List<SpicyPathExpression> sourcePaths) {
 		String sourceNesting;
 		handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, oa, true);
 		
@@ -394,10 +377,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	}
 	
 	private MappingValueCorrespondence createValueCorrespondence(final List<SpicyPathExpression> sourcePaths, final String targetNesting,
-			final String targetAttr, FunctionCall function) {
+			final String targetAttr, EvaluationExpression expr) {
 		final SpicyPathExpression targetSteps = new SpicyPathExpression(targetNesting, targetAttr);
 
-		return new MappingValueCorrespondence(sourcePaths, targetSteps, function);
+		return new MappingValueCorrespondence(sourcePaths, targetSteps, expr);
 	}
 
 	private MappingJoinCondition createJoinCondition(final String sourceNesting, final String sourceAttr, final String targetNesting, final String targetAttr) {

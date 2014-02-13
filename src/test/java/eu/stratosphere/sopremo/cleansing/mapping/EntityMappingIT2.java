@@ -10,7 +10,7 @@ import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * This test shall introduce new design concepts for the EntityMapping operator.
+ * This test shall test mapping from one source to two entities.
  * @author fabian
  *
  */

@@ -150,7 +150,7 @@ public class SpicyCorrespondenceTransformation {
 			// TODO remove JepFunctionFactory?!
 		} else if (topNode instanceof FunctionNode) {
 			FunctionNode fnNode = (FunctionNode) topNode;
-			return fnNode.getFunction();
+			return fnNode.getExpression();
 		} else if (topNode instanceof ASTConstant) {
 			return new ConstantExpression(((ASTConstant) topNode).getValue());
 		} else if (topNode instanceof ASTFunNode) { // uses a function

@@ -1,0 +1,14 @@
+using cleansing;
+
+$originalPersons = read from 'MappingIT3TestOriginalPersons.json';
+$originalJobs = read from 'MappingIT3TestOriginalJobs.json';
+
+$persons  = map entities of $originalPersons, $originalJobs where ($originalPersons.job[1:1] == $originalJobs.id[1:1])
+	into [
+	    entity $originalPersons identified by $originalPersons.id with {
+	    	name: concat_strings($originalPersons.name, '-', $originalJobs.title),
+	    	firstJob: $originalPersons.pastJobs[0]
+	    }
+	];
+
+write $persons to 'file:///tmp/MappingIT3bTestOutputPersons.json';
