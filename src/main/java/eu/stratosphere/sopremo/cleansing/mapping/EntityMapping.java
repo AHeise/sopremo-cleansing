@@ -309,9 +309,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		
 		final EvaluationExpression sourceInputExpr = oa.getInputExpression();
 		final String sourceExpr = oa.getField();
-		
-		sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
-		sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+
+		//TODO this does not work as expected
+		if (sourceInputExpr.toString().contains(this.getClass().getSimpleName())) {
+			Integer fkSource =  Integer.parseInt(sourceInputExpr.toString().replaceAll("[^0-9]", ""));
+			sourceNesting = this.createNesting(EntityMapping.targetStr, fkSource);
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}else{
+			sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}
 	}
 
 	/**

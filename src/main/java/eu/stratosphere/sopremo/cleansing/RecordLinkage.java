@@ -34,6 +34,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @InputCardinality(2)
 @OutputCardinality(1)
+@Name(verb = "link records")
 public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
 	private CandidateSelection candidateSelection = new CandidateSelection();
