@@ -10,40 +10,63 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
 
-public class FunctionNode extends ASTFunNode{
-	
-	private FunctionCall function;
+public class FunctionNode extends ASTFunNode {
+
+	private EvaluationExpression expr;
 
 	public FunctionNode(int id) {
 		super(id);
 	}
-	
-	public FunctionNode(int id, FunctionCall function) {
+
+	public FunctionNode(int id, EvaluationExpression expr) {
 		super(id);
-		for(EvaluationExpression param : function.getParameters()){
-			
-			param.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
-				public EvaluationExpression apply(EvaluationExpression ee){
+		if (expr instanceof FunctionCall) {
+			for (EvaluationExpression param : ((FunctionCall) expr).getParameters()) {
+
+				param.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
+					public EvaluationExpression apply(EvaluationExpression ee) {
+						InputSelection is = (InputSelection) ee;
+						EvaluationExpression oa = new ArrayAccess(is.getIndex()).withInputExpression(is.getInputExpression());
+						return oa;
+					}
+				});
+
+			}
+		} else if (expr instanceof ArrayAccess) {
+			((ArrayAccess) expr).replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
+				public EvaluationExpression apply(EvaluationExpression ee) {
 					InputSelection is = (InputSelection) ee;
-					EvaluationExpression oa = new ArrayAccess(is.getIndex()).withInputExpression(is.getInputExpression()); 
+					EvaluationExpression oa = new ArrayAccess(is.getIndex()).withInputExpression(is.getInputExpression());
 					return oa;
 				}
 			});
-			
 		}
-		this.function = function;
+
+		else if (expr instanceof TernaryExpression) {
+			for (ObjectAccess oa : expr.findAll(ObjectAccess.class)) {
+				oa.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
+					public EvaluationExpression apply(EvaluationExpression ee) {
+						InputSelection is = (InputSelection) ee;
+						EvaluationExpression oa = new ArrayAccess(is.getIndex()).withInputExpression(is.getInputExpression());
+						return oa;
+					}
+				});
+			}
+		}
+		this.expr = expr;
 	}
-	
-	public FunctionCall getFunction() {
-		return function;
+
+	public EvaluationExpression getExpression() {
+		return expr;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((function == null) ? 0 : function.hashCode());
+		result = prime * result + ((expr == null) ? 0 : expr.hashCode());
 		return result;
 	}
 
@@ -56,10 +79,10 @@ public class FunctionNode extends ASTFunNode{
 		if (getClass() != obj.getClass())
 			return false;
 		FunctionNode other = (FunctionNode) obj;
-		if (function == null) {
-			if (other.function != null)
+		if (expr == null) {
+			if (other.expr != null)
 				return false;
-		} else if (!function.equals(other.function))
+		} else if (!expr.equals(other.expr))
 			return false;
 		return true;
 	}

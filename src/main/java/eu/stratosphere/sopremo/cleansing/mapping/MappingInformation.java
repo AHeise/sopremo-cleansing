@@ -152,7 +152,5 @@ public class MappingInformation extends AbstractSopremoType {
 			return false;
 		return true;
 	}
-
 	
-
 }

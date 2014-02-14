@@ -44,7 +44,7 @@ public class EntityMappingIT extends MeteorIT {
 	}
 	
 	@Test
-	public void testNaive() throws IOException {
+	public void testSimpleMapping() throws IOException {
 
 		String query = "using cleansing;"+
 				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +

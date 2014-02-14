@@ -34,6 +34,7 @@ import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.IterativeOperator;
 import eu.stratosphere.sopremo.operator.IterativeSopremoModule;
 import eu.stratosphere.sopremo.operator.JsonStream;
+import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -42,6 +43,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  */
 @InputCardinality(1)
 @OutputCardinality(1)
+@Name(verb="cluster transitively")
 public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 
 	/**

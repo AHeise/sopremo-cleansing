@@ -8,14 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 public class MappingValueCorrespondence extends AbstractSopremoType {
 	private List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
 
 	private SpicyPathExpression targetPath;
 
-	private FunctionCall function;
+	private EvaluationExpression expr;
+	
+	private boolean takeAllValuesOfGrouping;
 
 	MappingValueCorrespondence() {
 	}
@@ -25,10 +27,10 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		this.targetPath = targetPath;
 	}
 
-	public MappingValueCorrespondence(List<SpicyPathExpression> sourcePaths, SpicyPathExpression targetPath, FunctionCall function) {
+	public MappingValueCorrespondence(List<SpicyPathExpression> sourcePaths, SpicyPathExpression targetPath, EvaluationExpression expr) {
 		this.sourcePaths = sourcePaths;
 		this.targetPath = targetPath;
-		this.function = function;
+		this.expr = expr;
 	}
 
 	public ValueCorrespondence generateSpicyType() {
@@ -36,10 +38,10 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		for (SpicyPathExpression spe : this.sourcePaths) {
 			spicyTypeSourcesPathes.add(spe.getPathExpression());
 		}
-		if (this.function == null) {
+		if (this.expr == null) {
 			return new ValueCorrespondence(spicyTypeSourcesPathes.get(0), this.targetPath.getPathExpression());
 		} else {
-			return new ValueCorrespondence(spicyTypeSourcesPathes, this.targetPath.getPathExpression(), new SopremoFunctionExpression(this.function));
+			return new ValueCorrespondence(spicyTypeSourcesPathes, this.targetPath.getPathExpression(), new SopremoFunctionExpression(this.expr));
 		}
 	}
 
@@ -51,8 +53,16 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		return this.targetPath;
 	}
 
-	public FunctionCall getFunction() {
-		return function;
+	public EvaluationExpression getExpression() {
+		return expr;
+	}
+	
+	public void setTakeAllValuesOfGrouping(boolean takeAllValuesOfGrouping) {
+		this.takeAllValuesOfGrouping = takeAllValuesOfGrouping;
+	}
+
+	public boolean isTakeAllValuesOfGrouping() {
+		return takeAllValuesOfGrouping;
 	}
 
 	/*
@@ -69,17 +79,17 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 				spe.appendAsString(appendable);
 				appendable.append(", ");
 			}
-
 			appendable.append(", ");
 		}
 		if (this.targetPath != null) {
 			appendable.append("targetPath=");
 			this.targetPath.appendAsString(appendable);
 		}
-		if (this.function != null) {
+		if (this.expr != null) {
 			appendable.append(", function=");
-			this.function.appendAsString(appendable);
+			this.expr.appendAsString(appendable);
 		}
+		appendable.append(", takeAllValuesOfGrouping="+takeAllValuesOfGrouping);
 		appendable.append("]");
 	}
 
@@ -87,8 +97,9 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((function == null) ? 0 : function.hashCode());
+		result = prime * result + ((expr == null) ? 0 : expr.hashCode());
 		result = prime * result + ((sourcePaths == null) ? 0 : sourcePaths.hashCode());
+		result = prime * result + (takeAllValuesOfGrouping ? 1231 : 1237);
 		result = prime * result + ((targetPath == null) ? 0 : targetPath.hashCode());
 		return result;
 	}
@@ -102,15 +113,17 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		MappingValueCorrespondence other = (MappingValueCorrespondence) obj;
-		if (function == null) {
-			if (other.function != null)
+		if (expr == null) {
+			if (other.expr != null)
 				return false;
-		} else if (!function.equals(other.function))
+		} else if (!expr.equals(other.expr))
 			return false;
 		if (sourcePaths == null) {
 			if (other.sourcePaths != null)
 				return false;
 		} else if (!sourcePaths.equals(other.sourcePaths))
+			return false;
+		if (takeAllValuesOfGrouping != other.takeAllValuesOfGrouping)
 			return false;
 		if (targetPath == null) {
 			if (other.targetPath != null)

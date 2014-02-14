@@ -10,7 +10,7 @@ import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * This test shall introduce new design concepts for the EntityMapping operator.
+ * This test shall test mapping from one source to two entities.
  * @author fabian
  *
  */
@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class EntityMappingIT2 extends MeteorIT {
 
 	@Test
-	public void testSuccessfulExecution() throws IOException {
+	public void testMappingFromOneSourceToTwoEntities() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT2.script"));
 
 		this.client.submit(plan, null, true);
