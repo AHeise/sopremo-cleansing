@@ -180,7 +180,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 				final EvaluationExpression expr = mapping.getExpression();
 
-				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression) {
+				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression || expr instanceof ObjectCreation) {
 					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, expr);
 				} else if (expr instanceof ObjectAccess) {
 					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
@@ -309,9 +309,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		
 		final EvaluationExpression sourceInputExpr = oa.getInputExpression();
 		final String sourceExpr = oa.getField();
-		
-		sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
-		sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+
+		//TODO this does not work as expected
+		if (sourceInputExpr.toString().contains(this.getClass().getSimpleName())) {
+			Integer fkSource =  Integer.parseInt(sourceInputExpr.toString().replaceAll("[^0-9]", ""));
+			sourceNesting = this.createNesting(EntityMapping.targetStr, fkSource);
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}else{
+			sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}
 	}
 
 	/**
