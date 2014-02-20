@@ -46,7 +46,7 @@ public class EntityMappingIT5 extends MeteorIT {
 	}
 	
 	@Test
-	public void testGroupingForMappingTakeAll() throws IOException {
+	public void testGroupingForMappingTakeAllandConstantExpressions() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT5c.script"));
 
 		this.client.submit(plan, null, true);

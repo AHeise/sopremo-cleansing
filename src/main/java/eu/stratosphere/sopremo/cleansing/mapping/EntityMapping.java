@@ -11,17 +11,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.stratosphere.sopremo.expressions.AggregationExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -180,14 +183,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 				final EvaluationExpression expr = mapping.getExpression();
 
-				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression || expr instanceof ObjectCreation) {
-					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, expr);
+				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression
+						|| expr instanceof ObjectCreation || expr instanceof ArrayCreation
+						|| expr instanceof ConstantExpression) {
+					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							expr);
 				} else if (expr instanceof ObjectAccess) {
-					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
-				} else if (expr instanceof ArrayCreation) {
-					handleArrayCreation(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ArrayCreation) expr);
-				}else {
-					throw new IllegalArgumentException("No valid value correspondence was given: "+expr);
+					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							(ObjectAccess) expr, false);
+				} else if (expr instanceof AggregationExpression) {
+					handleTakeAll(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							(AggregationExpression) expr);
+				} else {
+					throw new IllegalArgumentException("No valid value correspondence was given: " + expr);
 				}
 			}
 		}
@@ -201,18 +209,22 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 	}
 
-	private void handleArrayCreation(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys2, MappingInformation mappingInformation,
-			Integer targetInputIndex, String targetNesting, Mapping<?> mapping, ArrayCreation expr) {
+	private void handleTakeAll(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys2, MappingInformation mappingInformation,
+			Integer targetInputIndex, String targetNesting, Mapping<?> mapping, AggregationExpression aggregationExpression) {
 		MappingValueCorrespondence corr;
-		if(expr.size()!=1){
-			throw new IllegalArgumentException("Inside an ArrayCreation only one Element is allowed for Mapping.");
-		}
-		if (expr.get(0) instanceof FunctionCall || expr.get(0) instanceof ArrayAccess || expr.get(0) instanceof TernaryExpression) {
-			corr = handleSpecialExpression(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr.get(0));
-		} else if (expr.get(0) instanceof ObjectAccess) {
-			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr.get(0), false);
-		}else {
-			throw new IllegalArgumentException("No valid value correspondence was given!");
+		
+		EvaluationExpression expr = ((ArrayProjection)aggregationExpression.getInputExpression()).getInputExpression();
+		
+		if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression
+				|| expr instanceof ObjectCreation || expr instanceof ArrayCreation
+				|| expr instanceof ConstantExpression) {
+			corr = handleSpecialExpression(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping,
+					expr);
+		} else if (expr instanceof ObjectAccess) {
+			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping,
+					(ObjectAccess) expr, false);
+		}  else {
+			throw new IllegalArgumentException("No valid value correspondence was given: " + expr);
 		}
 		corr.setTakeAllValuesOfGrouping(true);
 	}

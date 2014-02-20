@@ -9,7 +9,11 @@ $persons, $companies  = map entities of $originalPersons
 	    	worksFor: $companies.id
 	    }, 
 	    entity $companies identified by $originalPersons.worksFor with {
-		    _id: [$originalPersons.id]
+		    _id: all($originalPersons.id),
+		    foo : "bar",
+	    	number: 1,
+	    	nullValue: null,
+	    	object: {key : "value", original: $originalPersons.id}
 		}
 	];
 
