@@ -6,6 +6,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;
@@ -45,7 +46,7 @@ public class FunctionNode extends ASTFunNode {
 			});
 		}
 
-		else if (expr instanceof TernaryExpression || expr instanceof ObjectCreation) {
+		else if (expr instanceof TernaryExpression || expr instanceof ObjectCreation || expr instanceof ArrayCreation) {
 			for (ObjectAccess oa : expr.findAll(ObjectAccess.class)) {
 				oa.replace(Predicates.instanceOf(InputSelection.class), new Function<EvaluationExpression, EvaluationExpression>() {
 					public EvaluationExpression apply(EvaluationExpression ee) {

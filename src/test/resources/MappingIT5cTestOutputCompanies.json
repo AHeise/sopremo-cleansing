@@ -1,4 +1,4 @@
-[{"id":"Arvid Inc.", "_id":[2], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value"}},
-{"id":"HPI", "_id":[1], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value"}},
-{"id":"SAP", "_id":[3,4], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value"}}]
+[{"id":"Arvid Inc.", "_id":[2], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value", "original": 2}},
+{"id":"HPI", "_id":[1], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value", "original": 1}},
+{"id":"SAP", "_id":[3,4], "foo" : "bar", "number": 1,	"nullValue": null, "object": {"key" : "value", "original": 3}}]
 
