@@ -16,6 +16,7 @@ import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
@@ -74,28 +75,31 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Property
 	@Name(preposition = "where")
 	public void setForeignKeys(final BooleanExpression assignment) {
+		if (assignment instanceof ComparativeExpression) {
+			handleSourceJoinExpression((ComparativeExpression) assignment);
+		} else {
 
-		final List<Integer> inputs = new ArrayList<Integer>();
-		final HashMap<Integer, String> joinParts = new HashMap<Integer, String>();
-
-		for (final ChildIterator it = assignment.iterator(); it.hasNext();) {
-			final EvaluationExpression expr = it.next();
-			// just one key relationship
-			if (expr instanceof ArrayAccess) {
-				evaluateKeyRelationship(inputs, joinParts, expr);
-				// multiple AND-connected relationships
-			} else {
-				for (final ChildIterator it2 = expr.iterator(); it2.hasNext();) {
-					evaluateKeyRelationship(inputs, joinParts, it2.next());
-				}
+			for (final ChildIterator it = assignment.iterator(); it.hasNext();) {
+				final EvaluationExpression expr = it.next();
+				final ComparativeExpression condidition = (ComparativeExpression) expr;
+				handleSourceJoinExpression((ComparativeExpression) condidition);
 			}
 		}
+	}
 
-		final String sourceNesting = this.createNesting(EntityMapping.sourceStr, inputs.get(0));
-		final String targetNesting = this.createNesting(EntityMapping.sourceStr, inputs.get(1));
+	private void handleSourceJoinExpression(ComparativeExpression condidition) {
+		final ObjectAccess inputExpr1 = condidition.getExpr1().findFirst(ObjectAccess.class);
+		final ObjectAccess inputExpr2 = condidition.getExpr2().findFirst(ObjectAccess.class);
+		final InputSelection input1 = inputExpr1.findFirst(InputSelection.class);
+		final InputSelection input2 = inputExpr2.findFirst(InputSelection.class);
+		final String attr1 = inputExpr1.getField();
+		final String attr2 = inputExpr2.getField();
 
-		this.spicyMappingTransformation.getMappingInformation().setSourceJoinCondition(
-				this.createJoinCondition(sourceNesting, joinParts.get(inputs.get(0)), targetNesting, joinParts.get(inputs.get(1))));
+		final String sourceNesting = this.createNesting(EntityMapping.sourceStr, input1.getIndex());
+		final String targetNesting = this.createNesting(EntityMapping.sourceStr, input2.getIndex());
+
+		this.spicyMappingTransformation.getMappingInformation().getSourceJoinConditions()
+				.add(this.createJoinCondition(sourceNesting, attr1, targetNesting, attr2));
 	}
 
 	/**
@@ -110,15 +114,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	public EntityMapping withForeignKeys(final BooleanExpression assignment) {
 		setForeignKeys(assignment);
 		return this;
-	}
-
-	private void evaluateKeyRelationship(final List<Integer> inputs, final HashMap<Integer, String> joinParts, final EvaluationExpression expr) {
-		final ArrayAccess arrayAccess = (ArrayAccess) expr;
-		final ObjectAccess inputExpr = (ObjectAccess) arrayAccess.getInputExpression();
-		final InputSelection input = inputExpr.findFirst(InputSelection.class);
-		final String attr = inputExpr.getField();
-		inputs.add(input.getIndex());
-		joinParts.put(input.getIndex(), attr);
 	}
 
 	public EntityMapping withMappingExpression(final ArrayCreation assignment) {
@@ -286,16 +281,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		this.extendTargetSchemaBy(targetExpr, targetInputIndex);
 
 		// add join attributes to source schema
-		if (mappingInformation.getSourceJoinCondition() != null) {
+		for(MappingJoinCondition cond : mappingInformation.getSourceJoinConditions()) {
 
-			String joinAttr = mappingInformation.getSourceJoinCondition().getFromPaths().get(0).getLastStep();
-			String joinSource = mappingInformation.getSourceJoinCondition().getFromPaths().get(0).getFirstStep();
+			String joinAttr = cond.getFromPaths().get(0).getLastStep();
+			String joinSource = cond.getFromPaths().get(0).getFirstStep();
 
 			if (joinSource.contains(fkSource.toString()))
 				this.extendSourceSchemaBy(joinAttr, fkSource);
 
-			joinAttr = mappingInformation.getSourceJoinCondition().getToPaths().get(0).getLastStep();
-			joinSource = mappingInformation.getSourceJoinCondition().getToPaths().get(0).getFirstStep();
+			joinAttr = cond.getToPaths().get(0).getLastStep();
+			joinSource = cond.getToPaths().get(0).getFirstStep();
 
 			if (joinSource.contains(fkSource.toString()))
 				this.extendSourceSchemaBy(joinAttr, fkSource);

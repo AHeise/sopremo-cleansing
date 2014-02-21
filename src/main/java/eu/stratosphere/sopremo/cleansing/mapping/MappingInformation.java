@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.AbstractSopremoType;
  */
 
 public class MappingInformation extends AbstractSopremoType {
-	private MappingJoinCondition sourceJoinCondition;
+	private List<MappingJoinCondition>  sourceJoinConditions = new ArrayList<MappingJoinCondition>();
 
 	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 
@@ -32,12 +32,12 @@ public class MappingInformation extends AbstractSopremoType {
 
 	}
 
-	public MappingJoinCondition getSourceJoinCondition() {
-		return this.sourceJoinCondition;
+	public List<MappingJoinCondition> getSourceJoinConditions() {
+		return this.sourceJoinConditions;
 	}
 
-	public void setSourceJoinCondition(MappingJoinCondition sourceJoinCondition) {
-		this.sourceJoinCondition = sourceJoinCondition;
+	public void setSourceJoinCondition(List<MappingJoinCondition> sourceJoinCondition) {
+		this.sourceJoinConditions = sourceJoinCondition;
 	}
 
 	public MappingSchema getSourceSchema() {
@@ -89,10 +89,7 @@ public class MappingInformation extends AbstractSopremoType {
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		appendable.append("MappingInformation [sourceJoinCondition=");
-		if (this.sourceJoinCondition != null)
-			this.sourceJoinCondition.appendAsString(appendable);
-		else
-			appendable.append(null);
+		append(appendable, this.sourceJoinConditions, ",");
 		appendable.append(", targetJoinConditions=");
 		append(appendable, this.targetJoinConditions, ",");
 		appendable.append(", sourceSchema=");
@@ -108,7 +105,7 @@ public class MappingInformation extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((sourceJoinCondition == null) ? 0 : sourceJoinCondition.hashCode());
+		result = prime * result + ((sourceJoinConditions == null) ? 0 : sourceJoinConditions.hashCode());
 		result = prime * result + ((sourceSchema == null) ? 0 : sourceSchema.hashCode());
 		result = prime * result + ((target == null) ? 0 : target.hashCode());
 		result = prime * result + ((targetJoinConditions == null) ? 0 : targetJoinConditions.hashCode());
@@ -125,10 +122,10 @@ public class MappingInformation extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		MappingInformation other = (MappingInformation) obj;
-		if (sourceJoinCondition == null) {
-			if (other.sourceJoinCondition != null)
+		if (sourceJoinConditions == null) {
+			if (other.sourceJoinConditions != null)
 				return false;
-		} else if (!sourceJoinCondition.equals(other.sourceJoinCondition))
+		} else if (!sourceJoinConditions.equals(other.sourceJoinConditions))
 			return false;
 		if (sourceSchema == null) {
 			if (other.sourceSchema != null)

@@ -201,10 +201,12 @@ public class SpicyMappingTransformation extends
 			this.mappingInformation.getSourceSchema().generateSpicyType()),
 			this.mappingInformation.getTarget().generateSpicyType(),
 			this.mappingInformation.getValueCorrespondencesAsSpicyTypes());
-		if (this.mappingInformation.getSourceJoinCondition() != null)
-			this.mappingTask.getSourceProxy().addJoinCondition(
-				this.mappingInformation.getSourceJoinCondition()
-					.generateSpicyType());
+		
+		for (MappingJoinCondition cond : this.mappingInformation
+				.getSourceJoinConditions()) {
+				this.mappingTask.getSourceProxy().addJoinCondition(
+					cond.generateSpicyType());
+			}
 
 		for (MappingJoinCondition cond : this.mappingInformation
 			.getTargetJoinConditions()) {
