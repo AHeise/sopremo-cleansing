@@ -7,6 +7,7 @@ import it.unibas.spicy.persistence.DAOMappingTaskTgds;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
@@ -71,7 +72,7 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 		sopremoPlan.run();
 	}	
 	
-	@Test
+	@Test @Ignore
 	public void shouldPerformExampleMappingGeneratedWithSKFunction() {
 
 		MappingTask task = null;

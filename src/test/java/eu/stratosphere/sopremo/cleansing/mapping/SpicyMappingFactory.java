@@ -471,7 +471,7 @@ public class SpicyMappingFactory {
 		PathExpression targetPath = new PathExpression(targetPathSteps);
 		
 		//TODO allow functions with more than two parameters
-		String dashes = "\"---\"";
+		//String dashes = "\"---\"";
 		Expression exp = new Expression(str1a + " + " + str1b);
 		ValueCorrespondence corr = new ValueCorrespondence(sourcePaths, targetPath, exp); // 2
 																							// source
