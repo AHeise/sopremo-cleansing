@@ -1,19 +1,10 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -53,7 +44,7 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	protected CandidateSelection getCandidateSelection() {
 		final CandidateSelection candidateSelection = super.getCandidateSelection();
 		for (EvaluationExpression blockingKey : this.sortingKeys)
-			candidateSelection.addPass(blockingKey);
+			candidateSelection.withPass(blockingKey);
 		return candidateSelection;
 	}
 

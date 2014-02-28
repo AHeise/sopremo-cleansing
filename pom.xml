@@ -11,8 +11,8 @@
 	</parent>
 
 	<properties>
-		<sopremo.version>0.4</sopremo.version>
-		<meteor.version>0.4</meteor.version>
+		<sopremo.version>0.4.1</sopremo.version>
+		<meteor.version>0.4.1</meteor.version>
 	</properties>
 
 	<artifactId>sopremo-cleansing</artifactId>

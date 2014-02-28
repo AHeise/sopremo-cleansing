@@ -14,6 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity;
 
+import java.io.IOException;
+
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
@@ -48,8 +50,38 @@ public class SimilarityExpression extends EvaluationExpression {
 	public Similarity<IJsonNode> getSimilarity() {
 		return this.similarity;
 	}
+	
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		this.similarity.appendAsString(appendable);
+	}
 
 	private transient DoubleNode result = new DoubleNode();
+
+	
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.similarity.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		SimilarityExpression other = (SimilarityExpression) obj;
+		return this.similarity.equals(other.similarity);
+	}
 
 	/*
 	 * (non-Javadoc)

@@ -16,22 +16,30 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.util.List;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.AbstractPreselection;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.type.BooleanNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.util.IdentityList;
 
 /**
  * 
  */
-final class NodeOrderSelector extends AbstractPreselection {
+final class NodeOrderSelector extends BooleanExpression {
 	private final List<IJsonNode> nodes = new IdentityList<IJsonNode>();
 
 	NodeOrderSelector(List<IJsonNode> nodes) {
 		this.nodes.addAll(nodes);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.expressions.BooleanExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode)
+	 */
 	@Override
-	public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-		return this.nodes.indexOf(left) < this.nodes.indexOf(right);
+	public BooleanNode evaluate(IJsonNode pair) {
+		@SuppressWarnings("unchecked")
+		IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) pair;
+		return BooleanNode.valueOf(this.nodes.indexOf(array.get(0)) < this.nodes.indexOf(array.get(1)));
 	}
 }

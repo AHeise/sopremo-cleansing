@@ -18,126 +18,26 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.base.GlobalEnumeration;
-import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
-import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
-import eu.stratosphere.sopremo.expressions.AndExpression;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.ExpressionUtil;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.SetValueExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.ArrayNode;
 import eu.stratosphere.sopremo.type.BooleanNode;
-import eu.stratosphere.sopremo.type.CachingArrayNode;
-import eu.stratosphere.sopremo.type.DoubleNode;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.INumericNode;
-import eu.stratosphere.util.Collector;
 
 /**
  * @author Arvid Heise
  */
 public class CandidateComparison extends AbstractSopremoType implements Cloneable {
-	/**
-	 * 
-	 */
-	static final class ComparisonCondition extends BooleanExpression {
-		private final Preselection preselect;
-
-		private final List<DuplicateRule> duplicateRules;
-
-		/**
-		 * Initializes CandidateComparison.ComparisonCondition.
-		 */
-		ComparisonCondition() {
-			this.preselect = null;
-			this.duplicateRules = null;
-		}
-
-		ComparisonCondition(Preselection preselect, List<DuplicateRule> duplicateRules) {
-			this.preselect = preselect;
-			this.duplicateRules = duplicateRules;
-		}
-
-		@Override
-		public BooleanNode evaluate(IJsonNode node) {
-			@SuppressWarnings("unchecked")
-			final IArrayNode<IJsonNode> inputPair = (IArrayNode<IJsonNode>) node;
-			final IJsonNode left = inputPair.get(0), right = inputPair.get(1);
-			if (!this.preselect.shouldProcess(left, right))
-				return BooleanNode.FALSE;
-			boolean satisfiesAll = true;
-			for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
-				satisfiesAll = this.duplicateRules.get(index).apply(left, right);
-			return BooleanNode.valueOf(satisfiesAll);
-		}
-	}
-
-	/**
-	 * 
-	 */
-	static class SimiliartiesAssembler extends EvaluationExpression {
-		private final List<DuplicateRule> duplicateRules;
-
-		SimiliartiesAssembler(List<DuplicateRule> duplicateRules) {
-			this.duplicateRules = duplicateRules;
-		}
-
-		/**
-		 * Initializes CandidateComparison.SimiliartiesAssembler.
-		 */
-		SimiliartiesAssembler() {
-			this.duplicateRules = null;
-		}
-
-		private transient CachingArrayNode<DoubleNode> similarities = new CachingArrayNode<DoubleNode>();
-
-		private transient DoubleNode similarity = new DoubleNode();
-
-		/*
-		 * (non-Javadoc)
-		 * @see
-		 * eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode)
-		 */
-		@Override
-		public IJsonNode evaluate(IJsonNode node) {
-			for (int index = 0, size = this.duplicateRules.size(); index < size; index++) {
-				this.similarity.setValue(this.duplicateRules.get(index).getLastSim());
-				this.similarities.addClone(this.similarity);
-			}
-			return this.similarities;
-		}
-
-	}
-
-	/**
-	 * 
-	 */
-	private static final class NoPreselection extends AbstractPreselection {
-		@Override
-		public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-			return true;
-		}
-	}
 
 	/**
 	 * @author Arvid Heise
 	 */
-	final static class OrderedPairsFilter extends AbstractPreselection {
+	final static class OrderedPairsFilter extends BooleanExpression {
 
 		private final EvaluationExpression leftExp, rightExp;
 
@@ -155,95 +55,27 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 			this.rightExp = null;
 		}
 
-		@Override
-		public boolean shouldProcess(IJsonNode left, IJsonNode right) {
-			return this.leftExp.evaluate(left).compareTo(this.rightExp.evaluate(right)) < 0;
-		}
-	}
-
-	public static class DuplicateRule extends AbstractSopremoType {
-		private final Similarity<IJsonNode> similarityMeasure;
-
-		private final float threshold;
-
-		private transient float lastSim;
-
-		public DuplicateRule(Similarity<IJsonNode> similarityMeasure, float threshold) {
-			this.similarityMeasure = similarityMeasure;
-			this.threshold = threshold;
-		}
-
-		/**
-		 * Initializes CandidateComparison.DuplicateRule.
-		 */
-		DuplicateRule() {
-			this(null, 0);
-		}
-
-		@SuppressWarnings("unchecked")
-		public static DuplicateRule valueOf(Similarity<? extends IJsonNode> similarityMeasure, float threshold) {
-			if (similarityMeasure.getExpectedType() == IJsonNode.class)
-				return new DuplicateRule((Similarity<IJsonNode>) similarityMeasure, threshold);
-			return new DuplicateRule(new CoercingSimilarity(similarityMeasure), threshold);
-		}
-
-		public boolean apply(IJsonNode left, IJsonNode right) {
-			return (this.lastSim = this.similarityMeasure.getSimilarity(left, right)) >= this.threshold;
-		}
-
-		/**
-		 * Returns the lastSim.
-		 * 
-		 * @return the lastSim
-		 */
-		public double getLastSim() {
-			return this.lastSim;
-		}
-
 		/*
 		 * (non-Javadoc)
-		 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
+		 * @see eu.stratosphere.sopremo.expressions.BooleanExpression#evaluate(eu.stratosphere.sopremo.type.IJsonNode)
 		 */
 		@Override
-		public void appendAsString(Appendable appendable) throws IOException {
-			SopremoUtil.append(appendable, "Sim: ", this.similarityMeasure, "; threshold: ", this.threshold);
-		}
-
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + this.similarityMeasure.hashCode();
-			long temp;
-			temp = Float.floatToIntBits(this.threshold);
-			result = prime * result + (int) (temp ^ (temp >>> 32));
-			return result;
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
-				return true;
-			if (obj == null)
-				return false;
-			if (getClass() != obj.getClass())
-				return false;
-			DuplicateRule other = (DuplicateRule) obj;
-			return Float.floatToIntBits(this.threshold) == Float.floatToIntBits(other.threshold) &&
-				this.similarityMeasure.equals(other.similarityMeasure);
+		public BooleanNode evaluate(IJsonNode pair) {
+			@SuppressWarnings("unchecked")
+			final IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) pair;
+			return BooleanNode.valueOf(this.leftExp.evaluate(array.get(0)).compareTo(
+				this.rightExp.evaluate(array.get(1))) < 0);
 		}
 
 	}
-
-	private List<DuplicateRule> duplicateRules = new ArrayList<DuplicateRule>();
 
 	private EvaluationExpression resultProjection = EvaluationExpression.VALUE;
 
-	private Preselection preselect;
+	private BooleanExpression preselect;
 
 	private EvaluationExpression leftIdProjection, rightIdProjection;
 
-	private boolean outputSimilarity = false, innerSource = false;
+	private boolean innerSource = false;
 
 	/**
 	 * Returns the value of innerSource.
@@ -264,60 +96,9 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 		this.innerSource = innerSource;
 	}
 
-	/**
-	 * Returns the value of outputSimilarity.
-	 * 
-	 * @return the outputSimilarity
-	 */
-	public boolean isOutputSimilarity() {
-		return this.outputSimilarity;
-	}
-
-	/**
-	 * Sets the value of outputSimilarity to the given value.
-	 * 
-	 * @param outputSimilarity
-	 *        the outputSimilarity to set
-	 */
-	public void setOutputSimilarity(boolean outputSimilarity) {
-		if (this.outputSimilarity != outputSimilarity)
-			this.outputSimilarity = outputSimilarity;
-	}
-
 	private transient IArrayNode<IJsonNode> pair = new ArrayNode<IJsonNode>();
 
-	private transient IArrayNode<DoubleNode> similarities = new ArrayNode<DoubleNode>();
-
-	public void performComparison(final IJsonNode left, final IJsonNode right, final Collector<IJsonNode> collector) {
-		if (this.preselect != null && !this.preselect.shouldProcess(left, right))
-			return;
-
-		boolean satisfiesAll = true;
-		for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
-			satisfiesAll = this.duplicateRules.get(index).apply(left, right);
-		if (satisfiesAll) {
-			this.pair.set(0, left);
-			this.pair.set(1, right);
-			if (this.outputSimilarity) {
-				for (int index = 0, size = this.duplicateRules.size(); satisfiesAll && index < size; index++)
-					this.similarities.get(index).setValue(this.duplicateRules.get(index).lastSim);
-				this.pair.set(2, this.similarities);
-			}
-			collector.collect(this.pair);
-		}
-	}
-
-	/**
-	 * Sets the value of outputSimilarity to the given value.
-	 * 
-	 * @param outputSimilarity
-	 *        the outputSimilarity to set
-	 * @return this
-	 */
-	public CandidateComparison withOutputSimilarity(boolean outputSimilarity) {
-		this.setOutputSimilarity(outputSimilarity);
-		return this;
-	}
+	private BooleanExpression duplicateExpression = BooleanExpression.TRUE;
 
 	/**
 	 * Returns the value of resultProjection.
@@ -346,38 +127,37 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	 * 
 	 * @param resultProjection
 	 *        the resultProjection to set
-	 * @return
 	 */
 	public CandidateComparison withResultProjection(EvaluationExpression resultProjection) {
 		this.setResultProjection(resultProjection);
 		return this;
 	}
 
-	public CandidateComparison withRules(DuplicateRule... rules) {
-		setDuplicateRules(rules);
-		return this;
-	}
+	/**
+	 * Sets the duplicateExpression to the specified value.
+	 * 
+	 * @param duplicateExpression
+	 *        the duplicateExpression to set
+	 */
+	public void setDuplicateExpression(BooleanExpression duplicateExpression) {
+		if (duplicateExpression == null)
+			throw new NullPointerException("duplicateExpression must not be null");
 
-	public CandidateComparison withRules(List<DuplicateRule> rules) {
-		setDuplicateRules(rules);
-		return this;
-	}
-
-	public void setDuplicateRules(List<DuplicateRule> rules) {
-		this.duplicateRules = rules;
-	}
-
-	public void setDuplicateRules(DuplicateRule... rules) {
-		setDuplicateRules(Lists.newArrayList(rules));
+		this.duplicateExpression = duplicateExpression;
 	}
 
 	/**
-	 * Returns the duplicateRules.
+	 * Returns the duplicateExpression.
 	 * 
-	 * @return the duplicateRules
+	 * @return the duplicateExpression
 	 */
-	public List<DuplicateRule> getDuplicateRules() {
-		return this.duplicateRules;
+	public BooleanExpression getDuplicateExpression() {
+		return this.duplicateExpression;
+	}
+
+	public CandidateComparison withDuplicateExpression(BooleanExpression duplicateExpression) {
+		setDuplicateExpression(duplicateExpression);
+		return this;
 	}
 
 	/**
@@ -397,7 +177,7 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	 * @param preselect
 	 *        the preselect to set
 	 */
-	public void setPreselect(Preselection preselect) {
+	public void setPreselect(BooleanExpression preselect) {
 		if (preselect == null)
 			throw new NullPointerException("preselect must not be null");
 
@@ -478,7 +258,7 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	}
 
 	public BooleanExpression asCondition(boolean omitSmallerPairs) {
-		return new ComparisonCondition(createSmallerPairFilter(omitSmallerPairs), this.duplicateRules);
+		return new AndExpression(createSmallerPairFilter(omitSmallerPairs), this.duplicateExpression);
 	}
 
 	public void setOmitSmallerPairs(boolean omitSmallerPairs) {
@@ -498,8 +278,8 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	 * @param omitSmallerPairs
 	 * @return
 	 */
-	private Preselection createSmallerPairFilter(boolean omitSmallerPairs) {
-		Preselection preselect = this.preselect;
+	private BooleanExpression createSmallerPairFilter(boolean omitSmallerPairs) {
+		BooleanExpression preselect = this.preselect;
 		if (omitSmallerPairs && preselect == null) {
 			if (this.innerSource) {
 				if (this.getLeftIdProjection() == null || this.getRightIdProjection() == null)
@@ -507,18 +287,20 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 
 				preselect = new OrderedPairsFilter(this.leftIdProjection, this.rightIdProjection);
 			} else
-				preselect = new NoPreselection();
+				preselect = BooleanExpression.ensureBooleanExpression(new ConstantExpression(BooleanNode.TRUE));
 		}
 		return preselect;
 	}
 
-	public EvaluationExpression getResultProjectionWithSimilarity() {
-		if (!this.outputSimilarity)
-			return this.resultProjection;
+	public void performComparison(IJsonNode left, IJsonNode right, JsonCollector<IJsonNode> collector) {
+		this.pair.set(0, left);
+		this.pair.set(1, right);
+		if (this.preselect.evaluate(this.pair) == BooleanNode.TRUE)
+			collector.collect(this.pair);
+	}
 
-		return new ChainedSegmentExpression(this.resultProjection).withInputExpression(new ArrayCreation(
-			new ArrayAccess(0),
-			new ArrayAccess(1), new SimiliartiesAssembler(this.duplicateRules)));
+	public EvaluationExpression getResultProjectionWithSimilarity() {
+		return this.resultProjection;
 	}
 
 	public CandidateComparison withInnerSource(boolean innerSource) {
@@ -533,10 +315,50 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		SopremoUtil.append(appendable,
-			"CandidateComparison [duplicateRules=", this.duplicateRules,
+			"CandidateComparison [duplicateExpression=", this.duplicateExpression,
 			", resultProjection=", this.resultProjection,
-			", idProjection=", this.leftIdProjection, "|", this.rightIdProjection,
-			", outputSimilarity=", this.outputSimilarity, "]");
+			", idProjection=", this.leftIdProjection, "|", this.rightIdProjection, "]");
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + this.duplicateExpression.hashCode();
+		result = prime * result + (this.innerSource ? 1231 : 1237);
+		result = prime * result + ((this.leftIdProjection == null) ? 0 : this.leftIdProjection.hashCode());
+		result = prime * result + ((this.preselect == null) ? 0 : this.preselect.hashCode());
+		result = prime * result + this.resultProjection.hashCode();
+		result = prime * result + ((this.rightIdProjection == null) ? 0 : this.rightIdProjection.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CandidateComparison other = (CandidateComparison) obj;
+		if (this.leftIdProjection == null) {
+			if (other.leftIdProjection != null)
+				return false;
+		} else if (!this.leftIdProjection.equals(other.leftIdProjection))
+			return false;
+		if (this.preselect == null) {
+			if (other.preselect != null)
+				return false;
+		} else if (!this.preselect.equals(other.preselect))
+			return false;
+		if (this.rightIdProjection == null) {
+			if (other.rightIdProjection != null)
+				return false;
+		} else if (!this.rightIdProjection.equals(other.rightIdProjection))
+			return false;
+		return this.resultProjection.equals(other.resultProjection) && this.innerSource == other.innerSource &&
+			this.duplicateExpression.equals(other.duplicateExpression);
 	}
 
 	public List<Operator<?>> addEnumeration(List<? extends Operator<?>> inputs) {
@@ -567,70 +389,5 @@ public class CandidateComparison extends AbstractSopremoType implements Cloneabl
 		this.resultProjection = idRemoval;
 
 		return outputs;
-	}
-
-	public DuplicateRule parseRule(EvaluationExpression expression) {
-		if (expression instanceof ComparativeExpression) {
-			float threshold;
-			final ComparativeExpression ce = (ComparativeExpression) expression;
-			boolean includeEqual = true;
-			Similarity<IJsonNode> similarityMeasure;
-			switch (ce.getBinaryOperator()) {
-			case GREATER:
-				includeEqual = false;
-			case GREATER_EQUAL:
-				threshold = (float) ExpressionUtil.getConstant(ce.getExpr2(), INumericNode.class)
-					.getDoubleValue();
-				similarityMeasure = parseSimilarity(ce.getExpr1());
-				break;
-			case LESS:
-				includeEqual = false;
-			case LESS_EQUAL:
-				threshold = (float) ExpressionUtil.getConstant(ce.getExpr1(), INumericNode.class)
-					.getDoubleValue();
-				similarityMeasure = parseSimilarity(ce.getExpr2());
-				break;
-			default:
-				throw new IllegalArgumentException(
-					"Unsupported similarity expression; must be of the form: sim > threshold");
-			}
-
-			// small hack to exclude the same value;
-			// very unlikely to have results in the range [threshold-2e-126;threshold]
-			if (!includeEqual)
-				threshold -= Float.MIN_VALUE;
-			DuplicateRule duplicateRule = new DuplicateRule(similarityMeasure, threshold);
-			return duplicateRule;
-		}
-		throw new IllegalArgumentException(
-			"Unsupported similarity expression; must be of the form: sim > threshold");
-	}
-
-	/**
-	 * @param expr2
-	 * @return
-	 */
-	private Similarity<IJsonNode> parseSimilarity(EvaluationExpression similarityExpression) {
-		return ((SimilarityExpression) similarityExpression).getSimilarity();
-	}
-
-	/**
-	 * @param expression
-	 */
-	public void parseRules(EvaluationExpression expression) {
-		this.duplicateRules.clear();
-		if (expression instanceof AndExpression)
-			for (EvaluationExpression subExpression : expression)
-				this.duplicateRules.add(parseRule(subExpression));
-		else
-			this.duplicateRules.add(parseRule(expression));
-	}
-
-	public void addRule(DuplicateRule rule) {
-		this.duplicateRules.add(rule);
-	}
-
-	public void removeRule(DuplicateRule rule) {
-		this.duplicateRules.remove(rule);
 	}
 }

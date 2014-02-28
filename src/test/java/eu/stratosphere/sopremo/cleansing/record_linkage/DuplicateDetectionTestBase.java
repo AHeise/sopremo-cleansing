@@ -10,19 +10,13 @@ import org.junit.runners.Parameterized;
 import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ArrayProjection;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
+import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
@@ -66,16 +60,8 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 			this.resultProjection);
 	}
 
-	protected Collector<IJsonNode> duplicateCollector = new Collector<IJsonNode>() {
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.pact.common.stubs.Collector#close()
-		 */
-		@Override
-		public void close() {
-		}
-
-		/*
+	protected JsonCollector<IJsonNode> duplicateCollector = new JsonCollector<IJsonNode>(SopremoEnvironment.getInstance().getEvaluationContext()) {
+				/*
 		 * (non-Javadoc)
 		 * @see eu.stratosphere.pact.common.stubs.Collector#collect(java.lang.Object)
 		 */

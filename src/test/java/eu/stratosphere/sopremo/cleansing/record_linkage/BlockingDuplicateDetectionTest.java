@@ -49,7 +49,7 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 	protected CandidateSelection getCandidateSelection() {
 		final CandidateSelection candidateSelection = super.getCandidateSelection();
 		for (EvaluationExpression blockingKey : this.blockingKeys)
-			candidateSelection.addPass(blockingKey);
+			candidateSelection.withPass(blockingKey);
 		return candidateSelection;
 	}
 
