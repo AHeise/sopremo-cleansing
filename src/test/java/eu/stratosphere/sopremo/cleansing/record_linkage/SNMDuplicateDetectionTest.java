@@ -48,14 +48,11 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 		return candidateSelection;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see
-	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere
-	 * .sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(java.util.List, eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
-	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
+	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
 		for (final EvaluationExpression sortingKey : this.sortingKeys) {
 			Collections.sort(input, new Comparator<IJsonNode>() {
 				@Override

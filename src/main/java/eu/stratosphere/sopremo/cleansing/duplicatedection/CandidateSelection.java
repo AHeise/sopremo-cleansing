@@ -135,7 +135,7 @@ public class CandidateSelection extends AbstractSopremoType {
 		/**
 		 * Sets the value of blockingKey to the given value.
 		 * 
-		 * @param blockingKey
+		 * @param blockingKeys
 		 *        the blockingKey to set
 		 */
 		public void setBlockingKeys(List<EvaluationExpression> blockingKeys) {
@@ -149,7 +149,7 @@ public class CandidateSelection extends AbstractSopremoType {
 		/**
 		 * Sets the value of blockingKey to the given value.
 		 * 
-		 * @param blockingKey
+		 * @param blockingKeys
 		 *        the blockingKey to set
 		 */
 		public void setBlockingKeys(EvaluationExpression... blockingKeys) {
@@ -186,6 +186,12 @@ public class CandidateSelection extends AbstractSopremoType {
 				return false;
 			Pass other = (Pass) obj;
 			return this.blockingKeys.equals(other.blockingKeys);
+		}
+
+		public EvaluationExpression getBlockingKey(int index) {
+			if(this.blockingKeys.size() == 1)
+				return this.blockingKeys.get(0);
+			return this.blockingKeys.get(index);
 		}
 
 	}

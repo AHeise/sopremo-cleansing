@@ -7,18 +7,16 @@ import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
- * Tests {@link DisjunctPartitioning} {@link InterSourceRecordLinkage} within one data source.
+ * Tests {@link Blocking} within one data source.
  * 
  * @author Arvid Heise
  */
@@ -56,22 +54,27 @@ public class BlockingDuplicateDetectionTest extends DuplicateDetectionTestBase<B
 	/*
 	 * (non-Javadoc)
 	 * @see
-	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere
-	 * .sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(java.util.List,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
-	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
-		if (comparison.getIdProjection() == null) {
-			comparison.setPreselect(new NodeOrderSelector(input));
-		}
+	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
+		BooleanExpression preselect;
+		if (pairFilter.isConfigured())
+			preselect = pairFilter;
+		else
+			preselect = new NodeOrderSelector(input);
 
-		final BooleanExpression condition = comparison.asCondition(true);
+		final BooleanExpression condition = comparison.asCondition();
 		for (final IJsonNode left : input) {
 			for (final IJsonNode right : input) {
 				for (int index = 0; index < this.blockingKeys.length; index++)
-					if (this.blockingKeys[index].evaluate(left).equals(this.blockingKeys[index].evaluate(right)))
-						if (condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
+					if (this.blockingKeys[index].evaluate(left).equals(this.blockingKeys[index].evaluate(right))) {
+						final IArrayNode<IJsonNode> pair = JsonUtil.asArray(left, right);
+						if (preselect.evaluate(pair).getBooleanValue() && condition.evaluate(pair).getBooleanValue())
 							this.emitCandidate(left, right);
+					}
 			}
 		}
 	}

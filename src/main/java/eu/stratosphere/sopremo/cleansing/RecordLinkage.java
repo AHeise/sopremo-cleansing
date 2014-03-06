@@ -26,11 +26,12 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @InputCardinality(2)
 @OutputCardinality(1)
+@Name(verb = "link records")
 public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
-	private CandidateComparison comparison = new CandidateComparison().withInnerSource(false);
+	private CandidateComparison comparison = new CandidateComparison();
 
 	private DuplicateDetectionImplementation implementation;
 

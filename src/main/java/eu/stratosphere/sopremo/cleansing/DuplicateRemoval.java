@@ -17,10 +17,7 @@ package eu.stratosphere.sopremo.cleansing;
 import eu.stratosphere.sopremo.base.ArraySplit;
 import eu.stratosphere.sopremo.base.Difference;
 import eu.stratosphere.sopremo.base.UnionAll;
-import eu.stratosphere.sopremo.operator.CompositeOperator;
-import eu.stratosphere.sopremo.operator.InputCardinality;
-import eu.stratosphere.sopremo.operator.OutputCardinality;
-import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.operator.*;
 
 /**
  * Detects duplicates, fuses them, and combines the non-duplicates the the fused records.
@@ -29,15 +26,28 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
  */
 @InputCardinality(1)
 @OutputCardinality(1)
+@Name(verb = "remove duplicates")
 public class DuplicateRemoval extends CompositeOperator<DuplicateRemoval> {
+	private final DuplicateDetection duplicateDetection = new DuplicateDetection();
+
+	private final Fusion fusion = new Fusion();
+
+	/**
+	 * Initializes DuplicateRemoval.
+	 */
+	public DuplicateRemoval() {
+		addPropertiesFrom(this.duplicateDetection);
+		addPropertiesFrom(this.fusion);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
 	public void addImplementation(SopremoModule module) {
-		DuplicateDetection duplicates = new DuplicateDetection().withInputs(module.getInput(0));
-		Fusion fusedDuplicates = new Fusion().withInputs(duplicates);
+		DuplicateDetection duplicates = this.duplicateDetection.withInputs(module.getInput(0));
+		Fusion fusedDuplicates = this.fusion.withInputs(duplicates);
 		Difference nonDuplicates =
 			new Difference().withInputs(module.getInput(0), new ArraySplit().withInputs(duplicates));
 		module.getOutput(0).setInputs(new UnionAll().withInputs(fusedDuplicates, nonDuplicates));

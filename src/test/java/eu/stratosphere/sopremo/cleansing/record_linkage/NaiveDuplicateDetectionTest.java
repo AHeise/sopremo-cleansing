@@ -9,13 +9,15 @@ import org.junit.runners.Parameterized.Parameters;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
- * Tests {@link Naive} {@link InterSourceRecordLinkage} with one data source.
+ * Tests {@link NaiveDuplicateDetection} with one data source.
  * 
  * @author Arvid Heise
  */
@@ -37,16 +39,26 @@ public class NaiveDuplicateDetectionTest extends DuplicateDetectionTestBase<Naiv
 		return new NaiveDuplicateDetection();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see
+	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(java.util.List,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	 */
 	@Override
-	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
-		if (comparison.getIdProjection() == null) {
-			comparison.setPreselect(new NodeOrderSelector(input));
-		} 
-		
-		final BooleanExpression condition = comparison.asCondition(true);
+	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
+		BooleanExpression preselect;
+		if (pairFilter.isConfigured())
+			preselect = pairFilter;
+		else
+			preselect = new NodeOrderSelector(input);
+
+		final BooleanExpression condition = comparison.asCondition();
 		for (final IJsonNode left : input) {
 			for (final IJsonNode right : input) {
-				if (condition.evaluate(JsonUtil.asArray(left, right)).getBooleanValue())
+				final IArrayNode<IJsonNode> pair = JsonUtil.asArray(left, right);
+				if (preselect.evaluate(pair).getBooleanValue() && condition.evaluate(pair).getBooleanValue())
 					this.emitCandidate(left, right);
 			}
 		}

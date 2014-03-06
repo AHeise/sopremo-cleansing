@@ -21,10 +21,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
@@ -69,7 +66,6 @@ public class DDParseTest extends MeteorParseTest {
 			new CoercingSimilarity(new LevenshteinSimilarity()),
 			new ObjectAccess("firstName")));
 		return new CandidateComparison().
-			withInnerSource(true).
 			withDuplicateExpression(
 				new ComparativeExpression(similarityExpression,
 					ComparativeExpression.BinaryOperator.GREATER_EQUAL,

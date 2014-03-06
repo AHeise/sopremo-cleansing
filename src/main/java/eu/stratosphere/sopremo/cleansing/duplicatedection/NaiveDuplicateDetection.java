@@ -23,11 +23,11 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 	 */
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison) {
+			PairFilter pairFilter, CandidateComparison comparison) {
 		return new ThetaJoin().
-			withCondition(comparison.asCondition(true)).
+			withCondition(getCondition()).
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
-			withInputs(inputs);
+			withInputs(inputs.get(0), inputs.get(inputs.size() - 1));
 	}
 	
 	/* (non-Javadoc)
