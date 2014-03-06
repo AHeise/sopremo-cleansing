@@ -83,6 +83,27 @@ public class CandidateSelection extends AbstractSopremoType {
 		this.passes.addAll(passes);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + this.passes.hashCode();
+		result = prime * result + ((this.selectionHint == null) ? 0 : this.selectionHint.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CandidateSelection other = (CandidateSelection) obj;
+		return this.selectionHint == other.selectionHint && this.passes.equals(other.passes);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.ISopremoType#appendAsString(java.lang.Appendable)
@@ -95,7 +116,7 @@ public class CandidateSelection extends AbstractSopremoType {
 	public static class Pass extends AbstractSopremoType {
 
 		private List<EvaluationExpression> blockingKeys = new ArrayList<EvaluationExpression>();
-		
+
 		/**
 		 * Initializes Pass.
 		 */
@@ -147,6 +168,26 @@ public class CandidateSelection extends AbstractSopremoType {
 			SopremoUtil.append(appendable, this.blockingKeys);
 		}
 
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + this.blockingKeys.hashCode();
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Pass other = (Pass) obj;
+			return this.blockingKeys.equals(other.blockingKeys);
+		}
+
 	}
 
 	public void parse(EvaluationExpression expression, int numSources) {
@@ -187,9 +228,15 @@ public class CandidateSelection extends AbstractSopremoType {
 	/**
 	 * @param blockingKey
 	 */
-	public void addPass(EvaluationExpression... blockingKey) {
+	public CandidateSelection withPass(EvaluationExpression... blockingKey) {
 		Pass pass = new Pass();
 		pass.setBlockingKeys(blockingKey);
 		this.passes.add(pass);
+		return this;
+	}
+
+	public CandidateSelection withSelectionHint(SelectionHint hint) {
+		setSelectionHint(hint);
+		return this;
 	}
 }

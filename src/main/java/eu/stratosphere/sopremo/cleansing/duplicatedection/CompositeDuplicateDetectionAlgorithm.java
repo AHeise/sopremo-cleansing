@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.io.IOException;
 import java.util.List;
 
 import eu.stratosphere.sopremo.operator.CompositeOperator;
@@ -115,6 +116,41 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 		if (comparison.isInnerSource())
 			inputs.add(inputs.get(0));
 		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		appendable.append("[");
+		this.comparison.appendAsString(appendable);
+		appendable.append(", ");
+		this.candidateSelection.appendAsString(appendable);
+		appendable.append("]");
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.candidateSelection.hashCode();
+		result = prime * result + this.comparison.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CompositeDuplicateDetectionAlgorithm<?> other = (CompositeDuplicateDetectionAlgorithm<?>) obj;
+		return this.candidateSelection.equals(other.candidateSelection) && this.comparison.equals(other.comparison);
 	}
 
 	protected boolean requiresEnumeration() {

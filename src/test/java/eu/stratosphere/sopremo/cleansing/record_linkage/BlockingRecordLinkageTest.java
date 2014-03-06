@@ -52,7 +52,7 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	protected CandidateSelection getCandidateSelection() {
 		final CandidateSelection candidateSelection = super.getCandidateSelection();
 		for (int index = 0; index < this.leftBlockingKeys.length; index++)
-			candidateSelection.addPass(this.leftBlockingKeys[index], this.rightBlockingKeys[index]);
+			candidateSelection.withPass(this.leftBlockingKeys[index], this.rightBlockingKeys[index]);
 		return candidateSelection;
 	}
 

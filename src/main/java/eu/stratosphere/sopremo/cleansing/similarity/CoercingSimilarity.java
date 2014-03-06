@@ -14,11 +14,13 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.similarity;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 
@@ -45,6 +47,35 @@ public class CoercingSimilarity extends AbstractSimilarity<IJsonNode> implements
 	CoercingSimilarity() {
 		this.actualSimilarity = null;
 		this.coercionType = null;
+	}
+
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.cleansing.similarity.AbstractSimilarity#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		SopremoUtil.append(appendable, this.actualSimilarity, "<", this.coercionType.getSimpleName(), ">");
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.actualSimilarity.hashCode();
+		result = prime * result + this.coercionType.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CoercingSimilarity other = (CoercingSimilarity) obj;
+		return this.coercionType.equals(other.coercionType) && this.actualSimilarity.equals(other.actualSimilarity);
 	}
 
 	/*
