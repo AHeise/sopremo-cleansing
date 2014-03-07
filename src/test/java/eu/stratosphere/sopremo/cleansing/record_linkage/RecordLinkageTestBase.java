@@ -19,11 +19,11 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
- * Base for inner source {@link InterSourceRecordLinkage} test cases between at least two sources.
+ * Base for inner source {@link RecordLinkage} test cases between at least two sources.
  * 
  * @author Arvid Heise
  * @param <P>
- *        the {@link RecordLinkageAlgorithm}
+ *        the {@link CompositeDuplicateDetectionAlgorithm}
  */
 @RunWith(Parameterized.class)
 @Ignore

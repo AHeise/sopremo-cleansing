@@ -19,13 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
@@ -189,7 +186,7 @@ public class CandidateSelection extends AbstractSopremoType {
 		}
 
 		public EvaluationExpression getBlockingKey(int index) {
-			if(this.blockingKeys.size() == 1)
+			if (this.blockingKeys.size() == 1)
 				return this.blockingKeys.get(0);
 			return this.blockingKeys.get(index);
 		}
@@ -199,7 +196,12 @@ public class CandidateSelection extends AbstractSopremoType {
 	public void parse(EvaluationExpression expression, int numSources) {
 		this.passes.clear();
 
-		if (expression instanceof ObjectCreation) {
+		if (expression instanceof OrExpression) {
+			final List<BooleanExpression> passExpressions = ((OrExpression) expression).getExpressions();
+			for (BooleanExpression passExpression : passExpressions) {
+				this.passes.add(parsePassExpression(passExpression, numSources));
+			}
+		} else if (expression instanceof ObjectCreation) {
 			if (numSources != 2)
 				throw new IllegalArgumentException("Can only use mappings for two sources");
 
@@ -214,21 +216,33 @@ public class CandidateSelection extends AbstractSopremoType {
 				pass.setBlockingKeys(key1, key2);
 				this.passes.add(pass);
 			}
-			return;
 		}
+		else
+			this.passes.add(parsePassExpression(expression, numSources));
+	}
 
-		List<EvaluationExpression> passes = expression instanceof ArrayCreation ?
-			((ArrayCreation) expression).getElements() : Arrays.asList(expression);
-		for (EvaluationExpression passExpression : passes) {
-			Pass pass = new Pass();
-			if (numSources == 1)
-				pass.setBlockingKeys(passExpression.remove(InputSelection.class));
-			else
-				pass.setBlockingKeys(
-					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(0)),
-					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(1)));
-			this.passes.add(pass);
-		}
+	private Pass parsePassExpression(EvaluationExpression expression, int numSources) {
+		if (expression instanceof UnaryExpression)
+			expression = ((UnaryExpression) expression).getExpression();
+
+		final Pass pass = new Pass();
+		List<EvaluationExpression> expressions;
+		if (expression instanceof AndExpression)
+			expressions = new ArrayList<EvaluationExpression>(((AndExpression) expression).getExpressions());
+		else if (numSources >= 2 && expression instanceof ArrayCreation)
+			expressions = new ArrayList<EvaluationExpression>(((ArrayCreation) expression).getElements());
+		else
+			expressions = Lists.newArrayList(new EvaluationExpression[] { expression });
+
+		if (expressions.size() > 1 && numSources == 1)
+			throw new IllegalArgumentException("Cannot define two sorting keys for one pass on a single input");
+
+		if (numSources > 1)
+			ExpressionUtil.sortExpressionsForInputs(expressions);
+
+		ExpressionUtil.removeInputSelections(expressions);
+		pass.setBlockingKeys(expressions);
+		return pass;
 	}
 
 	/**

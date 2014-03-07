@@ -2,6 +2,7 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.util.*;
 
+import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
 import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
@@ -14,6 +15,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise
  */
+@Ignore
 public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocking> {
 	private final EvaluationExpression[] sortingKeys;
 
@@ -23,8 +25,6 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	 * Initializes NaiveRecordLinkageInterSourceTest with the given parameter
 	 * 
 	 * @param projection
-	 * @param useId
-	 * @param blockingKeys
 	 */
 	public SNMDuplicateDetectionTest(final EvaluationExpression projection,
 			final int windowSize, final String[][] sortingKeys) {
