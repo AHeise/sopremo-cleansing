@@ -1,21 +1,10 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
-import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -26,7 +15,6 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise
  */
-@Ignore
 public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocking> {
 	private final EvaluationExpression[] sortingKeys;
 
@@ -70,10 +58,11 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	@Override
 	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
 		for (final EvaluationExpression sortingKey : this.sortingKeys) {
+			final EvaluationExpression leftKey = sortingKey.clone(), rightKey = sortingKey.clone();
 			Collections.sort(input, new Comparator<IJsonNode>() {
 				@Override
 				public int compare(IJsonNode left, IJsonNode right) {
-					return sortingKey.evaluate(left).compareTo(sortingKey.evaluate(right));
+					return leftKey.evaluate(left).compareTo(rightKey.evaluate(right));
 				}
 			});
 

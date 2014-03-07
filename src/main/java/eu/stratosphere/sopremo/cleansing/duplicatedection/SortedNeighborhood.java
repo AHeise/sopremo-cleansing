@@ -202,7 +202,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				withCandidateComparison(comparison).
 				withKeyExpression(0, new ArrayAccess(0)).
 				withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
-					new ChainedSegmentExpression(new ArrayAccess(2), pass.getBlockingKeys().get(0))));
+					new ChainedSegmentExpression(new ArrayAccess(2), pass.getBlockingKeys().get(0)))).
+				withResultProjection(comparison.getResultProjection());
 			passResults.add(window);
 		}
 		return new UnionAll().withInputs(passResults);

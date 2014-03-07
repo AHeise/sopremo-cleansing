@@ -70,7 +70,6 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		@Override
 		public void collect(IJsonNode record) {
 			final IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) record;
-			System.out.println(array);
 			emitCandidate(array.get(0), array.get(1));
 		}
 	};
@@ -96,7 +95,6 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 			dd.getPairFilter(), dd.getComparison());
 
 		try {
-			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
