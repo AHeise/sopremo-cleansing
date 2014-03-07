@@ -103,7 +103,7 @@ public class DDParseTest extends MeteorParseTest {
 			"$persons = read from 'file:///input.json';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
-			"  partition on $persons.age or $persons.lastName;" +
+			"  partition on [$persons.age, $persons.lastName];" +
 			"write $duplicates to 'file:///output.json';");
 
 		final SopremoPlan expectedPlan = new SopremoPlan();

@@ -196,49 +196,30 @@ public class CandidateSelection extends AbstractSopremoType {
 	public void parse(EvaluationExpression expression, int numSources) {
 		this.passes.clear();
 
-		if (expression instanceof OrExpression) {
-			final List<BooleanExpression> passExpressions = ((OrExpression) expression).getExpressions();
-			for (BooleanExpression passExpression : passExpressions) {
+		if (expression instanceof ArrayCreation)
+			for (EvaluationExpression passExpression : ((ArrayCreation) expression).getElements())
 				this.passes.add(parsePassExpression(passExpression, numSources));
-			}
-		} else if (expression instanceof ObjectCreation) {
-			if (numSources != 2)
-				throw new IllegalArgumentException("Can only use mappings for two sources");
-
-			final ObjectCreation oc = (ObjectCreation) expression;
-			for (int index = 0, size = oc.getMappingSize(); index < size; index++) {
-				final Pass pass = new Pass();
-				final Mapping<?> mapping = oc.getMapping(index);
-				final EvaluationExpression key1 = mapping.getTargetTagExpression();
-				final EvaluationExpression key2 = mapping.getExpression();
-				if (key1.findFirst(InputSelection.class).getIndex() == key2.findFirst(InputSelection.class).getIndex())
-					throw new IllegalArgumentException("The mapping " + mapping + " does not point to both sources");
-				pass.setBlockingKeys(key1, key2);
-				this.passes.add(pass);
-			}
-		}
 		else
 			this.passes.add(parsePassExpression(expression, numSources));
 	}
 
 	private Pass parsePassExpression(EvaluationExpression expression, int numSources) {
-		if (expression instanceof UnaryExpression)
-			expression = ((UnaryExpression) expression).getExpression();
-
 		final Pass pass = new Pass();
-		List<EvaluationExpression> expressions;
-		if (expression instanceof AndExpression)
-			expressions = new ArrayList<EvaluationExpression>(((AndExpression) expression).getExpressions());
-		else if (numSources >= 2 && expression instanceof ArrayCreation)
-			expressions = new ArrayList<EvaluationExpression>(((ArrayCreation) expression).getElements());
-		else
-			expressions = Lists.newArrayList(new EvaluationExpression[] { expression });
+		List<EvaluationExpression> expressions = new ArrayList<>();
+		if (numSources == 1)
+			expressions.add(expression);
+		else {
+			if (!(expression instanceof ObjectCreation))
+				throw new IllegalArgumentException("Must use mappings for two sources");
 
-		if (expressions.size() > 1 && numSources == 1)
-			throw new IllegalArgumentException("Cannot define two sorting keys for one pass on a single input");
-
-		if (numSources > 1)
+			final ObjectCreation oc = (ObjectCreation) expression;
+			if (oc.getMappings().size() != 1)
+				throw new IllegalArgumentException("Mapping must contain one element");
+			final Mapping<?> mapping = oc.getMapping(0);
+			expressions.add(mapping.getTargetTagExpression());
+			expressions.add(mapping.getExpression());
 			ExpressionUtil.sortExpressionsForInputs(expressions);
+		}
 
 		ExpressionUtil.removeInputSelections(expressions);
 		pass.setBlockingKeys(expressions);

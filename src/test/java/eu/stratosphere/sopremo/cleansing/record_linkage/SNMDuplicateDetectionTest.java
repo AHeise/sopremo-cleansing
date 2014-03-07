@@ -22,7 +22,7 @@ import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * Tests {@link DisjunctPartitioning} {@link InterSourceRecordLinkage} within one data source.
+ * Tests {@link SortedNeighborhood} within one data source.
  * 
  * @author Arvid Heise
  */
