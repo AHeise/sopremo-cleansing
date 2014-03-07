@@ -18,7 +18,6 @@ import com.esotericsoftware.kryo.serializers.MapSerializer;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
@@ -112,7 +111,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 	 * , eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		if (this.rules.isEmpty()) {
 			// short circuit
 			module.getOutput(0).setInput(0, module.getInput(0));

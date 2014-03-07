@@ -2,7 +2,6 @@ package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.base.join.ThetaJoin;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.Name;
@@ -24,11 +23,11 @@ public class NaiveDuplicateDetection extends CompositeDuplicateDetectionAlgorith
 	 */
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison, EvaluationContext context) {
+			PairFilter pairFilter, CandidateComparison comparison) {
 		return new ThetaJoin().
-			withCondition(comparison.asCondition(true)).
+			withCondition(getCondition()).
 			withResultProjection(comparison.getResultProjectionWithSimilarity()).
-			withInputs(inputs);
+			withInputs(inputs.get(0), inputs.get(inputs.size() - 1));
 	}
 	
 	/* (non-Javadoc)

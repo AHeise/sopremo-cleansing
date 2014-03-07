@@ -102,10 +102,10 @@ public class MappingJoinCondition extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + this.fromPaths.hashCode();
-		result = prime * result + (this.isMandatory ? 1231 : 1237);
-		result = prime * result + (this.isMonodirectional ? 1231 : 1237);
-		result = prime * result + this.toPaths.hashCode();
+		result = prime * result + ((fromPaths == null) ? 0 : fromPaths.hashCode());
+		result = prime * result + (isMandatory ? 1231 : 1237);
+		result = prime * result + (isMonodirectional ? 1231 : 1237);
+		result = prime * result + ((toPaths == null) ? 0 : toPaths.hashCode());
 		return result;
 	}
 
@@ -118,8 +118,22 @@ public class MappingJoinCondition extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		MappingJoinCondition other = (MappingJoinCondition) obj;
-		return this.isMandatory == other.isMandatory && this.isMonodirectional == other.isMonodirectional &&
-			this.fromPaths.equals(other.fromPaths) && this.toPaths.equals(other.toPaths);
+		if (fromPaths == null) {
+			if (other.fromPaths != null)
+				return false;
+		} else if (!fromPaths.equals(other.fromPaths))
+			return false;
+		if (isMandatory != other.isMandatory)
+			return false;
+		if (isMonodirectional != other.isMonodirectional)
+			return false;
+		if (toPaths == null) {
+			if (other.toPaths != null)
+				return false;
+		} else if (!toPaths.equals(other.toPaths))
+			return false;
+		return true;
 	}
+
 
 }

@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javolution.text.TextFormat;
 import javolution.text.TypeFormat;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 
@@ -34,8 +33,8 @@ public class MappingSchema extends AbstractSopremoType {
 
 	private int size = 0;
 
-	private String label;
-	private Map<String, Set<String>> groupings = new HashMap<String, Set<String>>();
+	private String label = "";
+	private Map<Integer, Set<String>> groupings = new HashMap<Integer, Set<String>>();
 
 	MappingSchema() {
 
@@ -50,11 +49,11 @@ public class MappingSchema extends AbstractSopremoType {
 		return this.size;
 	}
 
-	public Map<String, Set<String>> getGroupings() {
+	public Map<Integer, Set<String>> getGroupings() {
 		return this.groupings;
 	}
 
-	public void addKeyToInput(String input, String key) {
+	public void addKeyToInput(Integer input, String key) {
 		if (this.groupings.containsKey(input)) {
 			this.groupings.get(input).add(key);
 		}else{
@@ -75,8 +74,7 @@ public class MappingSchema extends AbstractSopremoType {
 		// entity_in1 : SequenceNode
 
 		for (int index = 0; index < this.size; index++) {
-			final String input = EntityMapping.inputPrefixStr
-				+ String.valueOf(index);
+			final Integer input = index;
 			INode tempEntity = new SequenceNode(EntityMapping.entityStr + input);
 			sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
 			sourceEntities.addChild(tempEntity);
@@ -86,7 +84,7 @@ public class MappingSchema extends AbstractSopremoType {
 
 		// ##### extend schema #####
 
-		for (Entry<String, Set<String>> grouping : this.groupings.entrySet()) {
+		for (Entry<Integer, Set<String>> grouping : this.groupings.entrySet()) {
 			for (String value : grouping.getValue()) {
 
 				INode sourceAttr;
@@ -117,7 +115,8 @@ public class MappingSchema extends AbstractSopremoType {
 		appendable.append(", label=");
 		appendable.append(this.label);
 		appendable.append(", groupings=");
-		TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
+		appendable.append(this.groupings.toString());
+		//TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
 		appendable.append("]");
 	}
 

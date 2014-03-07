@@ -26,10 +26,9 @@ public class MappingDataSource extends AbstractSopremoType {
 
 	private List<MappingKeyConstraint> keyConstraints = new ArrayList<MappingKeyConstraint>();
 
-	private MappingSchema targetSchema;
+	private MappingSchema targetSchema = new MappingSchema();
 
 	MappingDataSource() {
-
 	}
 
 	/**

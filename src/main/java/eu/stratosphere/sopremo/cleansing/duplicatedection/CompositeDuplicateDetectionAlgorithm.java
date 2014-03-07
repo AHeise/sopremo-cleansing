@@ -14,9 +14,12 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.base.GlobalEnumeration;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.operator.SopremoModule;
@@ -42,6 +45,8 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
+	private PairFilter pairFilter = new PairFilter();
+
 	/**
 	 * Sets the candidateSelection to the specified value.
 	 * 
@@ -53,6 +58,28 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 			throw new NullPointerException("candidateSelection must not be null");
 
 		this.candidateSelection = candidateSelection;
+	}
+
+	/**
+	 * Returns the pairFilter.
+	 * 
+	 * @return the pairFilter
+	 */
+	public PairFilter getPairFilter() {
+		return this.pairFilter;
+	}
+
+	/**
+	 * Sets the pairFilter to the specified value.
+	 * 
+	 * @param pairFilter
+	 *        the pairFilter to set
+	 */
+	public void setPairFilter(PairFilter pairFilter) {
+		if (pairFilter == null)
+			throw new NullPointerException("pairFilter must not be null");
+
+		this.pairFilter = pairFilter;
 	}
 
 	/**
@@ -105,17 +132,85 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	 * .sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		final CandidateComparison comparison = this.getComparison().copy();
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		List<Operator<?>> inputs = (List) module.getInputs();
-		if (requiresEnumeration() && comparison.requiresEnumeration())
-			inputs = comparison.addEnumeration(inputs);
-		// duplicate input
-		if (comparison.isInnerSource())
-			inputs.add(inputs.get(0));
-		module.embed(this.getImplementation(inputs, this.candidateSelection, comparison, context));
+		if (requiresEnumeration() && inputs.size() == 1 && !this.pairFilter.isConfigured())
+			inputs = addEnumeration(inputs, comparison);
+		module.embed(this.getImplementation(inputs, this.candidateSelection, this.pairFilter, comparison));
+	}
+
+	private List<Operator<?>> addEnumeration(List<Operator<?>> inputs, CandidateComparison comparison) {
+		List<Operator<?>> outputs = new ArrayList<Operator<?>>();
+		List<ObjectAccess> idPaths = new ArrayList<ObjectAccess>();
+		for (int index = 0; index < inputs.size(); index++) {
+			final GlobalEnumeration globalEnumeration = new GlobalEnumeration().
+				withInputs(inputs.get(index));
+			outputs.add(globalEnumeration);
+
+			final ObjectAccess idAccess = globalEnumeration.getIdAccess();
+			if (index == 0)
+				this.pairFilter.setLeftIdProjection(idAccess);
+			else
+				this.pairFilter.setRightIdProjection(idAccess);
+			idPaths.add(idAccess);
+		}
+		if (inputs.size() == 1)
+			this.pairFilter.setRightIdProjection(this.pairFilter.getLeftIdProjection());
+
+		final ChainedSegmentExpression idRemoval = new ChainedSegmentExpression();
+		for (int index = 0; index < 2; index++)
+			idRemoval.addExpression(new SetValueExpression(
+				ExpressionUtil.makePath(new InputSelection(index),
+					idPaths.get(inputs.size() == 1 ? 0 : index).clone()),
+				ConstantExpression.MISSING));
+		idRemoval.addExpression(comparison.getResultProjection());
+		comparison.setResultProjection(idRemoval);
+
+		return outputs;
+	}
+
+	protected BooleanExpression getCondition() {
+		if (this.getNumInputs() == 1)
+			return new AndExpression(this.pairFilter, this.comparison.asCondition());
+		return this.comparison.asCondition();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		appendable.append("[");
+		this.comparison.appendAsString(appendable);
+		appendable.append(", ");
+		this.candidateSelection.appendAsString(appendable);
+		appendable.append("]");
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.candidateSelection.hashCode();
+		result = prime * result + this.comparison.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		CompositeDuplicateDetectionAlgorithm<?> other = (CompositeDuplicateDetectionAlgorithm<?>) obj;
+		return this.candidateSelection.equals(other.candidateSelection) && this.comparison.equals(other.comparison);
 	}
 
 	protected boolean requiresEnumeration() {
@@ -123,5 +218,5 @@ public abstract class CompositeDuplicateDetectionAlgorithm<ImplType extends Comp
 	}
 
 	protected abstract Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison, EvaluationContext context);
+			PairFilter pairFilter, CandidateComparison comparison);
 }

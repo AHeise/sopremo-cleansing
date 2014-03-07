@@ -86,6 +86,7 @@ public class DuplicateDetectionIT extends MeteorIT {
 			JsonUtil.createArrayNode(r4, r14));
 	}
 
+	@Ignore
 	@Test
 	public void testSorting() throws IOException {
 

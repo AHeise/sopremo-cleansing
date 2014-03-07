@@ -52,14 +52,23 @@ public class EntityMappingUtil {
 	
 	public static List<String> getRelevantPathSteps(VariablePathExpression spicyPath) {
 		List<String> steps = new ArrayList<String>();
-		steps.add( getSourceId(spicyPath.getStartingVariable()) );
+		steps.add( "["+String.valueOf(spicyPath.getStartingVariable().getId()) +"]");
 		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
 			steps.add( spicyPath.getPathSteps().get(i) );			
 		}
 		return steps;
 	}
 	
-	public static String getSourceId(SetAlias setAlias) { 
-		return "v"+ setAlias.getId(); //e.g. "v0" as used by spicy
+	public static List<String> getRelevantPathStepsWithoutInput(VariablePathExpression spicyPath) {
+		List<String> steps = new ArrayList<String>();
+		steps.add(String.valueOf(spicyPath.getStartingVariable().getId()));
+		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
+			steps.add( spicyPath.getPathSteps().get(i) );			
+		}
+		return steps;
+	}
+	
+	public static int getSourceIdForArrayAccess(SetAlias setAlias) { 
+		return setAlias.getId(); //e.g. "v0" as used by spicy
 	}
 }

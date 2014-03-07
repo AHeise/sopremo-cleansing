@@ -23,7 +23,7 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class EntityMappingITfromFileInput extends MeteorIT {
 
 	@Test
-	public void testSuccessfulExecution() throws IOException {
+	public void testSimpleMappingFromMeteorFile() throws IOException {
 		final SopremoPlan plan = parseScript(new File("src/test/resources/MappingIT.script"));
 
 		this.client.submit(plan, null, true);

@@ -4,7 +4,9 @@ import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
 
@@ -20,11 +22,11 @@ public class MappingInformation extends AbstractSopremoType {
 
 	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 
-	private MappingSchema sourceSchema;
+	private MappingSchema sourceSchema = new MappingSchema();
 
 	private MappingDataSource target = new MappingDataSource();
 
-	private List<MappingValueCorrespondence> valueCorrespondences = new ArrayList<MappingValueCorrespondence>();
+	private Set<MappingValueCorrespondence> valueCorrespondences = new HashSet<MappingValueCorrespondence>();
 
 	MappingInformation() {
 
@@ -63,7 +65,7 @@ public class MappingInformation extends AbstractSopremoType {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
-	public List<MappingValueCorrespondence> getValueCorrespondences() {
+	public Set<MappingValueCorrespondence> getValueCorrespondences() {
 		return this.valueCorrespondences;
 	}
 
@@ -76,7 +78,7 @@ public class MappingInformation extends AbstractSopremoType {
 	}
 
 	public void setValueCorrespondences(
-			List<MappingValueCorrespondence> valueCorrespondences) {
+			Set<MappingValueCorrespondence> valueCorrespondences) {
 		this.valueCorrespondences = valueCorrespondences;
 	}
 
@@ -106,11 +108,11 @@ public class MappingInformation extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((this.sourceJoinCondition == null) ? 0 : this.sourceJoinCondition.hashCode());
-		result = prime * result + ((this.sourceSchema == null) ? 0 : this.sourceSchema.hashCode());
-		result = prime * result + ((this.target == null) ? 0 : this.target.hashCode());
-		result = prime * result + ((this.targetJoinConditions == null) ? 0 : this.targetJoinConditions.hashCode());
-		result = prime * result + ((this.valueCorrespondences == null) ? 0 : this.valueCorrespondences.hashCode());
+		result = prime * result + ((sourceJoinCondition == null) ? 0 : sourceJoinCondition.hashCode());
+		result = prime * result + ((sourceSchema == null) ? 0 : sourceSchema.hashCode());
+		result = prime * result + ((target == null) ? 0 : target.hashCode());
+		result = prime * result + ((targetJoinConditions == null) ? 0 : targetJoinConditions.hashCode());
+		result = prime * result + ((valueCorrespondences == null) ? 0 : valueCorrespondences.hashCode());
 		return result;
 	}
 
@@ -123,32 +125,32 @@ public class MappingInformation extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		MappingInformation other = (MappingInformation) obj;
-		if (this.sourceJoinCondition == null) {
+		if (sourceJoinCondition == null) {
 			if (other.sourceJoinCondition != null)
 				return false;
-		} else if (!this.sourceJoinCondition.equals(other.sourceJoinCondition))
+		} else if (!sourceJoinCondition.equals(other.sourceJoinCondition))
 			return false;
-		if (this.sourceSchema == null) {
+		if (sourceSchema == null) {
 			if (other.sourceSchema != null)
 				return false;
-		} else if (!this.sourceSchema.equals(other.sourceSchema))
+		} else if (!sourceSchema.equals(other.sourceSchema))
 			return false;
-		if (this.target == null) {
+		if (target == null) {
 			if (other.target != null)
 				return false;
-		} else if (!this.target.equals(other.target))
+		} else if (!target.equals(other.target))
 			return false;
-		if (this.targetJoinConditions == null) {
+		if (targetJoinConditions == null) {
 			if (other.targetJoinConditions != null)
 				return false;
-		} else if (!this.targetJoinConditions.equals(other.targetJoinConditions))
+		} else if (!targetJoinConditions.equals(other.targetJoinConditions))
 			return false;
-		if (this.valueCorrespondences == null) {
+		if (valueCorrespondences == null) {
 			if (other.valueCorrespondences != null)
 				return false;
-		} else if (!this.valueCorrespondences.equals(other.valueCorrespondences))
+		} else if (!valueCorrespondences.equals(other.valueCorrespondences))
 			return false;
 		return true;
 	}
-
+	
 }

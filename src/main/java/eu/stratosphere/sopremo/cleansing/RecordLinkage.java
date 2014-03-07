@@ -14,20 +14,11 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.operator.CompositeOperator;
-import eu.stratosphere.sopremo.operator.InputCardinality;
-import eu.stratosphere.sopremo.operator.Name;
-import eu.stratosphere.sopremo.operator.OutputCardinality;
-import eu.stratosphere.sopremo.operator.Property;
-import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.operator.*;
 import eu.stratosphere.util.reflect.ReflectUtil;
 
 /**
@@ -35,11 +26,12 @@ import eu.stratosphere.util.reflect.ReflectUtil;
  */
 @InputCardinality(2)
 @OutputCardinality(1)
+@Name(verb = "link records")
 public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
-	private CandidateComparison comparison = new CandidateComparison().withInnerSource(false);
+	private CandidateComparison comparison = new CandidateComparison();
 
 	private DuplicateDetectionImplementation implementation;
 
@@ -89,8 +81,8 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
 	@Property
 	@Name(preposition = "where")
-	public void setComparisonExpression(EvaluationExpression expression) {
-		this.comparison.parseRules(expression);
+	public void setComparisonExpression(BooleanExpression expression) {
+		this.comparison.setDuplicateExpression(expression);
 	}
 
 	@Property
@@ -134,7 +126,7 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module, EvaluationContext context) {
+	public void addImplementation(SopremoModule module) {
 		final CompositeDuplicateDetectionAlgorithm<?> algorithm;
 		if (this.implementation != null)
 			algorithm = ReflectUtil.newInstance(this.implementation.getType());

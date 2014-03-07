@@ -5,6 +5,7 @@ import it.unibas.spicy.persistence.DAOException;
 import it.unibas.spicy.persistence.DAOMappingTaskTgds;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -16,7 +17,11 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 	
 	@Override
 	protected SpicyMappingTransformation createDefaultInstance(final int index) {
-		return new SpicyMappingTransformation();
+		SpicyMappingTransformation foo = new SpicyMappingTransformation();
+		Map<String, Integer> inputIndices = new HashMap<String, Integer>();
+		inputIndices.put("key", index);
+		foo.setInputIndex(inputIndices);
+		return foo;
 	}
 	
 	@Test
@@ -67,7 +72,7 @@ public class SpicyMappingTransformationFromTGDFileTest extends SopremoOperatorTe
 		sopremoPlan.run();
 	}	
 	
-	@Test
+	@Test @Ignore
 	public void shouldPerformExampleMappingGeneratedWithSKFunction() {
 
 		MappingTask task = null;

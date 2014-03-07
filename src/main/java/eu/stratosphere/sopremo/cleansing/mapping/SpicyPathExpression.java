@@ -96,14 +96,6 @@ public class SpicyPathExpression extends AbstractSopremoType {
 		return this.pathExpression;
 	}
 
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + this.pathExpression.hashCode();
-		return result;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
@@ -111,6 +103,22 @@ public class SpicyPathExpression extends AbstractSopremoType {
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		appendable.append(this.pathExpression.toString());
+	}
+
+	public String getFirstStep() {
+		return this.pathExpression.getFirstStep();
+	}
+
+	public String getLastStep() {
+		return this.pathExpression.getLastStep();
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((pathExpression == null) ? 0 : pathExpression.hashCode());
+		return result;
 	}
 
 	@Override
@@ -122,15 +130,12 @@ public class SpicyPathExpression extends AbstractSopremoType {
 		if (getClass() != obj.getClass())
 			return false;
 		SpicyPathExpression other = (SpicyPathExpression) obj;
-		return this.pathExpression.equals(other.pathExpression);
+		if (pathExpression == null) {
+			if (other.pathExpression != null)
+				return false;
+		} else if (!pathExpression.equals(other.pathExpression))
+			return false;
+		return true;
 	}
-
-	public String getFirstStep() {
-		return this.pathExpression.getFirstStep();
-	}
-
-	public String getLastStep() {
-		return this.pathExpression.getLastStep();
-	}
-
+	
 }

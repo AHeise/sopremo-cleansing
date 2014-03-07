@@ -3,7 +3,9 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 import it.unibas.spicy.model.mapping.MappingTask;
 
 import java.util.HashMap;
+import java.util.Map;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
@@ -20,8 +22,11 @@ public class SpicyMappingTransformationWithKeysTest extends
 
 	@Override
 	protected SpicyMappingTransformation createDefaultInstance(final int index) {
-		return new SpicyMappingTransformation();
-		// setter, e.g. condition
+		SpicyMappingTransformation foo = new SpicyMappingTransformation();
+		Map<String, Integer> inputIndices = new HashMap<String, Integer>();
+		inputIndices.put("key", index);
+		foo.setInputIndex(inputIndices);
+		return foo;
 	}
 
 	private void addDefaultPersonsToPlan(SopremoTestPlan plan) {
@@ -259,9 +264,9 @@ public class SpicyMappingTransformationWithKeysTest extends
 	}
 	
 	/**
-	 * Full outer join semantics
+	 * Full outer join semantics - ignored because we need input from Paolo for this case...
 	 */
-	@Test
+	@Test @Ignore
 	public void shouldPerformMappingSourceAndTargetJoinNotMandatory() {
 
 		SpicyMappingFactory taskFactory = new SpicyMappingFactory();

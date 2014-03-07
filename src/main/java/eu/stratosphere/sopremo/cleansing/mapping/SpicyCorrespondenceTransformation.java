@@ -36,11 +36,11 @@ import org.nfunk.jep.ASTFunNode;
 import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
-import eu.stratosphere.sopremo.EvaluationContext;
-import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
 /**
@@ -64,14 +64,31 @@ public class SpicyCorrespondenceTransformation {
 		return createdNestedObject(map);
 	}
 	
-	public ObjectCreation createNestedObjectFromSpicyPaths(List<VariableCorrespondence> correspondences) {
+	public ArrayCreation createArrayFromSpicyPaths(List<VariableCorrespondence> correspondences) {
 		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
 		for(VariableCorrespondence varCor : correspondences) {
-			List<String> targetPathList = EntityMappingUtil.getRelevantPathSteps(varCor.getTargetPath()); //split target and add first as key to map e.g. [v3,fullname,name]
+			List<String> targetPathList = EntityMappingUtil.getRelevantPathStepsWithoutInput(varCor.getTargetPath()); //split target and add first as key to map e.g. [v3,fullname,name]
 			Expression function = varCor.getTransformationFunction();	//includes source paths e.g. [v4.usCongressBiographies.usCongressBiography.worksFor]
 			addTargetAttributeCreationToMap(map, targetPathList, new FunctionGenerator(function));
 		}
-		return createdNestedObject(map);
+		ObjectCreation tempObject = createdNestedObject(map);
+		
+//		List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
+//		while(currentElements.size()<=setAlias.getId()){
+//			currentElements.add(ConstantExpression.MISSING);
+//		}
+//		currentElements.set(setAlias.getId(), objectVi);
+		List<EvaluationExpression> tempElements = new ArrayList<EvaluationExpression>();
+		
+		for(Mapping<?> mapping : tempObject.getMappings()){
+			int index = Integer.valueOf(mapping.getTarget().toString());
+			while(tempElements.size()<=index){
+				tempElements.add(ConstantExpression.MISSING);
+			}
+			tempElements.set(index, mapping.getExpression());
+		}
+		return new ArrayCreation(tempElements);
+		//return createdNestedObject(map);
 	}
 	
 	public ObjectCreation createdNestedObject(Map<String, List<TargetAttributeCreation>> map) {
@@ -87,7 +104,8 @@ public class SpicyCorrespondenceTransformation {
 					Node topNode = function.getJepExpression().getTopNode();
 					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
 				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen(); //TODO
+					//TODO
+					//SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen();
 					sopremoSourcePath = ConstantExpression.NULL;
 				} else if(tac.getValueGen() instanceof NullValueGenerator) {
 					sopremoSourcePath = ConstantExpression.NULL;
@@ -126,13 +144,18 @@ public class SpicyCorrespondenceTransformation {
 	}
 	
 	private EvaluationExpression processJepFunctionNode(Node topNode, List<VariablePathExpression> sourcePaths) {
-		if(topNode instanceof ASTVarNode ) { //usual 1:1-mapping without a function
-			return createFunctionSourcePath( ((ASTVarNode) topNode).getVarName(), sourcePaths ); 
-		} else if(topNode instanceof ASTFunNode ) { //uses a function
-			return JepFunctionFactory.create( (ASTFunNode) topNode, sourcePaths);
-		} else if(topNode instanceof ASTConstant) {
-			return new ConstantExpression( ((ASTConstant) topNode).getValue() );
-		} 
+		if (topNode instanceof ASTVarNode) { // usual 1:1-mapping without a
+												// function
+			return createFunctionSourcePath(((ASTVarNode) topNode).getVarName(), sourcePaths);
+			// TODO remove JepFunctionFactory?!
+		} else if (topNode instanceof FunctionNode) {
+			FunctionNode fnNode = (FunctionNode) topNode;
+			return fnNode.getExpression();
+		} else if (topNode instanceof ASTConstant) {
+			return new ConstantExpression(((ASTConstant) topNode).getValue());
+		} else if (topNode instanceof ASTFunNode) { // uses a function
+			return JepFunctionFactory.create((ASTFunNode) topNode, sourcePaths);
+		}
 		return null;
 	}
 

@@ -21,6 +21,8 @@ import eu.stratosphere.sopremo.operator.ElementaryOperator;
  */
 public abstract class ElementaryDuplicateDetectionAlgorithm<ImplType extends ElementaryDuplicateDetectionAlgorithm<ImplType>>
 		extends ElementaryOperator<ImplType> {
+	private PairFilter pairFilter = new PairFilter();
+
 	private CandidateComparison candidateComparison = new CandidateComparison();
 
 	/**
@@ -33,16 +35,38 @@ public abstract class ElementaryDuplicateDetectionAlgorithm<ImplType extends Ele
 	}
 
 	/**
+	 * Returns the pairFilter.
+	 * 
+	 * @return the pairFilter
+	 */
+	public PairFilter getPairFilter() {
+		return this.pairFilter;
+	}
+
+	/**
 	 * Sets the value of candidateComparison to the given value.
 	 * 
 	 * @param candidateComparison
 	 *        the candidateComparison to set
 	 */
-	public void setCandidateComparison(CandidateComparison candidateComparison) {
+	public void setCandidateComparison(final CandidateComparison candidateComparison) {
 		if (candidateComparison == null)
 			throw new NullPointerException("candidateComparison must not be null");
 
 		this.candidateComparison = candidateComparison;
+	}
+
+	/**
+	 * Sets the pairFilter to the specified value.
+	 * 
+	 * @param pairFilter
+	 *        the pairFilter to set
+	 */
+	public void setPairFilter(final PairFilter pairFilter) {
+		if (pairFilter == null)
+			throw new NullPointerException("pairFilter must not be null");
+
+		this.pairFilter = pairFilter;
 	}
 
 	/**
@@ -52,8 +76,19 @@ public abstract class ElementaryDuplicateDetectionAlgorithm<ImplType extends Ele
 	 *        the candidateComparison to set
 	 * @return this
 	 */
-	public ImplType withCandidateComparison(CandidateComparison candidateComparison) {
+	public ImplType withCandidateComparison(final CandidateComparison candidateComparison) {
 		this.setCandidateComparison(candidateComparison);
+		return this.self();
+	}
+
+	/**
+	 * Sets the pairFilter to the specified value.
+	 * 
+	 * @param pairFilter
+	 *        the pairFilter to set
+	 */
+	public ImplType withPairFilter(final PairFilter pairFilter) {
+		this.setPairFilter(pairFilter);
 		return this.self();
 	}
 }

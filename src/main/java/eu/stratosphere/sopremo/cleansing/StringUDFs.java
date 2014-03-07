@@ -19,7 +19,7 @@ import java.io.IOException;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
 import eu.stratosphere.sopremo.function.SopremoFunction2;
-import eu.stratosphere.sopremo.function.SopremoVarargFunction;
+import eu.stratosphere.sopremo.function.SopremoVarargFunction0;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.packages.BuiltinProvider;
 import eu.stratosphere.sopremo.type.ArrayNode;
@@ -152,8 +152,9 @@ public class StringUDFs implements BuiltinProvider {
 	 * reference a textual value.
 	 */
 	@Name(noun = "concat_strings")
-	public static SopremoFunction CONCAT_STRINGS = new SopremoVarargFunction(0) {
-
+	public static SopremoFunction CONCAT_STRINGS = new SopremoVarargFunction0() {
+		
+		
 		@Override
 		public IJsonNode call(IArrayNode<IJsonNode> params) {
 			StringBuilder builder = new StringBuilder();
@@ -186,6 +187,7 @@ public class StringUDFs implements BuiltinProvider {
 				}
 			}
 		}
+
 	};
 
 	/**
