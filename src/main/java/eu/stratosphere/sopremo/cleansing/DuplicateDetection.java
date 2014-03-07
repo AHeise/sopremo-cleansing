@@ -23,6 +23,7 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDete
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -41,7 +42,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
 public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	private CompositeDuplicateDetectionAlgorithm<?> algorithm = new NaiveDuplicateDetection().
-		withComparison(new CandidateComparison().withInnerSource(true));
+		withComparison(new CandidateComparison());
 
 	/**
 	 * Initializes DuplicateDetection.
@@ -80,8 +81,8 @@ public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	@Property
 	@Name(preposition = "where")
-	public void setComparisonExpression(EvaluationExpression expression) {
-		this.algorithm.getComparison().parseRules(expression);
+	public void setComparisonExpression(BooleanExpression expression) {
+		this.algorithm.getComparison().setDuplicateExpression(expression);
 	}
 
 	@Property

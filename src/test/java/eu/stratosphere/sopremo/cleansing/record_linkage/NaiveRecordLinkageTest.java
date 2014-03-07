@@ -14,7 +14,7 @@ import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * Tests {@link Naive} {@link InterSourceRecordLinkage} with two data sources.
+ * Tests {@link NaiveDuplicateDetection} with two data sources.
  * 
  * @author Arvid Heise
  */
@@ -22,9 +22,6 @@ public class NaiveRecordLinkageTest extends RecordLinkageTestBase<NaiveDuplicate
 
 	/**
 	 * Initializes NaiveRecordLinkageInterSourceTest with the given parameter
-	 * 
-	 * @param resultProjection1
-	 * @param resultProjection2
 	 */
 	public NaiveRecordLinkageTest(final EvaluationExpression resultProjection) {
 		super(resultProjection);

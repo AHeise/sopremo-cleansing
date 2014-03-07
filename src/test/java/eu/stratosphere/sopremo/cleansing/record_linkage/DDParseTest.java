@@ -15,18 +15,25 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
+import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * @author arv
@@ -54,9 +61,15 @@ public class DDParseTest extends MeteorParseTest {
 	}
 
 	private CandidateComparison getComparison() {
+		final SimilarityExpression similarityExpression = new SimilarityExpression(new PathSimilarity<IJsonNode>(
+			new ObjectAccess("firstName"),
+			new CoercingSimilarity(new LevenshteinSimilarity()),
+			new ObjectAccess("firstName")));
 		return new CandidateComparison().
-			withInnerSource(true).
-			withRules(CandidateComparison.DuplicateRule.valueOf(new LevenshteinSimilarity(), 0.7f));
+			withDuplicateExpression(
+			new ComparativeExpression(similarityExpression,
+				ComparativeExpression.BinaryOperator.GREATER_EQUAL,
+				new ConstantExpression(new BigDecimal("0.7"))));
 	}
 
 	@Test
@@ -70,10 +83,39 @@ public class DDParseTest extends MeteorParseTest {
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file:/input.json");
-		final DuplicateDetection duplicateDetection = new DuplicateDetection().
-			withImplementation(DuplicateDetectionImplementation.BLOCKING).
-			withInputs(input).
-			withComparison(getComparison());
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.BLOCKING).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.BLOCK).withPass(new ObjectAccess("age")));
+
+		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
+		expectedPlan.setSinks(output);
+
+		assertPlanEquals(expectedPlan, actualPlan);
+	}
+
+	@Test
+	public void testMultipassBlocking() throws IOException {
+		final SopremoPlan actualPlan = parseScript("using cleansing;" +
+			"$persons = read from 'file:///input.json';" +
+			"$duplicates = detect duplicates $persons " +
+			"  where levenshtein($persons.firstName) >= 0.7" +
+			"  partition on $persons.age or $persons.lastName;" +
+			"write $duplicates to 'file:///output.json';");
+
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input = new Source("file:/input.json");
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.BLOCKING).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.BLOCK).withPass(new ObjectAccess("age")).withPass(
+						new ObjectAccess("lastName")));
 
 		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
 		expectedPlan.setSinks(output);
@@ -93,10 +135,13 @@ public class DDParseTest extends MeteorParseTest {
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file:/input.json");
-		final DuplicateDetection duplicateDetection = new DuplicateDetection().
-			withImplementation(DuplicateDetectionImplementation.SNM).
-			withInputs(input).
-			withComparison(getComparison());
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.SNM).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.SORT).withPass(new ObjectAccess("age")));
 		((SortedNeighborhood) duplicateDetection.getAlgorithm()).setWindowSize(20);
 
 		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);

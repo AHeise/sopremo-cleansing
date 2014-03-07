@@ -10,31 +10,26 @@ import org.junit.runners.Parameterized;
 import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
+import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ArrayProjection;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
+import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
-import eu.stratosphere.util.Collector;
 
 /**
- * Base for inner source {@link InterSourceRecordLinkage} test cases within one source.
+ * Base for inner source {@link DuplicateDetection} test cases within one source.
  * 
  * @author Arvid Heise
  * @param <P>
- *        the {@link RecordLinkageAlgorithm}
+ *        the {@link CompositeDuplicateDetectionAlgorithm}
  */
 @RunWith(Parameterized.class)
 @Ignore
@@ -66,16 +61,8 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 			this.resultProjection);
 	}
 
-	protected Collector<IJsonNode> duplicateCollector = new Collector<IJsonNode>() {
-		/*
-		 * (non-Javadoc)
-		 * @see eu.stratosphere.pact.common.stubs.Collector#close()
-		 */
-		@Override
-		public void close() {
-		}
-
-		/*
+	protected JsonCollector<IJsonNode> duplicateCollector = new JsonCollector<IJsonNode>(SopremoEnvironment.getInstance().getEvaluationContext()) {
+				/*
 		 * (non-Javadoc)
 		 * @see eu.stratosphere.pact.common.stubs.Collector#collect(java.lang.Object)
 		 */
@@ -94,19 +81,18 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	public void pactCodeShouldPerformLikeStandardImplementation() {
 
 		final CompositeDuplicateDetectionAlgorithm<?> dd = getImplementation();
-		dd.getComparison().setInnerSource(true);
 		dd.setCandidateSelection(getCandidateSelection());
 		dd.setDegreeOfParallelism(2);
 		if (this.useId) {
-			dd.getComparison().setIdProjection(new ObjectAccess("id"));
+			dd.getPairFilter().setIdProjection(new ObjectAccess("id"));
 		}
 		if (this.resultProjection != null)
 			dd.getComparison().setResultProjection(this.resultProjection);
 
 		this.sopremoTestPlan = createTestPlan(dd);
 
-		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)),
-			(CandidateComparison) dd.getComparison().clone());
+		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)),		
+			dd.getPairFilter(), dd.getComparison());
 
 		try {
 			this.sopremoTestPlan.trace();
@@ -116,19 +102,17 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		}
 	}
 
-	/**
-	 * @return
-	 */
 	protected CandidateSelection getCandidateSelection() {
 		return new CandidateSelection();
 	}
 
 	/**
-	 * Generates the expected pairs and invokes {@link #emitCandidate(KeyValuePair, KeyValuePair)}.
+	 * Generates the expected pairs and invokes {@link #emitCandidate(IJsonNode, IJsonNode)}.
 	 * 
 	 * @param input
+	 * @param pairFilter 
 	 */
-	protected abstract void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison);
+	protected abstract void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison);
 
 	/**
 	 * Emit the candidate.
@@ -163,9 +147,6 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 	/**
 	 * Creates a test plan for the record linkage operator.
 	 * 
-	 * @param recordLinkage
-	 * @param useId
-	 * @param projection
 	 * @return the generated test plan
 	 */
 	protected SopremoTestPlan createTestPlan(CompositeDuplicateDetectionAlgorithm<?> dd) {

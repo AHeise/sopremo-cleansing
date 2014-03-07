@@ -17,7 +17,7 @@ import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * Tests {@link DisjunctPartitioning} {@link InterSourceRecordLinkage} with two data sources.
+ * Tests {@link Blocking} with two data sources.
  * 
  * @author Arvid Heise
  */
@@ -28,8 +28,6 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	/**
 	 * Initializes NaiveRecordLinkageInterSourceTest with the given parameter
 	 * 
-	 * @param resultProjection1
-	 * @param resultProjection2
 	 * @param blockingKeys
 	 */
 	public BlockingRecordLinkageTest(final EvaluationExpression resultProjection, final String[][] blockingKeys) {
@@ -52,7 +50,7 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	protected CandidateSelection getCandidateSelection() {
 		final CandidateSelection candidateSelection = super.getCandidateSelection();
 		for (int index = 0; index < this.leftBlockingKeys.length; index++)
-			candidateSelection.addPass(this.leftBlockingKeys[index], this.rightBlockingKeys[index]);
+			candidateSelection.withPass(this.leftBlockingKeys[index], this.rightBlockingKeys[index]);
 		return candidateSelection;
 	}
 
