@@ -70,6 +70,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 		@Override
 		public void collect(IJsonNode record) {
 			final IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) record;
+			System.out.println(array);
 			emitCandidate(array.get(0), array.get(1));
 		}
 	};
