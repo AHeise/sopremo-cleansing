@@ -42,7 +42,7 @@ import eu.stratosphere.util.reflect.ReflectUtil;
 public class DuplicateDetection extends CompositeOperator<DuplicateDetection> {
 
 	private CompositeDuplicateDetectionAlgorithm<?> algorithm = new NaiveDuplicateDetection().
-		withComparison(new CandidateComparison().withInnerSource(true));
+		withComparison(new CandidateComparison());
 
 	/**
 	 * Initializes DuplicateDetection.

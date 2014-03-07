@@ -1,19 +1,32 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
- * Tests {@link DisjunctPartitioning} {@link InterSourceRecordLinkage} within one data source.
+ * Tests {@link SortedNeighborhood} within one data source.
  * 
  * @author Arvid Heise
  */
+@Ignore
 public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocking> {
 	private final EvaluationExpression[] sortingKeys;
 
@@ -23,16 +36,15 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	 * Initializes NaiveRecordLinkageInterSourceTest with the given parameter
 	 * 
 	 * @param projection
-	 * @param useId
-	 * @param blockingKeys
 	 */
 	public SNMDuplicateDetectionTest(final EvaluationExpression projection,
 			final int windowSize, final String[][] sortingKeys) {
 		super(projection, true);
 
 		this.sortingKeys = new EvaluationExpression[sortingKeys[0].length];
-		for (int index = 0; index < this.sortingKeys.length; index++)
-			this.sortingKeys[index] = new ObjectAccess(sortingKeys[0][index]);
+		for (int index = 0; index < this.sortingKeys.length; index++) {
+			this.sortingKeys[index] = new ArrayCreation(new ObjectAccess(sortingKeys[0][index]), new ObjectAccess("id"));
+		}
 		this.windowSize = windowSize;
 	}
 
@@ -51,11 +63,12 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	/*
 	 * (non-Javadoc)
 	 * @see
-	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(eu.stratosphere
-	 * .sopremo.SopremoTestPlan.Input, eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
+	 * eu.stratosphere.sopremo.cleansing.record_linkage.DuplicateDetectionTestBase#generateExpectedPairs(java.util.List,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.PairFilter,
+	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
-	protected void generateExpectedPairs(List<IJsonNode> input, CandidateComparison comparison) {
+	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
 		for (final EvaluationExpression sortingKey : this.sortingKeys) {
 			Collections.sort(input, new Comparator<IJsonNode>() {
 				@Override
@@ -63,7 +76,7 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 					return sortingKey.evaluate(left).compareTo(sortingKey.evaluate(right));
 				}
 			});
-			
+
 			for (int index1 = 0, size = input.size(); index1 < size; index1++) {
 				IJsonNode left = input.get(index1);
 				for (int index2 = index1 + 1; index2 < Math.min(size, index1 + this.windowSize); index2++) {
@@ -76,7 +89,7 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 
 	@Override
 	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
-		return new SortedNeighborhood().withWindowSize(windowSize);
+		return new SortedNeighborhood().withWindowSize(this.windowSize);
 	}
 
 	@Override
@@ -96,7 +109,7 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 		final ArrayList<Object[]> parameters = new ArrayList<Object[]>();
 		for (final EvaluationExpression projection : projections)
 			for (final String[][] combinedBlockingKeys : TestKeys.CombinedBlockingKeys)
-				for (final int windowSize : new int[] { 2, 3})
+				for (final int windowSize : new int[] { 2, 3 })
 					parameters.add(new Object[] { projection, windowSize, combinedBlockingKeys });
 
 		return parameters;

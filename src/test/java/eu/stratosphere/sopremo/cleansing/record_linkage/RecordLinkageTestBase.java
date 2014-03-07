@@ -19,11 +19,11 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
- * Base for inner source {@link InterSourceRecordLinkage} test cases between at least two sources.
+ * Base for inner source {@link RecordLinkage} test cases between at least two sources.
  * 
  * @author Arvid Heise
  * @param <P>
- *        the {@link RecordLinkageAlgorithm}
+ *        the {@link CompositeDuplicateDetectionAlgorithm}
  */
 @RunWith(Parameterized.class)
 @Ignore
@@ -34,9 +34,6 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 
 	/**
 	 * Initializes InterSourceRecordLinkageAlgorithmTestBase.
-	 * 
-	 * @param resultProjection1
-	 * @param resultProjection2
 	 */
 	protected RecordLinkageTestBase(EvaluationExpression resultProjection) {
 		this.resultProjection = resultProjection;
@@ -58,6 +55,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		this.generateExpectedPairs(this.sopremoTestPlan.getInput(0), this.sopremoTestPlan.getInput(1), recordLinkage.getComparison());
 
 		try {
+			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
@@ -65,7 +63,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	}
 
 	/**
-	 * Generates the expected pairs and invokes {@link #emitCandidate(KeyValuePair, KeyValuePair)}.
+	 * Generates the expected pairs and invokes {@link #emitCandidate(IJsonNode, IJsonNode)}.
 	 * 
 	 * @param leftInput
 	 * @param rightInput
@@ -113,9 +111,6 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * Creates a test plan for the record linkage operator.
 	 * 
 	 * @param recordLinkage
-	 * @param useId
-	 * @param resultProjection1
-	 * @param resultProjection2
 	 * @return the generated test plan
 	 */
 	protected static SopremoTestPlan createTestPlan(RecordLinkage recordLinkage) {
@@ -134,9 +129,6 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		return sopremoTestPlan;
 	}
 
-	/**
-	 * @return
-	 */
 	protected CandidateSelection getCandidateSelection() {
 		return new CandidateSelection();
 	}

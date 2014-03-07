@@ -21,10 +21,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
@@ -69,11 +66,10 @@ public class DDParseTest extends MeteorParseTest {
 			new CoercingSimilarity(new LevenshteinSimilarity()),
 			new ObjectAccess("firstName")));
 		return new CandidateComparison().
-			withInnerSource(true).
 			withDuplicateExpression(
-				new ComparativeExpression(similarityExpression,
-					ComparativeExpression.BinaryOperator.GREATER_EQUAL,
-					new ConstantExpression(new BigDecimal("0.7"))));
+			new ComparativeExpression(similarityExpression,
+				ComparativeExpression.BinaryOperator.GREATER_EQUAL,
+				new ConstantExpression(new BigDecimal("0.7"))));
 	}
 
 	@Test
@@ -87,11 +83,39 @@ public class DDParseTest extends MeteorParseTest {
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file:/input.json");
-		final DuplicateDetection duplicateDetection = new DuplicateDetection().
-			withImplementation(DuplicateDetectionImplementation.BLOCKING).
-			withInputs(input).
-			withComparison(getComparison()).
-			withCandidateSelection(new CandidateSelection().withSelectionHint(SelectionHint.BLOCK).withPass(new ObjectAccess("age")));
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.BLOCKING).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.BLOCK).withPass(new ObjectAccess("age")));
+
+		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
+		expectedPlan.setSinks(output);
+
+		assertPlanEquals(expectedPlan, actualPlan);
+	}
+
+	@Test
+	public void testMultipassBlocking() throws IOException {
+		final SopremoPlan actualPlan = parseScript("using cleansing;" +
+			"$persons = read from 'file:///input.json';" +
+			"$duplicates = detect duplicates $persons " +
+			"  where levenshtein($persons.firstName) >= 0.7" +
+			"  partition on [$persons.age, $persons.lastName];" +
+			"write $duplicates to 'file:///output.json';");
+
+		final SopremoPlan expectedPlan = new SopremoPlan();
+		final Source input = new Source("file:/input.json");
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.BLOCKING).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.BLOCK).withPass(new ObjectAccess("age")).withPass(
+						new ObjectAccess("lastName")));
 
 		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);
 		expectedPlan.setSinks(output);
@@ -111,11 +135,13 @@ public class DDParseTest extends MeteorParseTest {
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file:/input.json");
-		final DuplicateDetection duplicateDetection = new DuplicateDetection().
-			withImplementation(DuplicateDetectionImplementation.SNM).
-			withInputs(input).
-			withComparison(getComparison()).
-			withCandidateSelection(new CandidateSelection().withSelectionHint(SelectionHint.SORT).withPass(new ObjectAccess("age")));
+		final DuplicateDetection duplicateDetection =
+			new DuplicateDetection().
+				withImplementation(DuplicateDetectionImplementation.SNM).
+				withInputs(input).
+				withComparison(getComparison()).
+				withCandidateSelection(
+					new CandidateSelection().withSelectionHint(SelectionHint.SORT).withPass(new ObjectAccess("age")));
 		((SortedNeighborhood) duplicateDetection.getAlgorithm()).setWindowSize(20);
 
 		final Sink output = new Sink("file:/output.json").withInputs(duplicateDetection);

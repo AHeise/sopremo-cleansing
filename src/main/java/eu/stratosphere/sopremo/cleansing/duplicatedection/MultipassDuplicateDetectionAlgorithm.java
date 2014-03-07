@@ -23,13 +23,11 @@ import eu.stratosphere.sopremo.operator.Operator;
 
 /**
  * @author arv
- *
  */
 public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDuplicateDetectionAlgorithm<Blocking> {
 
 	/**
 	 * Initializes MultipassDuplicateDetectionAlgorithm.
-	 *
 	 */
 	public MultipassDuplicateDetectionAlgorithm() {
 		super();
@@ -37,7 +35,7 @@ public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDupl
 
 	/**
 	 * Initializes MultipassDuplicateDetectionAlgorithm.
-	 *
+	 * 
 	 * @param minInputs
 	 * @param maxInputs
 	 * @param minOutputs
@@ -49,7 +47,7 @@ public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDupl
 
 	/**
 	 * Initializes MultipassDuplicateDetectionAlgorithm.
-	 *
+	 * 
 	 * @param numberOfInputs
 	 * @param numberOfOutputs
 	 */
@@ -57,17 +55,19 @@ public abstract class MultipassDuplicateDetectionAlgorithm extends CompositeDupl
 		super(numberOfInputs, numberOfOutputs);
 	}
 
-	protected abstract Operator<?> createPass(List<Operator<?>> inputs, Pass pass, CandidateComparison comparison);
+	protected abstract Operator<?> createPass(List<Operator<?>> inputs, Pass pass, PairFilter pairFilter,
+			CandidateComparison comparison);
 
 	@Override
-	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection, CandidateComparison comparison) {
+	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
+			PairFilter pairFilter, CandidateComparison comparison) {
 		if (selection.getPasses().size() == 1)
-			return createPass(inputs, selection.getPasses().get(0), comparison);
-	
+			return createPass(inputs, selection.getPasses().get(0), pairFilter, comparison);
+
 		List<Operator<?>> passes = new ArrayList<Operator<?>>();
 		for (Pass pass : selection.getPasses())
-			passes.add(createPass(inputs, pass, comparison));
-	
+			passes.add(createPass(inputs, pass, pairFilter, comparison));
+
 		return new UnionAll().withInputs(passes);
 	}
 

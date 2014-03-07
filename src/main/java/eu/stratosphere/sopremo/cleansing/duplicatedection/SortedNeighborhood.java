@@ -155,8 +155,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	 */
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
-			CandidateComparison comparison) {
-		if (!comparison.isInnerSource())
+			PairFilter pairFilter, CandidateComparison comparison) {
+		if (inputs.size() > 1)
 			throw new UnsupportedOperationException();
 
 		final Grouping countRecords = new Grouping().

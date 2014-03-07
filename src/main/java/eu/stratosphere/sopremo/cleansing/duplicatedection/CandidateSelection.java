@@ -19,13 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.google.common.base.Predicates;
+import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
@@ -135,7 +132,7 @@ public class CandidateSelection extends AbstractSopremoType {
 		/**
 		 * Sets the value of blockingKey to the given value.
 		 * 
-		 * @param blockingKey
+		 * @param blockingKeys
 		 *        the blockingKey to set
 		 */
 		public void setBlockingKeys(List<EvaluationExpression> blockingKeys) {
@@ -149,7 +146,7 @@ public class CandidateSelection extends AbstractSopremoType {
 		/**
 		 * Sets the value of blockingKey to the given value.
 		 * 
-		 * @param blockingKey
+		 * @param blockingKeys
 		 *        the blockingKey to set
 		 */
 		public void setBlockingKeys(EvaluationExpression... blockingKeys) {
@@ -188,41 +185,45 @@ public class CandidateSelection extends AbstractSopremoType {
 			return this.blockingKeys.equals(other.blockingKeys);
 		}
 
+		public EvaluationExpression getBlockingKey(int index) {
+			if (this.blockingKeys.size() == 1)
+				return this.blockingKeys.get(0);
+			return this.blockingKeys.get(index);
+		}
+
 	}
 
 	public void parse(EvaluationExpression expression, int numSources) {
 		this.passes.clear();
 
-		if (expression instanceof ObjectCreation) {
-			if (numSources != 2)
-				throw new IllegalArgumentException("Can only use mappings for two sources");
+		if (expression instanceof ArrayCreation)
+			for (EvaluationExpression passExpression : ((ArrayCreation) expression).getElements())
+				this.passes.add(parsePassExpression(passExpression, numSources));
+		else
+			this.passes.add(parsePassExpression(expression, numSources));
+	}
+
+	private Pass parsePassExpression(EvaluationExpression expression, int numSources) {
+		final Pass pass = new Pass();
+		List<EvaluationExpression> expressions = new ArrayList<>();
+		if (numSources == 1)
+			expressions.add(expression);
+		else {
+			if (!(expression instanceof ObjectCreation))
+				throw new IllegalArgumentException("Must use mappings for two sources");
 
 			final ObjectCreation oc = (ObjectCreation) expression;
-			for (int index = 0, size = oc.getMappingSize(); index < size; index++) {
-				final Pass pass = new Pass();
-				final Mapping<?> mapping = oc.getMapping(index);
-				final EvaluationExpression key1 = mapping.getTargetTagExpression();
-				final EvaluationExpression key2 = mapping.getExpression();
-				if (key1.findFirst(InputSelection.class).getIndex() == key2.findFirst(InputSelection.class).getIndex())
-					throw new IllegalArgumentException("The mapping " + mapping + " does not point to both sources");
-				pass.setBlockingKeys(key1, key2);
-				this.passes.add(pass);
-			}
-			return;
+			if (oc.getMappings().size() != 1)
+				throw new IllegalArgumentException("Mapping must contain one element");
+			final Mapping<?> mapping = oc.getMapping(0);
+			expressions.add(mapping.getTargetTagExpression());
+			expressions.add(mapping.getExpression());
+			ExpressionUtil.sortExpressionsForInputs(expressions);
 		}
 
-		List<EvaluationExpression> passes = expression instanceof ArrayCreation ?
-			((ArrayCreation) expression).getElements() : Arrays.asList(expression);
-		for (EvaluationExpression passExpression : passes) {
-			Pass pass = new Pass();
-			if (numSources == 1)
-				pass.setBlockingKeys(passExpression.remove(InputSelection.class));
-			else
-				pass.setBlockingKeys(
-					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(0)),
-					passExpression.replace(Predicates.instanceOf(InputSelection.class), new InputSelection(1)));
-			this.passes.add(pass);
-		}
+		ExpressionUtil.removeInputSelections(expressions);
+		pass.setBlockingKeys(expressions);
+		return pass;
 	}
 
 	/**

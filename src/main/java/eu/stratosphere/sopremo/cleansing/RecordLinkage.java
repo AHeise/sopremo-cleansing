@@ -31,7 +31,7 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
 	private CandidateSelection candidateSelection = new CandidateSelection();
 
-	private CandidateComparison comparison = new CandidateComparison().withInnerSource(false);
+	private CandidateComparison comparison = new CandidateComparison();
 
 	private DuplicateDetectionImplementation implementation;
 
