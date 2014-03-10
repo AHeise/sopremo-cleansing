@@ -1,6 +1,6 @@
 using cleansing;
 
-$persons = read from 'TestData.json';
+$persons = read from 'src/test/resources/TestData.json';
 
 $persons_scrubbed = scrub $persons with rules {
 	_id: required,
