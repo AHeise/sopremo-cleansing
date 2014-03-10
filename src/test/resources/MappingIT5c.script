@@ -1,6 +1,6 @@
 using cleansing;
 
-$originalPersons = read from 'MappingIT5TestOriginalPersons.json';
+$originalPersons = read from 'src/test/resources/MappingIT5TestOriginalPersons.json';
 
 $persons, $companies  = map entities of $originalPersons
 	into [
@@ -9,7 +9,11 @@ $persons, $companies  = map entities of $originalPersons
 	    	worksFor: $companies.id
 	    }, 
 	    entity $companies identified by $originalPersons.worksFor with {
-		    _id: [$originalPersons.id]
+		    _id: all($originalPersons.id),
+		    foo : "bar",
+	    	number: 1,
+	    	nullValue: null,
+	    	object: {key : "value", original: $originalPersons.id}
 		}
 	];
 

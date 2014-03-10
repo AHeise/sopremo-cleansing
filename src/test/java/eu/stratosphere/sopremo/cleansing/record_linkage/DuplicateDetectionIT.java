@@ -75,7 +75,7 @@ public class DuplicateDetectionIT extends MeteorIT {
 		final SopremoPlan plan = parseScript("using cleansing;" +
 			"$persons = read from '" + this.input.toURI() + "';" +
 			"$duplicates = detect duplicates $persons " +
-			"  where levenshtein($persons.firstName) >= 0.7" +
+			"  where (levenshtein($persons.firstName) + 3*jaro($person.lastName))/2 > 0.8" +
 			"  partition on $persons.age;" +
 			"write $duplicates to '" + this.output.toURI() + "';");
 

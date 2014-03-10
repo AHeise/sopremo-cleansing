@@ -128,7 +128,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 				+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
-				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n" + "into [\n"
+				+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n" + "into [\n"
 				+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {"
 				+ "    name_p: $usCongressMembers.name_o,\n"
 				+
@@ -145,7 +145,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
 		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
-		info.setSourceJoinCondition(sourceJoinCondition);
+		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "worksFor_p"));
@@ -266,7 +266,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 				+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
-				+ "where ($usCongressMembers.biography[0:1] == $usCongressBiographies.biographyId[1:1])\n" + "into [\n"
+				+ "where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + "into [\n"
 				+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {" + "    name_p: $usCongressMembers.name_o,\n"
 				+ "    worksFor_p: $usCongressMembers.id_o" + "  }," + "  entity $usCongressBiographies identified by $usCongressBiographies.worksFor_o with {"
 				+ "    name_l: $usCongressBiographies.worksFor_o" + "  }" + "];\n" + "write $person to 'file://person.json';\n"
@@ -284,7 +284,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths, targetJoinConditionSourcePaths, true, true);
 
-		mappingInformation.setSourceJoinCondition(sourceJoinCondition);
+		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition);
 
 		// sourceSchema
 		MappingSchema sourceSchema = new MappingSchema(2, "source");
@@ -490,7 +490,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 				+ "$legalEntity, $person = map entities of $usCongressMembers, $usCongressBiographies\n"
-				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n"
+				+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 				+ "into [\n"
 				+ "  entity $usCongressBiographies identified by $usCongressBiographies.worksFor_o with {"
 				+ // switched output order and identified by
@@ -514,7 +514,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
 		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
-		info.setSourceJoinCondition(sourceJoinCondition);
+		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_1.entity_1", "worksFor_p"));
@@ -568,7 +568,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 				+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
-				+ "where ($usCongressBiographies.biographyId_o[1:1] == $usCongressMembers.biography_o[0:1])\n"
+				+ "where ($usCongressBiographies.biographyId_o == $usCongressMembers.biography_o)\n"
 				+ // if switched, spicy creates foreign keys on source in
 					// reversed order
 				"into [\n" + "  entity $usCongressMembers identified by $usCongressMembers.id_o with {" + "    name_p: $usCongressMembers.name_o,\n"
@@ -587,7 +587,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
 
-		mappingInformation.setSourceJoinCondition(sourceJoinCondition);
+		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition);
 
 		// targetJoinCondition
 		List<SpicyPathExpression> sourceJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_0.entity_0",
@@ -661,8 +661,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n" + "$states = read from 'file://states.json';\n" +
 
 				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies, $states\n"
-				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1]) "
-				+ "		and ($usCongressMembers.state[0:1] == $states.letterCode[1:1])\n" + "into [\n"
+				+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o) "
+				+ "		and ($usCongressMembers.state == $states.letterCode)\n" + "into [\n"
 				+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {" + "    name_p: $usCongressMembers.name_o,\n"
 				+ "    worksFor_p: $legalEntity.id,\n" + "	 state_p: $states.name" + "  },"
 				+ "  entity $usCongressBiographies identified by $usCongressBiographies.worksFor_o with {" + "    name_l: $usCongressBiographies.worksFor_o" + "  }"
@@ -683,19 +683,27 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		// sourceJoinCondition
 		List<SpicyPathExpression> sourceJoinConditionSourcePaths1 = Collections
 				.singletonList(new SpicyPathExpression("source.entities_0.entity_0", "state"));
-		List<SpicyPathExpression> targetJoinConditionSourcePaths1 = Collections.singletonList(new SpicyPathExpression("source.entities_1.entity_1",
+		List<SpicyPathExpression> targetJoinConditionSourcePaths1 = Collections.singletonList(new SpicyPathExpression("source.entities_2.entity_2",
+				"letterCode"));
+
+		MappingJoinCondition sourceJoinCondition1 = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
+		
+		List<SpicyPathExpression> sourceJoinConditionSourcePaths2 = Collections
+				.singletonList(new SpicyPathExpression("source.entities_0.entity_0", "biography_o"));
+		List<SpicyPathExpression> targetJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("source.entities_1.entity_1",
 				"biographyId_o"));
 
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
+		MappingJoinCondition sourceJoinCondition2 = new MappingJoinCondition(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
 
-		mappingInformation.setSourceJoinCondition(sourceJoinCondition);
+		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition2);
+		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition1);
 
 		// targetJoinCondition
-		List<SpicyPathExpression> sourceJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_0.entity_0",
+		List<SpicyPathExpression> sourceJoinConditionSourcePaths3 = Collections.singletonList(new SpicyPathExpression("target.entities_0.entity_0",
 				"worksFor_p"));
-		List<SpicyPathExpression> targetJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_1.entity_1", "id"));
+		List<SpicyPathExpression> targetJoinConditionSourcePaths3 = Collections.singletonList(new SpicyPathExpression("target.entities_1.entity_1", "id"));
 
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
+		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths3, targetJoinConditionSourcePaths3, true, true);
 
 		List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 		targetJoinConditions.add(targetJoinCondition);
@@ -707,11 +715,13 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		mappingInformation.setSourceSchema(sourceSchema);
 
 		sourceSchema.addKeyToInput(2, "name");
+		sourceSchema.addKeyToInput(2, "letterCode");
 		sourceSchema.addKeyToInput(1, "worksFor_o");
 		sourceSchema.addKeyToInput(1, "biographyId_o");
 		sourceSchema.addKeyToInput(0, "id_o");
 		sourceSchema.addKeyToInput(0, "state");
 		sourceSchema.addKeyToInput(0, "name_o");
+		sourceSchema.addKeyToInput(0, "biography_o");
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -765,7 +775,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 				+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 				+ "$person, $legalEntity, $personNames = map entities of $usCongressMembers, $usCongressBiographies\n"
-				+ "where ($usCongressMembers.biography_o[0:1] == $usCongressBiographies.biographyId_o[1:1])\n" + "into [\n"
+				+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n" + "into [\n"
 				+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {" + "    name_p: $usCongressMembers.name_o,\n"
 				+ "    worksFor_p: $legalEntity.id" + "  }," + "  entity $usCongressBiographies identified by $usCongressBiographies.worksFor_o with {"
 				+ "    name_l: $usCongressBiographies.worksFor_o" + "  }," + "  entity $usCongressMembers identified by $usCongressMembers.name_o with {"
@@ -790,7 +800,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
 		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
-		info.setSourceJoinCondition(sourceJoinCondition);
+		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "worksFor_p"));

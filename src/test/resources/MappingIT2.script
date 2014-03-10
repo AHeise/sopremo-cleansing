@@ -1,6 +1,6 @@
 using cleansing;
 
-$originalPersons = read from 'MappingIT2TestOriginalPersons.json';
+$originalPersons = read from 'src/test/resources/MappingIT2TestOriginalPersons.json';
 
 $persons, $companies  = map entities of $originalPersons
 	into [

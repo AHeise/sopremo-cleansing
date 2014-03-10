@@ -1,9 +1,9 @@
 using cleansing;
 
-$usCongressMembers = read from 'MappingITTestUsCongressMembers.json';
-$usCongressBiographies = read from 'MappingITTestUsCongressBiography.json';
+$usCongressMembers = read from 'src/test/resources/MappingITTestUsCongressMembers.json';
+$usCongressBiographies = read from 'src/test/resources/MappingITTestUsCongressBiography.json';
 
-$person, $legalEntity  = map entities of $usCongressMembers, $usCongressBiographies where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])
+$person, $legalEntity  = map entities of $usCongressMembers, $usCongressBiographies where ($usCongressMembers.biography == $usCongressBiographies.biographyId)
 	into [
 	    entity $usCongressMembers identified by $usCongressMembers.id with {
 	    	name: $usCongressMembers.name,

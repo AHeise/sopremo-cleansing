@@ -11,17 +11,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.stratosphere.sopremo.expressions.AggregationExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.ArrayProjection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
@@ -71,28 +75,31 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Property
 	@Name(preposition = "where")
 	public void setForeignKeys(final BooleanExpression assignment) {
+		if (assignment instanceof ComparativeExpression) {
+			handleSourceJoinExpression((ComparativeExpression) assignment);
+		} else {
 
-		final List<Integer> inputs = new ArrayList<Integer>();
-		final HashMap<Integer, String> joinParts = new HashMap<Integer, String>();
-
-		for (final ChildIterator it = assignment.iterator(); it.hasNext();) {
-			final EvaluationExpression expr = it.next();
-			// just one key relationship
-			if (expr instanceof ArrayAccess) {
-				evaluateKeyRelationship(inputs, joinParts, expr);
-				// multiple AND-connected relationships
-			} else {
-				for (final ChildIterator it2 = expr.iterator(); it2.hasNext();) {
-					evaluateKeyRelationship(inputs, joinParts, it2.next());
-				}
+			for (final ChildIterator it = assignment.iterator(); it.hasNext();) {
+				final EvaluationExpression expr = it.next();
+				final ComparativeExpression condidition = (ComparativeExpression) expr;
+				handleSourceJoinExpression((ComparativeExpression) condidition);
 			}
 		}
+	}
 
-		final String sourceNesting = this.createNesting(EntityMapping.sourceStr, inputs.get(0));
-		final String targetNesting = this.createNesting(EntityMapping.sourceStr, inputs.get(1));
+	private void handleSourceJoinExpression(ComparativeExpression condidition) {
+		final ObjectAccess inputExpr1 = condidition.getExpr1().findFirst(ObjectAccess.class);
+		final ObjectAccess inputExpr2 = condidition.getExpr2().findFirst(ObjectAccess.class);
+		final InputSelection input1 = inputExpr1.findFirst(InputSelection.class);
+		final InputSelection input2 = inputExpr2.findFirst(InputSelection.class);
+		final String attr1 = inputExpr1.getField();
+		final String attr2 = inputExpr2.getField();
 
-		this.spicyMappingTransformation.getMappingInformation().setSourceJoinCondition(
-				this.createJoinCondition(sourceNesting, joinParts.get(inputs.get(0)), targetNesting, joinParts.get(inputs.get(1))));
+		final String sourceNesting = this.createNesting(EntityMapping.sourceStr, input1.getIndex());
+		final String targetNesting = this.createNesting(EntityMapping.sourceStr, input2.getIndex());
+
+		this.spicyMappingTransformation.getMappingInformation().getSourceJoinConditions()
+				.add(this.createJoinCondition(sourceNesting, attr1, targetNesting, attr2));
 	}
 
 	/**
@@ -107,15 +114,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	public EntityMapping withForeignKeys(final BooleanExpression assignment) {
 		setForeignKeys(assignment);
 		return this;
-	}
-
-	private void evaluateKeyRelationship(final List<Integer> inputs, final HashMap<Integer, String> joinParts, final EvaluationExpression expr) {
-		final ArrayAccess arrayAccess = (ArrayAccess) expr;
-		final ObjectAccess inputExpr = (ObjectAccess) arrayAccess.getInputExpression();
-		final InputSelection input = inputExpr.findFirst(InputSelection.class);
-		final String attr = inputExpr.getField();
-		inputs.add(input.getIndex());
-		joinParts.put(input.getIndex(), attr);
 	}
 
 	public EntityMapping withMappingExpression(final ArrayCreation assignment) {
@@ -180,14 +178,19 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 				final EvaluationExpression expr = mapping.getExpression();
 
-				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression) {
-					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, expr);
+				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression
+						|| expr instanceof ObjectCreation || expr instanceof ArrayCreation
+						|| expr instanceof ConstantExpression) {
+					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							expr);
 				} else if (expr instanceof ObjectAccess) {
-					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr, false);
-				} else if (expr instanceof ArrayCreation) {
-					handleArrayCreation(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping, (ArrayCreation) expr);
-				}else {
-					throw new IllegalArgumentException("No valid value correspondence was given: "+expr);
+					handleObjectAccess(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							(ObjectAccess) expr, false);
+				} else if (expr instanceof AggregationExpression) {
+					handleTakeAll(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
+							(AggregationExpression) expr);
+				} else {
+					throw new IllegalArgumentException("No valid value correspondence was given: " + expr);
 				}
 			}
 		}
@@ -201,18 +204,22 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		}
 	}
 
-	private void handleArrayCreation(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys2, MappingInformation mappingInformation,
-			Integer targetInputIndex, String targetNesting, Mapping<?> mapping, ArrayCreation expr) {
+	private void handleTakeAll(HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys2, MappingInformation mappingInformation,
+			Integer targetInputIndex, String targetNesting, Mapping<?> mapping, AggregationExpression aggregationExpression) {
 		MappingValueCorrespondence corr;
-		if(expr.size()!=1){
-			throw new IllegalArgumentException("Inside an ArrayCreation only one Element is allowed for Mapping.");
-		}
-		if (expr.get(0) instanceof FunctionCall || expr.get(0) instanceof ArrayAccess || expr.get(0) instanceof TernaryExpression) {
-			corr = handleSpecialExpression(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (FunctionCall) expr.get(0));
-		} else if (expr.get(0) instanceof ObjectAccess) {
-			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping, (ObjectAccess) expr.get(0), false);
-		}else {
-			throw new IllegalArgumentException("No valid value correspondence was given!");
+		
+		EvaluationExpression expr = ((ArrayProjection)aggregationExpression.getInputExpression()).getInputExpression();
+		
+		if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression
+				|| expr instanceof ObjectCreation || expr instanceof ArrayCreation
+				|| expr instanceof ConstantExpression) {
+			corr = handleSpecialExpression(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping,
+					expr);
+		} else if (expr instanceof ObjectAccess) {
+			corr = handleObjectAccess(foreignKeys2, mappingInformation, targetInputIndex, targetNesting, mapping,
+					(ObjectAccess) expr, false);
+		}  else {
+			throw new IllegalArgumentException("No valid value correspondence was given: " + expr);
 		}
 		corr.setTakeAllValuesOfGrouping(true);
 	}
@@ -274,16 +281,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		this.extendTargetSchemaBy(targetExpr, targetInputIndex);
 
 		// add join attributes to source schema
-		if (mappingInformation.getSourceJoinCondition() != null) {
+		for(MappingJoinCondition cond : mappingInformation.getSourceJoinConditions()) {
 
-			String joinAttr = mappingInformation.getSourceJoinCondition().getFromPaths().get(0).getLastStep();
-			String joinSource = mappingInformation.getSourceJoinCondition().getFromPaths().get(0).getFirstStep();
+			String joinAttr = cond.getFromPaths().get(0).getLastStep();
+			String joinSource = cond.getFromPaths().get(0).getFirstStep();
 
 			if (joinSource.contains(fkSource.toString()))
 				this.extendSourceSchemaBy(joinAttr, fkSource);
 
-			joinAttr = mappingInformation.getSourceJoinCondition().getToPaths().get(0).getLastStep();
-			joinSource = mappingInformation.getSourceJoinCondition().getToPaths().get(0).getFirstStep();
+			joinAttr = cond.getToPaths().get(0).getLastStep();
+			joinSource = cond.getToPaths().get(0).getFirstStep();
 
 			if (joinSource.contains(fkSource.toString()))
 				this.extendSourceSchemaBy(joinAttr, fkSource);
@@ -309,9 +316,16 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		
 		final EvaluationExpression sourceInputExpr = oa.getInputExpression();
 		final String sourceExpr = oa.getField();
-		
-		sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
-		sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+
+		//TODO this does not work as expected
+		if (sourceInputExpr.toString().contains(this.getClass().getSimpleName())) {
+			Integer fkSource =  Integer.parseInt(sourceInputExpr.toString().replaceAll("[^0-9]", ""));
+			sourceNesting = this.createNesting(EntityMapping.targetStr, fkSource);
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}else{
+			sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInputExpr.findFirst(InputSelection.class).getIndex());
+			sourcePaths.add(new SpicyPathExpression(sourceNesting, sourceExpr));
+		}
 	}
 
 	/**

@@ -50,7 +50,7 @@ public class EntityMappingIT extends MeteorIT {
 				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
 				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography[1:1] == $usCongressBiographies.biographyId[1:1])\n" + 
+				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
 				"into [\n" +  
 				"  entity $usCongressMembers identified by $usCongressMembers.id with {" + 
 				"    name: $usCongressMembers.name,\n" +
