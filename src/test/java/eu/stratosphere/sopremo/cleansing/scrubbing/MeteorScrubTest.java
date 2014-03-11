@@ -35,11 +35,11 @@ public class MeteorScrubTest extends MeteorParseTest {
 	@Test
 	public void testFullScrub() {
 		final SopremoPlan actualPlan = parseScript(
-			"normalizeName = javaudf('" + MeteorScrubTest.class.getName() +  ".normalizeName');\n" +
+			"normalizeNameInternal = javaudf('" + MeteorScrubTest.class.getName() +  ".normalizeNameInternal');\n" +
 			"$dirty = read from 'file://person.json';\n" +
 			"$clean = scrub $dirty with rules {\n" +
-			"	firstName: [required, normalizeName()],\n" +
-			"	lastName: required,\n" +
+			"	firstName: [required, normalizeNameInternal()],\n" +
+			"	lastName: required\n" +
 			"};\n" +
 			"write $clean to 'file://output.json';");
 
@@ -47,7 +47,7 @@ public class MeteorScrubTest extends MeteorParseTest {
 		final Source input = new Source("file://person.json");
 		final Scrubbing scrubbing = new Scrubbing().withInputs(input);
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("firstName"));
-		scrubbing.addRule(createFunctionCall(MeteorScrubTest.class, "normalizeName", EvaluationExpression.VALUE), new ObjectAccess("firstName"));
+		scrubbing.addRule(createFunctionCall(MeteorScrubTest.class, "normalizeNameInternal", EvaluationExpression.VALUE), new ObjectAccess("firstName"));
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("lastName"));
 //		scrubbing.addRule(new TernaryExpression(new ComparativeExpression(new ObjectAccess("year"), BinaryOperator.GREATER, new ConstantExpression(1900)), EvaluationExpression.VALUE, FilterRecord.Expression), new ObjectAccess("birthDay"));
 		final Sink output = new Sink("file://output.json").withInputs(scrubbing);
@@ -56,8 +56,8 @@ public class MeteorScrubTest extends MeteorParseTest {
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
 	
-	@Name(verb = "normalizeName")
-	public static TextNode normalizeName(TextNode name) {
+	@Name(verb = "normalizeNameInternal")
+	public static TextNode normalizeNameInternal(TextNode name) {
 		return name;
 	}
 }
