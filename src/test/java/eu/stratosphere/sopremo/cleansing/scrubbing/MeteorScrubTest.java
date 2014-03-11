@@ -49,7 +49,6 @@ public class MeteorScrubTest extends MeteorParseTest {
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("firstName"));
 		scrubbing.addRule(createFunctionCall(MeteorScrubTest.class, "normalizeNameInternal", EvaluationExpression.VALUE), new ObjectAccess("firstName"));
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("lastName"));
-//		scrubbing.addRule(new TernaryExpression(new ComparativeExpression(new ObjectAccess("year"), BinaryOperator.GREATER, new ConstantExpression(1900)), EvaluationExpression.VALUE, FilterRecord.Expression), new ObjectAccess("birthDay"));
 		final Sink output = new Sink("file://output.json").withInputs(scrubbing);
 		expectedPlan.setSinks(output);
 
