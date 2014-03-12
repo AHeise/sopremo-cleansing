@@ -1,6 +1,6 @@
 using cleansing;
 
-$persons_duplicate_pairs = read from 'FusionTestData.json';
+$persons_duplicate_pairs = read from 'src/test/resources/FusionTestData.json';
 
 $persons_fused = fuse $p in $persons_duplicate_pairs
 	with weights {
