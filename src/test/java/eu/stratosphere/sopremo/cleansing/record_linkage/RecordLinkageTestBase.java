@@ -1,11 +1,16 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
+import java.util.List;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import com.google.common.collect.Lists;
+
 import eu.stratosphere.sopremo.EvaluationContext;
+import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cleansing.RecordLinkage;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
@@ -13,8 +18,9 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDete
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
-import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
+import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -39,6 +45,19 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		this.resultProjection = resultProjection;
 	}
 
+	protected JsonCollector<IJsonNode> duplicateCollector = new JsonCollector<IJsonNode>(SopremoEnvironment.getInstance().getEvaluationContext()) {
+				/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.pact.common.stubs.Collector#collect(java.lang.Object)
+		 */
+		@SuppressWarnings("unchecked")
+		@Override
+		public void collect(IJsonNode record) {
+			final IArrayNode<IJsonNode> array = (IArrayNode<IJsonNode>) record;
+			emitCandidate(array.get(0), array.get(1));
+		}
+	};
+
 	/**
 	 * Performs the naive record linkage in place and compares with the Pact code.
 	 */
@@ -47,12 +66,15 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		final RecordLinkage recordLinkage = new RecordLinkage();
 		recordLinkage.setImplementation(getImplementation());
 		recordLinkage.setCandidateSelection(getCandidateSelection());
+		recordLinkage.setDegreeOfParallelism(2);
 		if (this.resultProjection != null)
 			recordLinkage.getComparison().setResultProjection(this.resultProjection);
 		
 		this.sopremoTestPlan = createTestPlan(recordLinkage);
 
-		this.generateExpectedPairs(this.sopremoTestPlan.getInput(0), this.sopremoTestPlan.getInput(1), recordLinkage.getComparison());
+		this.generateExpectedPairs(Lists.newArrayList(this.sopremoTestPlan.getInput(0)), 
+			Lists.newArrayList(this.sopremoTestPlan.getInput(1)), 
+			recordLinkage.getComparison());
 
 		try {
 			this.sopremoTestPlan.trace();
@@ -68,7 +90,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * @param leftInput
 	 * @param rightInput
 	 */
-	protected abstract void generateExpectedPairs(Input leftInput, Input rightInput,
+	protected abstract void generateExpectedPairs(List<IJsonNode> leftInput, List<IJsonNode> rightInput,
 			CandidateComparison candidateComparison);
 
 	/**

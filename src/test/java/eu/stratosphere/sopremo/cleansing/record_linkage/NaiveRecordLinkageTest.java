@@ -2,6 +2,7 @@ package eu.stratosphere.sopremo.cleansing.record_linkage;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
@@ -10,7 +11,6 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImpl
 import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.testing.SopremoTestPlan.Input;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -35,7 +35,7 @@ public class NaiveRecordLinkageTest extends RecordLinkageTestBase<NaiveDuplicate
 	 * eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison)
 	 */
 	@Override
-	protected void generateExpectedPairs(Input leftInput, Input rightInput, CandidateComparison candidateComparison) {
+	protected void generateExpectedPairs(List<IJsonNode> leftInput, List<IJsonNode> rightInput, CandidateComparison candidateComparison) {
 		for (final IJsonNode left : leftInput)
 			for (final IJsonNode right : rightInput)
 				emitCandidate(left, right);
