@@ -11,7 +11,7 @@
 	</parent>
 
 	<properties>
-		<sopremo.version>0.4.2-SNAPSHOT</sopremo.version>
+		<sopremo.version>0.4.3-SNAPSHOT</sopremo.version>
 		<meteor.version>${sopremo.version}</meteor.version>
 	</properties>
 

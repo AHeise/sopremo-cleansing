@@ -63,8 +63,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 */
 	@Test 
 	public void pactCodeShouldPerformLikeStandardImplementation() {
-		final RecordLinkage recordLinkage = new RecordLinkage();
-		recordLinkage.setImplementation(getImplementation());
+		final CompositeDuplicateDetectionAlgorithm<?> recordLinkage = getImplementation();
 		recordLinkage.setCandidateSelection(getCandidateSelection());
 		recordLinkage.setDegreeOfParallelism(2);
 		if (this.resultProjection != null)
@@ -127,7 +126,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * 
 	 * @return the configured algorithm
 	 */
-	protected abstract DuplicateDetectionImplementation getImplementation();
+	protected abstract CompositeDuplicateDetectionAlgorithm<?> getImplementation();
 
 	/**
 	 * Creates a test plan for the record linkage operator.
@@ -135,7 +134,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * @param recordLinkage
 	 * @return the generated test plan
 	 */
-	protected static SopremoTestPlan createTestPlan(RecordLinkage recordLinkage) {
+	protected static SopremoTestPlan createTestPlan(CompositeDuplicateDetectionAlgorithm<?> recordLinkage) {
 		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(recordLinkage);
 		sopremoTestPlan.getInput(0).
 			addObject("id", 0, "first name", "albert", "last name", "perfect duplicate", "age", 80).

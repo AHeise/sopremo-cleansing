@@ -68,18 +68,20 @@ public class SNMRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 	protected void generateExpectedPairs(List<IJsonNode> leftInput, List<IJsonNode> rightInput,
 			CandidateComparison comparison) {
 		for (int keyIndex = 0; keyIndex < this.leftSortingKeys.length; keyIndex++) {
-			Collections.sort(leftInput, new ExpressionSorter(this.leftSortingKeys[keyIndex]));
-			Collections.sort(rightInput, new ExpressionSorter(this.rightSortingKeys[keyIndex]));
+			final EvaluationExpression leftKeyExpression = this.leftSortingKeys[keyIndex], rightSortingKey =
+				this.rightSortingKeys[keyIndex];
+			Collections.sort(leftInput, new ExpressionSorter(leftKeyExpression));
+			Collections.sort(rightInput, new ExpressionSorter(rightSortingKey));
 
 			for (int leftIndex = 0, size = leftInput.size(); leftIndex < size; leftIndex++) {
 				IJsonNode left = leftInput.get(leftIndex);
-				final IJsonNode leftKey = this.leftSortingKeys[keyIndex].evaluate(left);
+				final IJsonNode leftKey = leftKeyExpression.evaluate(left);
 				int rightIndex = 0;
 				for (; rightIndex < rightInput.size() - 1; rightIndex++)
-					if (leftKey.compareTo(this.rightSortingKeys[keyIndex].evaluate(rightInput.get(rightIndex))) >= 0)
+					if (leftKey.compareTo(rightSortingKey.evaluate(rightInput.get(rightIndex))) < 0)
 						break;
 
-				for (int index = Math.max(0, rightIndex - this.windowSize); index < Math.min(size, rightIndex +
+				for (int index = Math.max(0, rightIndex - this.windowSize + 1); index < Math.min(size - 1, rightIndex +
 					this.windowSize - 1); index++) {
 					IJsonNode right = rightInput.get(index);
 					comparison.performComparison(left, right, this.duplicateCollector);
@@ -89,19 +91,15 @@ public class SNMRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.RecordLinkageTestBase#getImplementation()
-	 */
 	@Override
-	protected DuplicateDetectionImplementation getImplementation() {
-		return DuplicateDetectionImplementation.SNM;
+	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
+		return new SortedNeighborhood().withWindowSize(this.windowSize);
 	}
-
+	
 	@Override
 	public String toString() {
-		return String.format("%s, leftSortingKeys=%s, rightSortingKeys=%s", super.toString(),
-			Arrays.toString(this.leftSortingKeys), Arrays.toString(this.rightSortingKeys));
+		return String.format("%s, leftSortingKeys=%s, rightSortingKeys=%s, window=%s", super.toString(),
+			Arrays.toString(this.leftSortingKeys), Arrays.toString(this.rightSortingKeys), this.windowSize);
 	}
 
 	/**

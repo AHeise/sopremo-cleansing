@@ -7,10 +7,7 @@ import java.util.List;
 
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -74,13 +71,9 @@ public class BlockingRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see eu.stratosphere.sopremo.cleansing.record_linkage.RecordLinkageTestBase#getImplementation()
-	 */
 	@Override
-	protected DuplicateDetectionImplementation getImplementation() {
-		return DuplicateDetectionImplementation.BLOCKING;
+	protected CompositeDuplicateDetectionAlgorithm<?> getImplementation() {
+		return new Blocking();
 	}
 
 	@Override
