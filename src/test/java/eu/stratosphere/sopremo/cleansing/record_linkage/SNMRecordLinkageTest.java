@@ -1,11 +1,18 @@
 package eu.stratosphere.sopremo.cleansing.record_linkage;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
-import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.Blocking;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
@@ -16,7 +23,6 @@ import eu.stratosphere.sopremo.type.IJsonNode;
  * 
  * @author Arvid Heise
  */
-@Ignore
 public class SNMRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 
 	private final EvaluationExpression[] leftSortingKeys, rightSortingKeys;
@@ -73,15 +79,15 @@ public class SNMRecordLinkageTest extends RecordLinkageTestBase<Blocking> {
 			Collections.sort(leftInput, new ExpressionSorter(leftKeyExpression));
 			Collections.sort(rightInput, new ExpressionSorter(rightSortingKey));
 
-			for (int leftIndex = 0, size = leftInput.size(); leftIndex < size; leftIndex++) {
+			int rightIndex = 0;
+			for (int leftIndex = 0, leftSize = leftInput.size(), rightSize = rightInput.size(); leftIndex < leftSize; leftIndex++) {
 				IJsonNode left = leftInput.get(leftIndex);
 				final IJsonNode leftKey = leftKeyExpression.evaluate(left);
-				int rightIndex = 0;
-				for (; rightIndex < rightInput.size() - 1; rightIndex++)
+				for (; rightIndex < rightInput.size(); rightIndex++)
 					if (leftKey.compareTo(rightSortingKey.evaluate(rightInput.get(rightIndex))) < 0)
 						break;
 
-				for (int index = Math.max(0, rightIndex - this.windowSize + 1); index < Math.min(size - 1, rightIndex +
+				for (int index = Math.max(0, rightIndex - this.windowSize + 1); index < Math.min(rightSize, rightIndex +
 					this.windowSize - 1); index++) {
 					IJsonNode right = rightInput.get(index);
 					comparison.performComparison(left, right, this.duplicateCollector);

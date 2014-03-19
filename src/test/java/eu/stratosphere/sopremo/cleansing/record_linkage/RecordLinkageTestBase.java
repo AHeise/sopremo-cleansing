@@ -15,7 +15,6 @@ import eu.stratosphere.sopremo.cleansing.RecordLinkage;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.pact.JsonCollector;
@@ -63,7 +62,8 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 */
 	@Test 
 	public void pactCodeShouldPerformLikeStandardImplementation() {
-		final CompositeDuplicateDetectionAlgorithm<?> recordLinkage = getImplementation();
+		RecordLinkage recordLinkage = new RecordLinkage();
+		recordLinkage.setAlgorithm(getImplementation());
 		recordLinkage.setCandidateSelection(getCandidateSelection());
 		recordLinkage.setDegreeOfParallelism(2);
 		if (this.resultProjection != null)
@@ -76,7 +76,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 			recordLinkage.getComparison());
 
 		try {
-			this.sopremoTestPlan.trace();
+//			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
@@ -103,6 +103,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		if (resultProjection == null)
 			resultProjection = EvaluationExpression.VALUE;
 
+//		System.out.println(left + " " + right);
 		this.sopremoTestPlan.getExpectedOutput(0).add(
 			resultProjection.evaluate(JsonUtil.asArray(left, right)).clone());
 	}
@@ -134,7 +135,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 	 * @param recordLinkage
 	 * @return the generated test plan
 	 */
-	protected static SopremoTestPlan createTestPlan(CompositeDuplicateDetectionAlgorithm<?> recordLinkage) {
+	protected static SopremoTestPlan createTestPlan(RecordLinkage recordLinkage) {
 		final SopremoTestPlan sopremoTestPlan = new SopremoTestPlan(recordLinkage);
 		sopremoTestPlan.getInput(0).
 			addObject("id", 0, "first name", "albert", "last name", "perfect duplicate", "age", 80).

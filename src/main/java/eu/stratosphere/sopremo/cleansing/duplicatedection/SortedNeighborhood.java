@@ -24,6 +24,7 @@ import java.util.List;
 
 import javolution.text.TypeFormat;
 import javolution.util.FastList;
+import javolution.util.FastList.Node;
 import eu.stratosphere.api.common.operators.Order;
 import eu.stratosphere.configuration.Configuration;
 import eu.stratosphere.sopremo.CoreFunctions;
@@ -214,8 +215,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				// [sorting key, rank, count]? + [sorting key, count]* -> [sorting key, partition, [window borders]*]
 				final CoPartition keys2WithPartition = new CoPartition(this.windowSize, getDegreeOfParallelism()).
 					withInputs(keysWithRankAndCount, sortingKeyCount2).
-					withInnerGroupOrdering(0, new OrderingExpression(Order.DESCENDING, new ArrayAccess(0))).
-					withInnerGroupOrdering(1, new OrderingExpression(Order.DESCENDING, new ArrayAccess(0)));
+					withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(0))).
+					withInnerGroupOrdering(1, new OrderingExpression(Order.ASCENDING, new ArrayAccess(0)));
 
 				// record + [sorting key, partition, [window borders]*] -> [partition, partition, record]+
 				final PartitionKeys rankJoin2 = new RightPartitionKeys(this.windowSize, getDegreeOfParallelism()).
@@ -253,13 +254,13 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			this.setKeyExpressions(1, ConstantExpression.NULL);
 		}
 
-		private int windowSize;
+		private int bufferSize;
 
 		private int numberOfPartitions;
 
 		protected CoPartition(int windowSize, int numberOfPartitions) {
 			this();
-			this.windowSize = windowSize;
+			this.bufferSize = windowSize - 1;
 			this.numberOfPartitions = numberOfPartitions;
 		}
 
@@ -269,7 +270,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		 * @return the windowSize
 		 */
 		public int getWindowSize() {
-			return this.windowSize;
+			return this.bufferSize + 1;
 		}
 
 		/**
@@ -281,33 +282,65 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			return this.numberOfPartitions;
 		}
 
+		private static class ValueWithIndices {
+			private IJsonNode value;
+
+			private int partitionNumber, count;
+
+			private int[] beforeReplicationIndices;
+
+			private IntList afterReplicationCount = new IntArrayList();
+
+			/**
+			 * Initializes ValueWithIndices.
+			 * 
+			 * @param value
+			 * @param partitionNumber
+			 * @param afterReplicationIndices
+			 */
+			public ValueWithIndices(IJsonNode value, int partitionNumber, int count, int[] beforeReplicationIndices) {
+				super();
+				this.value = value;
+				this.count = count;
+				this.partitionNumber = partitionNumber;
+				this.beforeReplicationIndices = beforeReplicationIndices;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				StringBuilder builder = new StringBuilder();
+				builder.append(this.value);
+				builder.append(" (");
+				builder.append(this.partitionNumber);
+				builder.append(")");
+				return builder.toString();
+			}
+
+		}
+
 		public static class Implementation extends
 				GenericSopremoCoGroup<IArrayNode<IJsonNode>, IArrayNode<IJsonNode>, IJsonNode> {
 			private int partitionNumber;
 
-			private int windowSize;
+			private int bufferSize;
 
 			private int numberOfPartitions;
 
-			private CachingArrayNode<IntNode> replicationIndices = new CachingArrayNode<IntNode>();
+			private CachingArrayNode<IntNode> beforeReplicationIndicesNode = new CachingArrayNode<IntNode>(),
+					afterReplicationIndicesNode = new CachingArrayNode<IntNode>();
 
-			private IntList replicationsLeft = new IntArrayList();
+			private IntList beforeReplicationsLeft = new IntArrayList(), beforeReplicationIndices = new IntArrayList();
 
 			private IntNode partitionNode = new IntNode();
 
 			private IArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(NullNode.getInstance(),
-				this.partitionNode, this.replicationIndices);
+				this.partitionNode, this.beforeReplicationIndicesNode, this.afterReplicationIndicesNode);
 
-			/*
-			 * (non-Javadoc)
-			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#open(eu.stratosphere.configuration.Configuration)
-			 */
-			@Override
-			public void open(Configuration parameters) throws Exception {
-				super.open(parameters);
-				this.partitionNumber = this.numberOfPartitions - 1;
-				this.partitionNode.setValue(this.partitionNumber);
-			}
+			private FastList<ValueWithIndices> ringBuffer = new FastList<ValueWithIndices>();
 
 			/*
 			 * (non-Javadoc)
@@ -325,50 +358,85 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 				IArrayNode<IJsonNode> sortingKeyRank = null, keyWithCount = null;
 				boolean hasNext1 = iterator1.hasNext(), hasNext2 = iterator2.hasNext();
-				while (hasNext2) {
+				while (hasNext1 || hasNext2) {
 					if (sortingKeyRank == null && hasNext1)
 						sortingKeyRank = iterator1.next();
 					if (keyWithCount == null && hasNext2)
 						keyWithCount = iterator2.next();
 
-					int comparison = hasNext1 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1;
-					if (comparison >= 0) {
+					int comparison = hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
+					if (comparison <= 0) {
 						final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 						final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
 						final int newPartitionNumber = keyRank * this.numberOfPartitions / numberOfRecords;
-						for (int p = this.partitionNumber; p > newPartitionNumber; p--) {
-							this.replicationsLeft.add(0, this.windowSize);
-							final IntNode unusedNode = this.replicationIndices.getUnusedNode();
-							this.replicationIndices.add(unusedNode == null ? new IntNode() : unusedNode);
+						for (int p = this.partitionNumber; p < newPartitionNumber; p++) {
+							this.beforeReplicationsLeft.add(0, this.bufferSize);
+							this.beforeReplicationIndices.add(0);
+
+							int remaining = this.bufferSize;
+							for (Node<ValueWithIndices> n = this.ringBuffer.tail(), end = this.ringBuffer.head(); (n =
+								n.getPrevious()) != end && remaining > 0;) {
+								ValueWithIndices value = n.getValue();
+								value.afterReplicationCount.add(Math.max(0, value.count - remaining));
+								remaining -= value.count;
+							}
 						}
 						this.partitionNumber = newPartitionNumber;
-						this.partitionNode.setValue(this.partitionNumber);
 						sortingKeyRank = null;
 						hasNext1 = iterator1.hasNext();
 					}
-					if (comparison <= 0) {
+					if (comparison >= 0) {
 						final int count = ((IntNode) keyWithCount.get(1)).getIntValue();
 
-						for (int p = this.replicationsLeft.size() - 1; p >= 0; p--) {
-							final IntNode index = this.replicationIndices.get(p);
-							int remaining = this.replicationsLeft.getInt(p);
-							index.setValue(Math.max(0, count - remaining));
-							this.replicationsLeft.set(p, remaining - count);
+						for (int p = this.beforeReplicationsLeft.size() - 1; p >= 0; p--) {
+							int remaining = this.beforeReplicationsLeft.getInt(p);
+							this.beforeReplicationIndices.set(p, Math.min(remaining, count));
+							this.beforeReplicationsLeft.set(p, remaining - count);
 						}
 
-						this.emitNode.set(0, keyWithCount.get(0));
-						out.collect(this.emitNode);
+						if (this.ringBuffer.size() >= this.bufferSize)
+							emit(this.ringBuffer.removeFirst(), out);
+						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber, count,
+							this.beforeReplicationIndices.toIntArray()));
 						keyWithCount = null;
 						hasNext2 = iterator2.hasNext();
 
-						for (int p = this.replicationsLeft.size() - 1; p >= 0; p--)
-							if (this.replicationsLeft.getInt(p) <= 0) {
-								this.replicationIndices.remove(p);
-								this.replicationsLeft.remove(p);
+						for (int p = this.beforeReplicationsLeft.size() - 1; p >= 0; p--)
+							if (this.beforeReplicationsLeft.getInt(p) <= 0) {
+								this.beforeReplicationIndices.remove(p);
+								this.beforeReplicationsLeft.remove(p);
 							}
 					}
 
 				}
+
+				while (!this.ringBuffer.isEmpty())
+					emit(this.ringBuffer.removeFirst(), out);
+			}
+
+			/**
+			 * @param removeFirst
+			 */
+			private void emit(ValueWithIndices valueWithIndices, JsonCollector<IJsonNode> out) {
+				this.emitNode.set(0, valueWithIndices.value);
+				this.partitionNode.setValue(valueWithIndices.partitionNumber);
+				setIntArrayNode(this.beforeReplicationIndicesNode, valueWithIndices.beforeReplicationIndices);
+				this.afterReplicationIndicesNode.setSize(0);
+				setIntArrayNode(this.afterReplicationIndicesNode, valueWithIndices.afterReplicationCount);
+				out.collect(this.emitNode);
+			}
+
+			private void setIntArrayNode(CachingArrayNode<IntNode> node, int[] afterIndices) {
+				node.setSize(afterIndices.length, IntNode.ZERO);
+				for (int index = 0; index < afterIndices.length; index++)
+					node.get(index).setValue(afterIndices[index]);
+			}
+
+			private void setIntArrayNode(CachingArrayNode<IntNode> node, IntList afterIndices) {
+				int length = afterIndices.size();
+				node.setSize(length, IntNode.ZERO);
+				for (int index = 0; index < length; index++)
+					node.get(index).setValue(afterIndices.getInt(index));
 			}
 		}
 	}
@@ -603,12 +671,11 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					this.smallerBuffer.add(toKeyedValue(partitionedValue));
 				}
 
-				boolean correctPartition2 = false;
 				int leftReplicatedCount = 0;
 				while (iterator1.hasNext()) {
 					final IArrayNode<IJsonNode> pivot = iterator1.next();
 					final IJsonNode key = pivot.get(0);
-					final IJsonNode value = pivot.get(3);
+					final IJsonNode value = pivot.get(2);
 
 					// move window in second source so that pivot would be in the middle
 					while (!this.largerBuffer.isEmpty() &&
@@ -616,30 +683,18 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 						if (this.smallerBuffer.size() >= this.bufferSize)
 							this.smallerBuffer.removeFirst();
 						this.smallerBuffer.add(this.largerBuffer.removeFirst());
+						while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
+							this.largerBuffer.add(toKeyedValue(iterator2.next()));
 					}
 
 					while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
 						this.largerBuffer.add(toKeyedValue(iterator2.next()));
 
-					// avoid duplicate comparison with elements replicated in both sources
-					if (correctPartition2 ||
-						(correctPartition2 = pivot.get(1).equals(pivot.get(2)))) {
-						// now compare with the buffers
-						for (FastList.Node<KeyedValue> n = this.smallerBuffer.head(), end =
-							this.smallerBuffer.tail(); (n =
-							n.getNext()) != end;)
-							this.candidateComparison.performComparison(value, n.getValue().value, collector);
-						for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end =
-							this.largerBuffer.tail(); (n =
-							n.getNext()) != end;)
-							this.candidateComparison.performComparison(value, n.getValue().value, collector);
-					} else {
-						int index = 0;
-						for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); index <= leftReplicatedCount &&
-							(n = n.getNext()) != end; index++)
-							this.candidateComparison.performComparison(value, n.getValue().value, collector);
-						leftReplicatedCount++;
-					}
+					int index = 0;
+					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); index <= leftReplicatedCount &&
+						(n = n.getNext()) != end; index++)
+						this.candidateComparison.performComparison(value, n.getValue().value, collector);
+					leftReplicatedCount++;
 				}
 			}
 
@@ -789,18 +844,23 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
 				final int partitionNumber = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 				@SuppressWarnings("unchecked")
-				final IArrayNode<IntNode> replicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(2);
+				final IArrayNode<IntNode> beforeReplicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(2);
+				@SuppressWarnings("unchecked")
+				final IArrayNode<IntNode> afterReplicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(3);
 
 				final Iterator<IJsonNode> iterator = values1.iterator();
-				int numReplications = 0;
+				int startReplicationNumber = beforeReplicationIndices.size(), endReplicationNumber = 0;
 				for (int index = 0; iterator.hasNext(); index++) {
 					final IJsonNode record = iterator.next();
 
-					for (; numReplications < replicationIndices.size(); numReplications++)
-						if (index < replicationIndices.get(numReplications).getIntValue())
+					for (; startReplicationNumber > 0; startReplicationNumber--)
+						if (index < beforeReplicationIndices.get(startReplicationNumber - 1).getIntValue())
+							break;
+					for (; endReplicationNumber < afterReplicationIndices.size(); endReplicationNumber++)
+						if (index < afterReplicationIndices.get(endReplicationNumber).getIntValue())
 							break;
 
-					for (int replicationNumber = 0; replicationNumber <= numReplications; replicationNumber++)
+					for (int replicationNumber = -startReplicationNumber; replicationNumber <= endReplicationNumber; replicationNumber++)
 						emit(out, partitionNumber + replicationNumber, partitionNumber, record);
 				}
 			}
@@ -829,12 +889,10 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		public static class Implementation extends SopremoCoGroup {
 			private int numberOfPartitions;
 
-			private int windowSize;
-
-			private final IntNode partitionNode = new IntNode(), originalPartitionNode = new IntNode();
+			private final IntNode partitionNode = new IntNode();
 
 			private final ArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(NullNode.getInstance(),
-				this.partitionNode, this.originalPartitionNode, NullNode.getInstance());
+				this.partitionNode, NullNode.getInstance());
 
 			/*
 			 * (non-Javadoc)
@@ -867,21 +925,15 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				for (int index = 0; iterator.hasNext(); index++) {
 					final IJsonNode record = iterator.next();
 					final int partitionNumber = (keyRank + index) * this.numberOfPartitions / numberOfRecords;
-					final int partitionNumberForReplication = Math.min(this.numberOfPartitions - 1,
-						(keyRank + index + this.windowSize - 1) * this.numberOfPartitions / numberOfRecords);
 
-					for (int replicationNumber = partitionNumber; replicationNumber <= partitionNumberForReplication; replicationNumber++)
-						emit(out, key, replicationNumber, partitionNumber, record);
+					emit(out, key, partitionNumber, record);
 				}
 			}
 
-			private void emit(JsonCollector<IJsonNode> out, IJsonNode key, int partitionNumber,
-					int originalPartitionNumber,
-					IJsonNode record) {
+			private void emit(JsonCollector<IJsonNode> out, IJsonNode key, int partitionNumber, IJsonNode record) {
 				this.emitNode.set(0, key);
 				this.partitionNode.setValue(partitionNumber);
-				this.originalPartitionNode.setValue(originalPartitionNumber);
-				this.emitNode.set(3, record);
+				this.emitNode.set(2, record);
 				out.collect(this.emitNode);
 			}
 		}

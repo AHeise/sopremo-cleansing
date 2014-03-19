@@ -14,11 +14,23 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
+import java.io.IOException;
+
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CompositeDuplicateDetectionAlgorithm;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionFactory;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.NaiveDuplicateDetection;
 import eu.stratosphere.sopremo.expressions.BooleanExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
+import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.util.reflect.ReflectUtil;
 
 /**
@@ -29,11 +41,16 @@ import eu.stratosphere.util.reflect.ReflectUtil;
 @Name(verb = "link records")
 public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 
-	private CandidateSelection candidateSelection = new CandidateSelection();
+	private CompositeDuplicateDetectionAlgorithm<?> algorithm = new NaiveDuplicateDetection().
+		withComparison(new CandidateComparison());
 
-	private CandidateComparison comparison = new CandidateComparison();
 
-	private DuplicateDetectionImplementation implementation;
+	/**
+	 * Initializes DuplicateDetection.
+	 */
+	public RecordLinkage() {
+		addPropertiesFrom(this.algorithm);
+	}
 
 	/**
 	 * Returns the candidateSelection.
@@ -41,7 +58,7 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 	 * @return the candidateSelection
 	 */
 	public CandidateSelection getCandidateSelection() {
-		return this.candidateSelection;
+		return this.algorithm.getCandidateSelection();
 	}
 
 	/**
@@ -54,7 +71,82 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 		if (candidateSelection == null)
 			throw new NullPointerException("candidateSelection must not be null");
 
-		this.candidateSelection = candidateSelection;
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 1));
+		this.algorithm.setCandidateSelection(candidateSelection);
+	}
+
+	public RecordLinkage withCandidateSelection(CandidateSelection candidateSelection) {
+		setCandidateSelection(candidateSelection);
+		return this;
+	}
+
+	@Property
+	@Name(preposition = "where")
+	public void setComparisonExpression(BooleanExpression expression) {
+		this.algorithm.getComparison().setDuplicateExpression(expression);
+	}
+
+	@Property
+	@Name(preposition = "sort on")
+	public void setSortingKeyExpression(EvaluationExpression expression) {
+		final CandidateSelection candidateSelection = getCandidateSelection();
+		candidateSelection.parse(expression, 2);
+		candidateSelection.setSelectionHint(SelectionHint.SORT);
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 2));
+	}
+
+	/**
+	 * @param matchingAlgorithm
+	 */
+	private void changeAlgorithm(CompositeDuplicateDetectionAlgorithm<?> matchingAlgorithm) {
+		if (matchingAlgorithm.getClass() == this.algorithm.getClass())
+			return;
+
+		removePropertiesFrom(this.algorithm);
+		matchingAlgorithm.setCandidateSelection(this.algorithm.getCandidateSelection());
+		matchingAlgorithm.setComparison(this.algorithm.getComparison());
+		this.algorithm = matchingAlgorithm;
+		addPropertiesFrom(matchingAlgorithm);
+	}
+
+	@Property
+	@Name(preposition = "partition on")
+	public void setPartitionKeyExpression(EvaluationExpression expression) {
+		final CandidateSelection candidateSelection = getCandidateSelection();
+		candidateSelection.parse(expression, 1);
+		candidateSelection.setSelectionHint(SelectionHint.BLOCK);
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 1));
+	}
+
+	@Property
+	@Name(preposition = "on")
+	public void setKeyExpression(EvaluationExpression expression) {
+		final CandidateSelection candidateSelection = getCandidateSelection();
+		candidateSelection.parse(expression, 1);
+		candidateSelection.setSelectionHint(null);
+	}
+
+	@Property
+	@Name(preposition = "with")
+	public void setImplementation(DuplicateDetectionImplementation implementation) {
+		this.algorithm = ReflectUtil.newInstance(implementation.getType());
+	}
+
+	public RecordLinkage withImplementation(DuplicateDetectionImplementation implementation) {
+		setImplementation(implementation);
+		return this;
+	}
+
+	/**
+	 * Returns the implementation.
+	 * 
+	 * @return the implementation
+	 */
+	public DuplicateDetectionImplementation getImplementation() {
+		for (DuplicateDetectionImplementation implementation : DuplicateDetectionImplementation.values())
+			if (implementation.getType().isInstance(this.algorithm))
+				return implementation;
+		return null;
 	}
 
 	/**
@@ -63,7 +155,7 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 	 * @return the comparison
 	 */
 	public CandidateComparison getComparison() {
-		return this.comparison;
+		return this.algorithm.getComparison();
 	}
 
 	/**
@@ -73,69 +165,78 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 	 *        the comparison to set
 	 */
 	public void setComparison(CandidateComparison comparison) {
-		if (comparison == null)
-			throw new NullPointerException("comparison must not be null");
-
-		this.comparison = comparison;
+		this.algorithm.setComparison(comparison);
 	}
 
-	@Property
-	@Name(preposition = "where")
-	public void setComparisonExpression(BooleanExpression expression) {
-		this.comparison.setDuplicateExpression(expression);
-	}
-
-	@Property
-	@Name(preposition = "sort on")
-	public void setSortingKeyExpression(EvaluationExpression expression) {
-		this.candidateSelection.parse(expression, 1);
-		this.candidateSelection.setSelectionHint(SelectionHint.SORT);
-	}
-
-	@Property
-	@Name(preposition = "partition on")
-	public void setPartitionKeyExpression(EvaluationExpression expression) {
-		this.candidateSelection.parse(expression, 1);
-		this.candidateSelection.setSelectionHint(SelectionHint.BLOCK);
-	}
-	
-	@Property
-	@Name(preposition = "on")
-	public void setKeyExpression(EvaluationExpression expression) {
-		this.candidateSelection.parse(expression, 1);
-		this.candidateSelection.setSelectionHint(null);
-	}
-
-	@Property
-	@Name(preposition = "with")
-	public void setImplementation(DuplicateDetectionImplementation implementation) {
-		this.implementation = implementation;
-	}
-	
 	/**
-	 * Returns the implementation.
+	 * Sets the value of comparison to the given value.
 	 * 
-	 * @return the implementation
+	 * @param comparison
+	 *        the comparison to set
 	 */
-	public DuplicateDetectionImplementation getImplementation() {
-		return this.implementation;
+	public RecordLinkage withComparison(CandidateComparison comparison) {
+		setComparison(comparison);
+		return this;
 	}
-	
+
+	/**
+	 * Returns the algorithm.
+	 * 
+	 * @return the algorithm
+	 */
+	public CompositeDuplicateDetectionAlgorithm<?> getAlgorithm() {
+		return this.algorithm;
+	}
+
+	/**
+	 * Sets the algorithm to the specified value.
+	 * 
+	 * @param algorithm
+	 *        the algorithm to set
+	 */
+	public void setAlgorithm(CompositeDuplicateDetectionAlgorithm<?> algorithm) {
+		if (algorithm == null)
+			throw new NullPointerException("algorithm must not be null");
+
+		this.algorithm = algorithm;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.operator.CompositeOperator#asModule(eu.stratosphere.sopremo.EvaluationContext)
 	 */
 	@Override
 	public void addImplementation(SopremoModule module) {
-		final CompositeDuplicateDetectionAlgorithm<?> algorithm;
-		if (this.implementation != null)
-			algorithm = ReflectUtil.newInstance(this.implementation.getType());
-		else
-			algorithm = DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(this.candidateSelection, 2);
-		algorithm.setInputs(module.getInputs());
-		algorithm.setCandidateSelection(this.candidateSelection);
-		algorithm.setComparison(this.comparison);
-		module.embed(algorithm);
+		module.getOutput(0).setInput(0, this.algorithm);
+		this.algorithm.setInputs(module.getInputs());
+	}
+	
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime * result + this.algorithm.hashCode();
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		RecordLinkage other = (RecordLinkage) obj;
+		return this.algorithm.equals(other.algorithm);
+	}
+
+	/* (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		this.algorithm.appendAsString(appendable);
 	}
 
 }
