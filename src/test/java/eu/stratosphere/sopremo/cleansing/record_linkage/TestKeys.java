@@ -23,7 +23,7 @@ public class TestKeys {
 	protected static String[][][] CombinedBlockingKeys = new String[][][] {
 		{ { BlockingKeys[0][0] }, { BlockingKeys[0][1] } },
 		{ { BlockingKeys[1][0] }, { BlockingKeys[1][1] } },
-		// { { BlockingKeys[2][0] }, { BlockingKeys[2][1] } },
+		 { { BlockingKeys[2][0] }, { BlockingKeys[2][1] } },
 
 		{ { BlockingKeys[0][0], BlockingKeys[1][0] }, { BlockingKeys[0][1], BlockingKeys[1][1] } },
 		// { { BlockingKeys[0][0], BlockingKeys[2][0] }, { BlockingKeys[0][1], BlockingKeys[2][1] } },

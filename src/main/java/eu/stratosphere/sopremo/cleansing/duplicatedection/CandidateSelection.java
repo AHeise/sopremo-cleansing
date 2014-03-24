@@ -205,7 +205,7 @@ public class CandidateSelection extends AbstractSopremoType {
 
 	private Pass parsePassExpression(EvaluationExpression expression, int numSources) {
 		final Pass pass = new Pass();
-		List<EvaluationExpression> expressions = new ArrayList<>();
+		List<EvaluationExpression> expressions = new ArrayList<EvaluationExpression>();
 		if (numSources == 1)
 			expressions.add(expression);
 		else {
