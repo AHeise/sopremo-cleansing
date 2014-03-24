@@ -132,22 +132,7 @@ public class SpicyMappingTransformationTest extends
 						new ObjectNode().put("nestedName",
 								TextNode.valueOf("John Doe")), "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE));
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress1"))
-		// .put("fullName",
-		// new ObjectNode().put("nestedName",
-		// TextNode.valueOf("Andrew Adams")))
-		// .put("worksFor", TextNode.valueOf("CompanyXYZ"))
-		// .put("incomes",
-		// new ArrayNode<IJsonNode>().add(IntNode.ONE)))
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress3"))
-		// .put("fullName",
-		// new ObjectNode().put("nestedName",
-		// TextNode.valueOf("John Doe")))
-		// .put("worksFor", TextNode.valueOf("CompanyUVW"))
-		// .put("incomes",
-		// new ArrayNode<IJsonNode>().add(IntNode.ONE)));
+
 		sopremoPlan.getExpectedOutput(1)
 				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
 				.addObject("id", "CompanyABC", "name", "CompanyABC")
@@ -183,15 +168,6 @@ public class SpicyMappingTransformationTest extends
 						"CompanyUVW", "name", "John Doe", "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE));
 
-		// .add(new ObjectNode()
-		// .put("id",
-		// TextNode.valueOf("usCongress1---Andrew Adams"))
-		// .put("name", TextNode.valueOf("Andrew Adams"))
-		// .put("worksFor", TextNode.valueOf("CompanyXYZ")))
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress3---John Doe"))
-		// .put("name", TextNode.valueOf("John Doe"))
-		// .put("worksFor", TextNode.valueOf("CompanyUVW")));
 		sopremoPlan.getExpectedOutput(1)
 				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
 				.addObject("id", "CompanyABC", "name", "CompanyABC")
@@ -227,14 +203,6 @@ public class SpicyMappingTransformationTest extends
 						"name", "Jo", "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE));
 
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress1"))
-		// .put("name", TextNode.valueOf("An"))
-		// .put("worksFor", TextNode.valueOf("CompanyXYZ")))
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress3"))
-		// .put("name", TextNode.valueOf("Jo"))
-		// .put("worksFor", TextNode.valueOf("CompanyUVW")));
 		sopremoPlan.getExpectedOutput(1)
 				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
 				.addObject("id", "CompanyABC", "name", "CompanyABC")
@@ -269,14 +237,7 @@ public class SpicyMappingTransformationTest extends
 				.addObject("id", "usCongress3", "name", "John Doe", "worksFor",
 						"CompanyUVW---", "income",
 						new ArrayNode<IJsonNode>().add(IntNode.ONE));
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress1"))
-		// .put("name", TextNode.valueOf("Andrew Adams"))
-		// .put("worksFor", TextNode.valueOf("CompanyXYZ---")))
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress3"))
-		// .put("name", TextNode.valueOf("John Doe"))
-		// .put("worksFor", TextNode.valueOf("CompanyUVW---")));
+		
 		sopremoPlan.getExpectedOutput(1)
 				.addObject("id", "CompanyXYZ---", "name", "CompanyXYZ")
 				. // don't always use concat
