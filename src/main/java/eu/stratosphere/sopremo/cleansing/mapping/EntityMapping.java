@@ -131,8 +131,6 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Name(adjective = "into")
 	public void setMappingExpression(final ArrayCreation assignment) {
 
-		MappingValueCorrespondence corr = null;
-
 		HashMap<SpicyPathExpression, SpicyPathExpression> foreignKeys = new HashMap<SpicyPathExpression, SpicyPathExpression>();
 
 		this.createDefaultSourceSchema(this.getInputs().size());
@@ -146,19 +144,12 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			final NestedOperatorExpression nestedOperator = (NestedOperatorExpression) assignment.get(index);
 			final IdentifyOperator operator = (IdentifyOperator) nestedOperator.getOperator();
 			EvaluationExpression groupingKey = operator.getKeyExpression();
-			final Integer targetInputIndex = index; // e.g.
-			// in0
-			final InputSelection sourceInput = groupingKey.findFirst(InputSelection.class); // e.g.
-																							// in0
-			final String keyStr = ((ObjectAccess) groupingKey).getField(); // e.g.
-																			// id
+			final Integer targetInputIndex = index; 
+			final InputSelection sourceInput = groupingKey.findFirst(InputSelection.class); 
 			String sourceNesting = this.createNesting(EntityMapping.sourceStr, sourceInput.getIndex()); // e.g.
 			// source.entities_in0.entity_in0
 			final String targetNesting = this.createNesting(EntityMapping.targetStr, targetInputIndex); // e.g.
 			// target.entities_in0.entity_in0
-
-			// add source grouping key to source schema
-			this.extendSourceSchemaBy(keyStr, sourceInput.getIndex());
 
 			// add target entity id to target schema
 			this.extendTargetSchemaBy(EntityMapping.idStr, targetInputIndex);
@@ -166,12 +157,33 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			// create primary key: target entity id
 			MappingKeyConstraint targetKey = new MappingKeyConstraint(targetNesting, EntityMapping.idStr);
 			mappingInformation.getTarget().addKeyConstraint(targetKey);
+			
+			if(groupingKey instanceof ObjectAccess){
+				final String keyStr = ((ObjectAccess) groupingKey).getField();
+				// add source grouping key to source schema
+				this.extendSourceSchemaBy(keyStr, sourceInput.getIndex());
+				// create value correspondence: source grouping key -> target entity
+				// id
+				MappingValueCorrespondence corr = this.createValueCorrespondence(sourceNesting, keyStr, targetNesting, EntityMapping.idStr);
+				mappingInformation.getValueCorrespondences().add(corr);
+			} else if (groupingKey instanceof FunctionCall) {
+				FunctionCall expr = (FunctionCall) groupingKey;
+				List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
+				for (ObjectAccess oa : expr.findAll(ObjectAccess.class)) {
+					this.extendSourceSchemaBy(oa.getField(), sourceInput.getIndex());
+					String sourceNesting2;
+					final EvaluationExpression sourceInputExpr = oa.getInputExpression();
+					final String sourceExpr = oa.getField();
 
-			// create value correspondence: source grouping key -> target entity
-			// id
-			corr = this.createValueCorrespondence(sourceNesting, keyStr, targetNesting, EntityMapping.idStr);
-			mappingInformation.getValueCorrespondences().add(corr);
-
+					sourceNesting2 = this.createNesting(EntityMapping.sourceStr,
+							sourceInputExpr.findFirst(InputSelection.class).getIndex());
+					sourcePaths.add(new SpicyPathExpression(sourceNesting2, sourceExpr));
+				}
+				MappingValueCorrespondence corr = this.createValueCorrespondence(sourcePaths, targetNesting,
+						EntityMapping.idStr, expr);
+				mappingInformation.getValueCorrespondences().add(corr);
+			}
+			
 			ObjectCreation resultProjection = (ObjectCreation) operator.getResultProjection();
 			final List<Mapping<?>> mappings = resultProjection.getMappings();
 			for (final Mapping<?> mapping : mappings) { // mapping level
