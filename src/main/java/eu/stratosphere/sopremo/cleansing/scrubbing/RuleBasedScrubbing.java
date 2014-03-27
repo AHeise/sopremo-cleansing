@@ -29,16 +29,13 @@ import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
-import eu.stratosphere.sopremo.operator.CompositeOperator;
-import eu.stratosphere.sopremo.operator.InputCardinality;
-import eu.stratosphere.sopremo.operator.Operator;
-import eu.stratosphere.sopremo.operator.OutputCardinality;
-import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.operator.*;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 @InputCardinality(1)
 @OutputCardinality(1)
 @DefaultSerializer(value = RuleBasedScrubbing.RuleBasedScrubbingSerializer.class)
+@Internal
 public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 	public static class RuleBasedScrubbingSerializer extends Serializer<RuleBasedScrubbing>{
 		FieldSerializer<RuleBasedScrubbing> fieldSerializer;

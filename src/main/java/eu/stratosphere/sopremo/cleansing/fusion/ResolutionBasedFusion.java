@@ -45,6 +45,7 @@ import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.ElementaryOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Internal;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
 import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.pact.GenericSopremoMap;
@@ -63,6 +64,7 @@ import eu.stratosphere.sopremo.type.TextNode;
 @InputCardinality(1)
 @OutputCardinality(1)
 @DefaultSerializer(value = ResolutionBasedFusion.RuleBasedFusionSerializer.class)
+@Internal
 public class ResolutionBasedFusion extends CompositeOperator<ResolutionBasedFusion> {
 	public static class RuleBasedFusionSerializer extends
 			Serializer<ResolutionBasedFusion> {

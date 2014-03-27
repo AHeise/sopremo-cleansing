@@ -146,11 +146,11 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 		List<JsonStream> passResults = new ArrayList<JsonStream>();
 		for (Pass pass : selection.getPasses()) {
-			final EvaluationExpression blockingKey = pass.getBlockingKey(0);
+			final EvaluationExpression sortingKey1 = pass.getBlockingKey(0);
 			// record -> sorting key
 			final Projection sortingKeys = new Projection().
 				withInputs(inputs.get(0)).
-				withResultProjection(blockingKey);
+				withResultProjection(sortingKey1);
 
 			// [sorting key]+ -> [sorting key, count]
 			final BatchAggregationExpression countExpression = new BatchAggregationExpression();
@@ -161,7 +161,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					new ArrayCreation().
 						add(countExpression.add(CoreFunctions.FIRST)).
 						add(countExpression.add(CoreFunctions.COUNT))).
-				withName("Generate KPM List " + blockingKey);
+				withName("Generate KPM List " + sortingKey1);
 
 			// [sorting key, count] -> [sorting key, rank]
 			final Sort keysWithRank = new Sort().
@@ -177,7 +177,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				// record + [sorting key, rank, count] -> [partition, partition, record]+
 				final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
 					withInputs(inputs.get(0), keysWithRankAndCount).
-					withKeyExpression(0, blockingKey).
+					withKeyExpression(0, sortingKey1).
 					withKeyExpression(1, new ArrayAccess(0));
 
 				final SingleSourceSlidingWindow window = new SingleSourceSlidingWindow().
@@ -193,7 +193,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				// record + [sorting key, rank, count] -> [key, partition, record]
 				final PartitionKeys rankJoin1 = new LeftPartitionKeys(this.windowSize, getDegreeOfParallelism()).
 					withInputs(inputs.get(0), keysWithRankAndCount).
-					withKeyExpression(0, blockingKey).
+					withKeyExpression(0, sortingKey1).
 					withKeyExpression(1, new ArrayAccess(0));
 
 				final EvaluationExpression sortingKey2 = pass.getBlockingKey(1);
@@ -228,11 +228,12 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					withInputs(rankJoin1, rankJoin2).
 					withWindowSize(this.windowSize).
 					withCandidateComparison(comparison).
+					withSortingKey1(sortingKey1).
 					withSortingKey2(sortingKey2).
-					withKeyExpression(0, new ArrayAccess(1)).
+					withKeyExpression(0, new ArrayAccess(0)).
 					withKeyExpression(1, new ArrayAccess(0)).
 					withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
-						new ChainedSegmentExpression(new ArrayAccess(3), pass.getBlockingKeys().get(0)))).
+						new ChainedSegmentExpression(new ArrayAccess(1), sortingKey1))).
 					withInnerGroupOrdering(1, new OrderingExpression(Order.ASCENDING,
 						new ChainedSegmentExpression(new ArrayAccess(2), sortingKey2))).
 					withResultProjection(comparison.getResultProjection());
@@ -364,7 +365,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					if (keyWithCount == null && hasNext2)
 						keyWithCount = iterator2.next();
 
-					int comparison = hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
+					int comparison =
+						hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
 					if (comparison <= 0) {
 						final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 						final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
@@ -396,7 +398,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 						if (this.ringBuffer.size() >= this.bufferSize)
 							emit(this.ringBuffer.removeFirst(), out);
-						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber, count,
+						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber,
+							count,
 							this.beforeReplicationIndices.toIntArray()));
 						keyWithCount = null;
 						hasNext2 = iterator2.hasNext();
@@ -534,7 +537,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	public static class DualSourceSlidingWindow extends ElementaryDuplicateDetectionAlgorithm<DualSourceSlidingWindow> {
 		private int bufferSize = DEFAULT_WINDOW_SIZE - 1;
 
-		private EvaluationExpression sortingKey2;
+		private EvaluationExpression sortingKey1, sortingKey2;
 
 		/**
 		 * Initializes SortedNeighborhood.SingleSourceSlidingWindow.
@@ -609,6 +612,40 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			return this.sortingKey2;
 		}
 
+		/**
+		 * Sets the sortingKey1 to the specified value.
+		 * 
+		 * @param sortingKey
+		 *        the sortingKey1 to set
+		 */
+		public void setSortingKey1(EvaluationExpression sortingKey) {
+			if (sortingKey == null)
+				throw new NullPointerException("sortingKey1 must not be null");
+
+			this.sortingKey1 = sortingKey;
+		}
+
+		/**
+		 * Sets the sortingKey1 to the specified value.
+		 * 
+		 * @param sortingKey
+		 *        the sortingKey1 to set
+		 * @return this
+		 */
+		public DualSourceSlidingWindow withSortingKey1(EvaluationExpression sortingKey) {
+			setSortingKey1(sortingKey);
+			return this;
+		}
+
+		/**
+		 * Returns the sortingKey1.
+		 * 
+		 * @return the sortingKey1
+		 */
+		public EvaluationExpression getSortingKey1() {
+			return this.sortingKey1;
+		}
+
 		private static class KeyedValue {
 			final IJsonNode key, value;
 
@@ -639,7 +676,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			private FastList<KeyedValue> smallerBuffer = new FastList<KeyedValue>(),
 					largerBuffer = new FastList<KeyedValue>();
 
-			private EvaluationExpression sortingKey2;
+			private EvaluationExpression sortingKey1, sortingKey2;
 
 			/*
 			 * (non-Javadoc)
@@ -671,11 +708,10 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					this.smallerBuffer.add(toKeyedValue(partitionedValue));
 				}
 
-				int leftReplicatedCount = 0;
 				while (iterator1.hasNext()) {
 					final IArrayNode<IJsonNode> pivot = iterator1.next();
-					final IJsonNode key = pivot.get(0);
-					final IJsonNode value = pivot.get(2);
+					final IJsonNode value = pivot.get(1);
+					final IJsonNode key = this.sortingKey1.evaluate(value);
 
 					// move window in second source so that pivot would be in the middle
 					while (!this.largerBuffer.isEmpty() &&
@@ -690,11 +726,12 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
 						this.largerBuffer.add(toKeyedValue(iterator2.next()));
 
-					int index = 0;
-					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); index <= leftReplicatedCount &&
-						(n = n.getNext()) != end; index++)
+					for (FastList.Node<KeyedValue> n = this.smallerBuffer.head(), end = this.smallerBuffer.tail(); (n =
+						n.getNext()) != end;)
 						this.candidateComparison.performComparison(value, n.getValue().value, collector);
-					leftReplicatedCount++;
+					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); (n =
+						n.getNext()) != end;)
+						this.candidateComparison.performComparison(value, n.getValue().value, collector);
 				}
 			}
 
@@ -891,8 +928,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 			private final IntNode partitionNode = new IntNode();
 
-			private final ArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(NullNode.getInstance(),
-				this.partitionNode, NullNode.getInstance());
+			private final ArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(this.partitionNode, NullNode.getInstance());
 
 			/*
 			 * (non-Javadoc)
@@ -917,7 +953,6 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					JsonCollector<IJsonNode> out) {
 				@SuppressWarnings("unchecked")
 				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
-				final IJsonNode key = sortingKeyRank.get(0);
 				final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 				final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
 
@@ -926,14 +961,13 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					final IJsonNode record = iterator.next();
 					final int partitionNumber = (keyRank + index) * this.numberOfPartitions / numberOfRecords;
 
-					emit(out, key, partitionNumber, record);
+					emit(out, partitionNumber, record);
 				}
 			}
 
-			private void emit(JsonCollector<IJsonNode> out, IJsonNode key, int partitionNumber, IJsonNode record) {
-				this.emitNode.set(0, key);
+			private void emit(JsonCollector<IJsonNode> out, int partitionNumber, IJsonNode record) {
 				this.partitionNode.setValue(partitionNumber);
-				this.emitNode.set(2, record);
+				this.emitNode.set(1, record);
 				out.collect(this.emitNode);
 			}
 		}
