@@ -76,7 +76,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 			recordLinkage.getComparison());
 
 		try {
-//			this.sopremoTestPlan.trace();
+			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));
@@ -103,7 +103,7 @@ public abstract class RecordLinkageTestBase<P extends CompositeDuplicateDetectio
 		if (resultProjection == null)
 			resultProjection = EvaluationExpression.VALUE;
 
-//		System.out.println(left + " " + right);
+		System.out.println(left + " " + right);
 		this.sopremoTestPlan.getExpectedOutput(0).add(
 			resultProjection.evaluate(JsonUtil.asArray(left, right)).clone());
 	}

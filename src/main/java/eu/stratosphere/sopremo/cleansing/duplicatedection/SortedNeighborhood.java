@@ -364,7 +364,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					if (keyWithCount == null && hasNext2)
 						keyWithCount = iterator2.next();
 
-					int comparison = hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
+					int comparison =
+						hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
 					if (comparison <= 0) {
 						final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 						final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
@@ -396,7 +397,8 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 						if (this.ringBuffer.size() >= this.bufferSize)
 							emit(this.ringBuffer.removeFirst(), out);
-						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber, count,
+						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber,
+							count,
 							this.beforeReplicationIndices.toIntArray()));
 						keyWithCount = null;
 						hasNext2 = iterator2.hasNext();
@@ -690,11 +692,12 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
 						this.largerBuffer.add(toKeyedValue(iterator2.next()));
 
-					int index = 0;
-					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); index <= leftReplicatedCount &&
-						(n = n.getNext()) != end; index++)
+					for (FastList.Node<KeyedValue> n = this.smallerBuffer.head(), end = this.smallerBuffer.tail(); (n =
+						n.getNext()) != end;)
 						this.candidateComparison.performComparison(value, n.getValue().value, collector);
-					leftReplicatedCount++;
+					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); (n =
+						n.getNext()) != end;)
+						this.candidateComparison.performComparison(value, n.getValue().value, collector);
 				}
 			}
 
