@@ -31,7 +31,8 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 
 		this.sortingKeys = new EvaluationExpression[sortingKeys[0].length];
 		for (int index = 0; index < this.sortingKeys.length; index++) {
-			this.sortingKeys[index] = new ArrayCreation(new ObjectAccess(sortingKeys[0][index]), new ObjectAccess("id"));
+			this.sortingKeys[index] =
+				new ArrayCreation(new ObjectAccess(sortingKeys[0][index]), new ObjectAccess("id"));
 		}
 		this.windowSize = windowSize;
 	}
@@ -58,13 +59,7 @@ public class SNMDuplicateDetectionTest extends DuplicateDetectionTestBase<Blocki
 	@Override
 	protected void generateExpectedPairs(List<IJsonNode> input, PairFilter pairFilter, CandidateComparison comparison) {
 		for (final EvaluationExpression sortingKey : this.sortingKeys) {
-			final EvaluationExpression leftKey = sortingKey.clone(), rightKey = sortingKey.clone();
-			Collections.sort(input, new Comparator<IJsonNode>() {
-				@Override
-				public int compare(IJsonNode left, IJsonNode right) {
-					return leftKey.evaluate(left).compareTo(rightKey.evaluate(right));
-				}
-			});
+			Collections.sort(input, new ExpressionSorter(sortingKey));
 
 			for (int index1 = 0, size = input.size(); index1 < size; index1++) {
 				IJsonNode left = input.get(index1);

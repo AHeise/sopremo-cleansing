@@ -14,6 +14,9 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.duplicatedection;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -21,38 +24,19 @@ import java.util.List;
 
 import javolution.text.TypeFormat;
 import javolution.util.FastList;
+import javolution.util.FastList.Node;
 import eu.stratosphere.api.common.operators.Order;
 import eu.stratosphere.configuration.Configuration;
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.base.ContextualProjection;
-import eu.stratosphere.sopremo.base.Grouping;
-import eu.stratosphere.sopremo.base.Projection;
-import eu.stratosphere.sopremo.base.Sort;
-import eu.stratosphere.sopremo.base.UnionAll;
+import eu.stratosphere.sopremo.base.*;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
-import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.OrderingExpression;
-import eu.stratosphere.sopremo.operator.ElementaryOperator;
-import eu.stratosphere.sopremo.operator.InputCardinality;
-import eu.stratosphere.sopremo.operator.JsonStream;
-import eu.stratosphere.sopremo.operator.Name;
-import eu.stratosphere.sopremo.operator.Operator;
-import eu.stratosphere.sopremo.operator.OutputCardinality;
-import eu.stratosphere.sopremo.operator.Property;
+import eu.stratosphere.sopremo.expressions.*;
+import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.pact.GenericSopremoCoGroup;
 import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
-import eu.stratosphere.sopremo.type.ArrayNode;
-import eu.stratosphere.sopremo.type.IArrayNode;
-import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IStreamNode;
-import eu.stratosphere.sopremo.type.IntNode;
-import eu.stratosphere.sopremo.type.NullNode;
+import eu.stratosphere.sopremo.type.*;
 
 /**
  * @author Arvid Heise
@@ -112,8 +96,9 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		SortedNeighborhood other = (SortedNeighborhood) obj;
 		return this.windowSize == other.windowSize;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
 	 */
 	@Override
@@ -156,18 +141,16 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	@Override
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
 			PairFilter pairFilter, CandidateComparison comparison) {
-		if (inputs.size() > 1)
-			throw new UnsupportedOperationException();
-
 		final Grouping countRecords = new Grouping().
 			withInputs(inputs).
 			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 		List<JsonStream> passResults = new ArrayList<JsonStream>();
 		for (Pass pass : selection.getPasses()) {
+			final EvaluationExpression blockingKey = pass.getBlockingKey(0);
 			// record -> sorting key
 			final Projection sortingKeys = new Projection().
 				withInputs(inputs.get(0)).
-				withResultProjection(pass.getBlockingKeys().get(0));
+				withResultProjection(blockingKey);
 
 			// [sorting key]+ -> [sorting key, count]
 			final BatchAggregationExpression countExpression = new BatchAggregationExpression();
@@ -178,7 +161,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 					new ArrayCreation().
 						add(countExpression.add(CoreFunctions.FIRST)).
 						add(countExpression.add(CoreFunctions.COUNT))).
-				withName("Generate KPM List " + pass.getBlockingKeys().get(0));
+				withName("Generate KPM List " + blockingKey);
 
 			// [sorting key, count] -> [sorting key, rank]
 			final Sort keysWithRank = new Sort().
@@ -190,33 +173,283 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				withInputs(keysWithRank, countRecords).
 				withContextPath(new ArrayAccess(2));
 
-			// record + [sorting key, rank, count] -> [partition, partition, record]{1,3}
-			final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
-				withInputs(inputs.get(0), keysWithRankAndCount).
-				withKeyExpression(0, pass.getBlockingKeys().get(0)).
-				withKeyExpression(1, new ArrayAccess(0));
+			if (inputs.size() == 1) {
+				// record + [sorting key, rank, count] -> [partition, partition, record]+
+				final PartitionKeys rankJoin = new PartitionKeys(this.windowSize, getDegreeOfParallelism()).
+					withInputs(inputs.get(0), keysWithRankAndCount).
+					withKeyExpression(0, blockingKey).
+					withKeyExpression(1, new ArrayAccess(0));
 
-			final SlidingWindow window = new SlidingWindow().
-				withInputs(rankJoin).
-				withWindowSize(this.windowSize).
-				withCandidateComparison(comparison).
-				withKeyExpression(0, new ArrayAccess(0)).
-				withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
-					new ChainedSegmentExpression(new ArrayAccess(2), pass.getBlockingKeys().get(0)))).
-				withResultProjection(comparison.getResultProjection());
-			passResults.add(window);
+				final SingleSourceSlidingWindow window = new SingleSourceSlidingWindow().
+					withInputs(rankJoin).
+					withWindowSize(this.windowSize).
+					withCandidateComparison(comparison).
+					withKeyExpression(0, new ArrayAccess(0)).
+					withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
+						new ChainedSegmentExpression(new ArrayAccess(2), pass.getBlockingKeys().get(0)))).
+					withResultProjection(comparison.getResultProjection());
+				passResults.add(window);
+			} else {
+				// record + [sorting key, rank, count] -> [key, partition, record]
+				final PartitionKeys rankJoin1 = new LeftPartitionKeys(this.windowSize, getDegreeOfParallelism()).
+					withInputs(inputs.get(0), keysWithRankAndCount).
+					withKeyExpression(0, blockingKey).
+					withKeyExpression(1, new ArrayAccess(0));
+
+				final EvaluationExpression sortingKey2 = pass.getBlockingKey(1);
+				// record -> sorting key
+				final Projection sortingKeys2 = new Projection().
+					withInputs(inputs.get(1)).
+					withResultProjection(sortingKey2);
+
+				// [sorting key]+ -> [sorting key, count]
+				final Grouping sortingKeyCount2 = new Grouping().
+					withInputs(sortingKeys2).
+					withGroupingKey(EvaluationExpression.VALUE).
+					withResultProjection(
+						new ArrayCreation().
+							add(countExpression.add(CoreFunctions.FIRST)).
+							add(countExpression.add(CoreFunctions.COUNT))).
+					withName("Generate KPM List " + sortingKey2);
+
+				// [sorting key, rank, count]? + [sorting key, count]* -> [sorting key, partition, [window borders]*]
+				final CoPartition keys2WithPartition = new CoPartition(this.windowSize, getDegreeOfParallelism()).
+					withInputs(keysWithRankAndCount, sortingKeyCount2).
+					withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING, new ArrayAccess(0))).
+					withInnerGroupOrdering(1, new OrderingExpression(Order.ASCENDING, new ArrayAccess(0)));
+
+				// record + [sorting key, partition, [window borders]*] -> [partition, partition, record]+
+				final PartitionKeys rankJoin2 = new RightPartitionKeys(this.windowSize, getDegreeOfParallelism()).
+					withInputs(inputs.get(1), keys2WithPartition).
+					withKeyExpression(0, sortingKey2).
+					withKeyExpression(1, new ArrayAccess(0));
+
+				final DualSourceSlidingWindow window = new DualSourceSlidingWindow().
+					withInputs(rankJoin1, rankJoin2).
+					withWindowSize(this.windowSize).
+					withCandidateComparison(comparison).
+					withSortingKey2(sortingKey2).
+					withKeyExpression(0, new ArrayAccess(1)).
+					withKeyExpression(1, new ArrayAccess(0)).
+					withInnerGroupOrdering(0, new OrderingExpression(Order.ASCENDING,
+						new ChainedSegmentExpression(new ArrayAccess(3), pass.getBlockingKeys().get(0)))).
+					withInnerGroupOrdering(1, new OrderingExpression(Order.ASCENDING,
+						new ChainedSegmentExpression(new ArrayAccess(2), sortingKey2))).
+					withResultProjection(comparison.getResultProjection());
+				passResults.add(window);
+			}
 		}
 		return new UnionAll().withInputs(passResults);
 	}
 
+	// [sorting key, rank, count]? + [sorting key, count]* -> [sorting key, partition, [window borders]*]
+	@InputCardinality(2)
+	@DegreeOfParallelism(1)
+	public static class CoPartition extends ElementaryOperator<CoPartition> {
+		/**
+		 * Initializes Sort.
+		 */
+		public CoPartition() {
+			this.setKeyExpressions(0, ConstantExpression.NULL);
+			this.setKeyExpressions(1, ConstantExpression.NULL);
+		}
+
+		private int bufferSize;
+
+		private int numberOfPartitions;
+
+		protected CoPartition(int windowSize, int numberOfPartitions) {
+			this();
+			this.bufferSize = windowSize - 1;
+			this.numberOfPartitions = numberOfPartitions;
+		}
+
+		/**
+		 * Returns the windowSize.
+		 * 
+		 * @return the windowSize
+		 */
+		public int getWindowSize() {
+			return this.bufferSize + 1;
+		}
+
+		/**
+		 * Returns the numberOfPartitions.
+		 * 
+		 * @return the numberOfPartitions
+		 */
+		public int getNumberOfPartitions() {
+			return this.numberOfPartitions;
+		}
+
+		private static class ValueWithIndices {
+			private IJsonNode value;
+
+			private int partitionNumber, count;
+
+			private int[] beforeReplicationIndices;
+
+			private IntList afterReplicationCount = new IntArrayList();
+
+			/**
+			 * Initializes ValueWithIndices.
+			 * 
+			 * @param value
+			 * @param partitionNumber
+			 * @param afterReplicationIndices
+			 */
+			public ValueWithIndices(IJsonNode value, int partitionNumber, int count, int[] beforeReplicationIndices) {
+				super();
+				this.value = value;
+				this.count = count;
+				this.partitionNumber = partitionNumber;
+				this.beforeReplicationIndices = beforeReplicationIndices;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				StringBuilder builder = new StringBuilder();
+				builder.append(this.value);
+				builder.append(" (");
+				builder.append(this.partitionNumber);
+				builder.append(")");
+				return builder.toString();
+			}
+
+		}
+
+		public static class Implementation extends
+				GenericSopremoCoGroup<IArrayNode<IJsonNode>, IArrayNode<IJsonNode>, IJsonNode> {
+			private int partitionNumber;
+
+			private int bufferSize;
+
+			private int numberOfPartitions;
+
+			private CachingArrayNode<IntNode> beforeReplicationIndicesNode = new CachingArrayNode<IntNode>(),
+					afterReplicationIndicesNode = new CachingArrayNode<IntNode>();
+
+			private IntList beforeReplicationsLeft = new IntArrayList(), beforeReplicationIndices = new IntArrayList();
+
+			private IntNode partitionNode = new IntNode();
+
+			private IArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(NullNode.getInstance(),
+				this.partitionNode, this.beforeReplicationIndicesNode, this.afterReplicationIndicesNode);
+
+			private FastList<ValueWithIndices> ringBuffer = new FastList<ValueWithIndices>();
+
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
+			 */
+			@SuppressWarnings("null")
+			@Override
+			protected void coGroup(IStreamNode<IArrayNode<IJsonNode>> values1,
+					IStreamNode<IArrayNode<IJsonNode>> values2,
+					JsonCollector<IJsonNode> out) {
+
+				final Iterator<IArrayNode<IJsonNode>> iterator1 = values1.iterator();
+				final Iterator<IArrayNode<IJsonNode>> iterator2 = values2.iterator();
+
+				IArrayNode<IJsonNode> sortingKeyRank = null, keyWithCount = null;
+				boolean hasNext1 = iterator1.hasNext(), hasNext2 = iterator2.hasNext();
+				while (hasNext1 || hasNext2) {
+					if (sortingKeyRank == null && hasNext1)
+						sortingKeyRank = iterator1.next();
+					if (keyWithCount == null && hasNext2)
+						keyWithCount = iterator2.next();
+
+					int comparison = hasNext1 ? (hasNext2 ? sortingKeyRank.get(0).compareTo(keyWithCount.get(0)) : -1) : 1;
+					if (comparison <= 0) {
+						final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
+						final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
+						final int newPartitionNumber = keyRank * this.numberOfPartitions / numberOfRecords;
+						for (int p = this.partitionNumber; p < newPartitionNumber; p++) {
+							this.beforeReplicationsLeft.add(0, this.bufferSize);
+							this.beforeReplicationIndices.add(0);
+
+							int remaining = this.bufferSize;
+							for (Node<ValueWithIndices> n = this.ringBuffer.tail(), end = this.ringBuffer.head(); (n =
+								n.getPrevious()) != end && remaining > 0;) {
+								ValueWithIndices value = n.getValue();
+								value.afterReplicationCount.add(Math.max(0, value.count - remaining));
+								remaining -= value.count;
+							}
+						}
+						this.partitionNumber = newPartitionNumber;
+						sortingKeyRank = null;
+						hasNext1 = iterator1.hasNext();
+					}
+					if (comparison >= 0) {
+						final int count = ((IntNode) keyWithCount.get(1)).getIntValue();
+
+						for (int p = this.beforeReplicationsLeft.size() - 1; p >= 0; p--) {
+							int remaining = this.beforeReplicationsLeft.getInt(p);
+							this.beforeReplicationIndices.set(p, Math.min(remaining, count));
+							this.beforeReplicationsLeft.set(p, remaining - count);
+						}
+
+						if (this.ringBuffer.size() >= this.bufferSize)
+							emit(this.ringBuffer.removeFirst(), out);
+						this.ringBuffer.add(new ValueWithIndices(keyWithCount.get(0).clone(), this.partitionNumber, count,
+							this.beforeReplicationIndices.toIntArray()));
+						keyWithCount = null;
+						hasNext2 = iterator2.hasNext();
+
+						for (int p = this.beforeReplicationsLeft.size() - 1; p >= 0; p--)
+							if (this.beforeReplicationsLeft.getInt(p) <= 0) {
+								this.beforeReplicationIndices.remove(p);
+								this.beforeReplicationsLeft.remove(p);
+							}
+					}
+
+				}
+
+				while (!this.ringBuffer.isEmpty())
+					emit(this.ringBuffer.removeFirst(), out);
+			}
+
+			/**
+			 * @param removeFirst
+			 */
+			private void emit(ValueWithIndices valueWithIndices, JsonCollector<IJsonNode> out) {
+				this.emitNode.set(0, valueWithIndices.value);
+				this.partitionNode.setValue(valueWithIndices.partitionNumber);
+				setIntArrayNode(this.beforeReplicationIndicesNode, valueWithIndices.beforeReplicationIndices);
+				this.afterReplicationIndicesNode.setSize(0);
+				setIntArrayNode(this.afterReplicationIndicesNode, valueWithIndices.afterReplicationCount);
+				out.collect(this.emitNode);
+			}
+
+			private void setIntArrayNode(CachingArrayNode<IntNode> node, int[] afterIndices) {
+				node.setSize(afterIndices.length, IntNode.ZERO);
+				for (int index = 0; index < afterIndices.length; index++)
+					node.get(index).setValue(afterIndices[index]);
+			}
+
+			private void setIntArrayNode(CachingArrayNode<IntNode> node, IntList afterIndices) {
+				int length = afterIndices.size();
+				node.setSize(length, IntNode.ZERO);
+				for (int index = 0; index < length; index++)
+					node.get(index).setValue(afterIndices.getInt(index));
+			}
+		}
+	}
+
 	@InputCardinality(1)
-	public static class SlidingWindow extends ElementaryDuplicateDetectionAlgorithm<SlidingWindow> {
+	public static class SingleSourceSlidingWindow extends
+			ElementaryDuplicateDetectionAlgorithm<SingleSourceSlidingWindow> {
 		private int bufferSize = DEFAULT_WINDOW_SIZE - 1;
 
 		/**
-		 * Initializes SortedNeighborhood.SlidingWindow.
+		 * Initializes SortedNeighborhood.SingleSourceSlidingWindow.
 		 */
-		public SlidingWindow() {
+		public SingleSourceSlidingWindow() {
 		}
 
 		/**
@@ -247,7 +480,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 		 * @param windowSize
 		 *        the windowSize to set
 		 */
-		public SlidingWindow withWindowSize(int windowSize) {
+		public SingleSourceSlidingWindow withWindowSize(int windowSize) {
 			setWindowSize(windowSize);
 			return this;
 		}
@@ -282,7 +515,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 					if (this.ringBuffer.size() >= this.bufferSize)
 						this.ringBuffer.removeFirst();
-					this.ringBuffer.add(value);
+					this.ringBuffer.add(value.clone());
 				}
 
 				if (this.ringBuffer.size() >= this.bufferSize)
@@ -294,6 +527,182 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 						this.candidateComparison.performComparison(value, n.getValue(), collector);
 				}
 			}
+		}
+	}
+
+	@InputCardinality(2)
+	public static class DualSourceSlidingWindow extends ElementaryDuplicateDetectionAlgorithm<DualSourceSlidingWindow> {
+		private int bufferSize = DEFAULT_WINDOW_SIZE - 1;
+
+		private EvaluationExpression sortingKey2;
+
+		/**
+		 * Initializes SortedNeighborhood.SingleSourceSlidingWindow.
+		 */
+		public DualSourceSlidingWindow() {
+		}
+
+		/**
+		 * Returns the windowSize.
+		 * 
+		 * @return the windowSize
+		 */
+		public int getWindowSize() {
+			return this.bufferSize + 1;
+		}
+
+		/**
+		 * Sets the windowSize to the specified value.
+		 * 
+		 * @param windowSize
+		 *        the windowSize to set
+		 */
+		public void setWindowSize(int windowSize) {
+			if (windowSize <= 1)
+				throw new NullPointerException("windowSize must be greater than 1");
+
+			this.bufferSize = windowSize - 1;
+		}
+
+		/**
+		 * Sets the windowSize to the specified value.
+		 * 
+		 * @param windowSize
+		 *        the windowSize to set
+		 */
+		public DualSourceSlidingWindow withWindowSize(int windowSize) {
+			setWindowSize(windowSize);
+			return this;
+		}
+
+		/**
+		 * Sets the sortingKey2 to the specified value.
+		 * 
+		 * @param sortingKey
+		 *        the sortingKey2 to set
+		 */
+		public void setSortingKey2(EvaluationExpression sortingKey) {
+			if (sortingKey == null)
+				throw new NullPointerException("sortingKey2 must not be null");
+
+			this.sortingKey2 = sortingKey;
+		}
+
+		/**
+		 * Sets the sortingKey2 to the specified value.
+		 * 
+		 * @param sortingKey
+		 *        the sortingKey2 to set
+		 * @return this
+		 */
+		public DualSourceSlidingWindow withSortingKey2(EvaluationExpression sortingKey) {
+			setSortingKey2(sortingKey);
+			return this;
+		}
+
+		/**
+		 * Returns the sortingKey2.
+		 * 
+		 * @return the sortingKey2
+		 */
+		public EvaluationExpression getSortingKey2() {
+			return this.sortingKey2;
+		}
+
+		private static class KeyedValue {
+			final IJsonNode key, value;
+
+			public KeyedValue(IJsonNode key, IJsonNode value) {
+				this.key = key;
+				this.value = value;
+			}
+
+			@Override
+			public String toString() {
+				StringBuilder builder = new StringBuilder();
+				builder.append("KeyedValue [");
+				builder.append("key=").append(this.key).append(", ");
+				builder.append("value=").append(this.value);
+				builder.append("]");
+				return builder.toString();
+			}
+
+		}
+
+		public static class Implementation extends
+				GenericSopremoCoGroup<IArrayNode<IJsonNode>, IArrayNode<IJsonNode>, IJsonNode> {
+
+			private int bufferSize;
+
+			private CandidateComparison candidateComparison;
+
+			private FastList<KeyedValue> smallerBuffer = new FastList<KeyedValue>(),
+					largerBuffer = new FastList<KeyedValue>();
+
+			private EvaluationExpression sortingKey2;
+
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
+			 */
+			@Override
+			protected void coGroup(IStreamNode<IArrayNode<IJsonNode>> values1,
+					IStreamNode<IArrayNode<IJsonNode>> values2, JsonCollector<IJsonNode> collector) {
+				this.smallerBuffer.clear();
+				this.largerBuffer.clear();
+
+				final Iterator<IArrayNode<IJsonNode>> iterator1 = values1.iterator();
+				final Iterator<IArrayNode<IJsonNode>> iterator2 = values2.iterator();
+
+				// fill ring buffer with overlapping values from the previous partition
+				boolean correctPartition = false;
+				while (iterator2.hasNext()) {
+					IArrayNode<IJsonNode> partitionedValue = iterator2.next();
+					if (correctPartition ||
+						(correctPartition = partitionedValue.get(0).equals(partitionedValue.get(1)))) {
+						if (this.largerBuffer.size() >= this.bufferSize)
+							this.smallerBuffer.add(this.largerBuffer.removeFirst());
+						this.largerBuffer.add(toKeyedValue(partitionedValue));
+						break;
+					}
+					if (this.smallerBuffer.size() >= this.bufferSize)
+						this.smallerBuffer.removeFirst();
+					this.smallerBuffer.add(toKeyedValue(partitionedValue));
+				}
+
+				int leftReplicatedCount = 0;
+				while (iterator1.hasNext()) {
+					final IArrayNode<IJsonNode> pivot = iterator1.next();
+					final IJsonNode key = pivot.get(0);
+					final IJsonNode value = pivot.get(2);
+
+					// move window in second source so that pivot would be in the middle
+					while (!this.largerBuffer.isEmpty() &&
+						this.largerBuffer.getFirst().key.compareTo(key) < 0) {
+						if (this.smallerBuffer.size() >= this.bufferSize)
+							this.smallerBuffer.removeFirst();
+						this.smallerBuffer.add(this.largerBuffer.removeFirst());
+						while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
+							this.largerBuffer.add(toKeyedValue(iterator2.next()));
+					}
+
+					while (this.largerBuffer.size() < this.bufferSize && iterator2.hasNext())
+						this.largerBuffer.add(toKeyedValue(iterator2.next()));
+
+					int index = 0;
+					for (FastList.Node<KeyedValue> n = this.largerBuffer.head(), end = this.largerBuffer.tail(); index <= leftReplicatedCount &&
+						(n = n.getNext()) != end; index++)
+						this.candidateComparison.performComparison(value, n.getValue().value, collector);
+					leftReplicatedCount++;
+				}
+			}
+
+			private KeyedValue toKeyedValue(IArrayNode<IJsonNode> partitionedValue) {
+				final IJsonNode value = partitionedValue.get(2).clone();
+				return new KeyedValue(this.sortingKey2.evaluate(value).clone(), value);
+			}
+
 		}
 	}
 
@@ -387,7 +796,146 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 				this.emitNode.set(2, record);
 				out.collect(this.emitNode);
 			}
+		}
+	}
 
+	// record + [sorting key, partition, [window borders]*] -> [partition, partition, record]+
+	@InputCardinality(2)
+	public static class RightPartitionKeys extends PartitionKeys {
+
+		public RightPartitionKeys() {
+			super();
+		}
+
+		public RightPartitionKeys(int windowSize, int numberOfPartitions) {
+			super(windowSize, numberOfPartitions);
+		}
+
+		public static class Implementation extends SopremoCoGroup {
+			private int numberOfPartitions;
+
+			private final IntNode partitionNode = new IntNode(), originalPartitionNode = new IntNode();
+
+			private final ArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(this.partitionNode,
+				this.originalPartitionNode, NullNode.getInstance());
+
+			/*
+			 * (non-Javadoc)
+			 * @see
+			 * eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#open(eu.stratosphere.nephele.configuration.Configuration
+			 * )
+			 */
+			@Override
+			public void open(Configuration parameters) throws Exception {
+				super.open(parameters);
+				if (this.numberOfPartitions == STANDARD_DEGREE_OF_PARALLELISM)
+					this.numberOfPartitions = getRuntimeContext().getNumberOfParallelSubtasks();
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
+			 */
+			@Override
+			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2,
+					JsonCollector<IJsonNode> out) {
+				@SuppressWarnings("unchecked")
+				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
+				final int partitionNumber = ((IntNode) sortingKeyRank.get(1)).getIntValue();
+				@SuppressWarnings("unchecked")
+				final IArrayNode<IntNode> beforeReplicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(2);
+				@SuppressWarnings("unchecked")
+				final IArrayNode<IntNode> afterReplicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(3);
+
+				final Iterator<IJsonNode> iterator = values1.iterator();
+				int startReplicationNumber = beforeReplicationIndices.size(), endReplicationNumber = 0;
+				for (int index = 0; iterator.hasNext(); index++) {
+					final IJsonNode record = iterator.next();
+
+					for (; startReplicationNumber > 0; startReplicationNumber--)
+						if (index < beforeReplicationIndices.get(startReplicationNumber - 1).getIntValue())
+							break;
+					for (; endReplicationNumber < afterReplicationIndices.size(); endReplicationNumber++)
+						if (index < afterReplicationIndices.get(endReplicationNumber).getIntValue())
+							break;
+
+					for (int replicationNumber = -startReplicationNumber; replicationNumber <= endReplicationNumber; replicationNumber++)
+						emit(out, partitionNumber + replicationNumber, partitionNumber, record);
+				}
+			}
+
+			private void emit(JsonCollector<IJsonNode> out, int partitionNumber, int originalPartitionNumber,
+					IJsonNode record) {
+				this.partitionNode.setValue(partitionNumber);
+				this.originalPartitionNode.setValue(originalPartitionNumber);
+				this.emitNode.set(2, record);
+				out.collect(this.emitNode);
+			}
+		}
+	}
+
+	@InputCardinality(2)
+	public static class LeftPartitionKeys extends PartitionKeys {
+
+		public LeftPartitionKeys() {
+			super();
+		}
+
+		public LeftPartitionKeys(int windowSize, int numberOfPartitions) {
+			super(windowSize, numberOfPartitions);
+		}
+
+		public static class Implementation extends SopremoCoGroup {
+			private int numberOfPartitions;
+
+			private final IntNode partitionNode = new IntNode();
+
+			private final ArrayNode<IJsonNode> emitNode = new ArrayNode<IJsonNode>(NullNode.getInstance(),
+				this.partitionNode, NullNode.getInstance());
+
+			/*
+			 * (non-Javadoc)
+			 * @see
+			 * eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#open(eu.stratosphere.nephele.configuration.Configuration
+			 * )
+			 */
+			@Override
+			public void open(Configuration parameters) throws Exception {
+				super.open(parameters);
+				if (this.numberOfPartitions == STANDARD_DEGREE_OF_PARALLELISM)
+					this.numberOfPartitions = getRuntimeContext().getNumberOfParallelSubtasks();
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * @see eu.stratosphere.sopremo.pact.GenericSopremoCoGroup#coGroup(eu.stratosphere.sopremo.type.IStreamNode,
+			 * eu.stratosphere.sopremo.type.IStreamNode, eu.stratosphere.sopremo.pact.JsonCollector)
+			 */
+			@Override
+			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2,
+					JsonCollector<IJsonNode> out) {
+				@SuppressWarnings("unchecked")
+				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
+				final IJsonNode key = sortingKeyRank.get(0);
+				final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
+				final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
+
+				final Iterator<IJsonNode> iterator = values1.iterator();
+				for (int index = 0; iterator.hasNext(); index++) {
+					final IJsonNode record = iterator.next();
+					final int partitionNumber = (keyRank + index) * this.numberOfPartitions / numberOfRecords;
+
+					emit(out, key, partitionNumber, record);
+				}
+			}
+
+			private void emit(JsonCollector<IJsonNode> out, IJsonNode key, int partitionNumber, IJsonNode record) {
+				this.emitNode.set(0, key);
+				this.partitionNode.setValue(partitionNumber);
+				this.emitNode.set(2, record);
+				out.collect(this.emitNode);
+			}
 		}
 	}
 
@@ -395,15 +943,16 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 
 //
 // @InputCardinality(1)
-// public static class SlidingWindow extends ElementaryDuplicateDetectionAlgorithm<SlidingWindow> {
+// public static class SingleSourceSlidingWindow extends
+// ElementaryDuplicateDetectionAlgorithm<SingleSourceSlidingWindow> {
 // private int bufferSize = DEFAULT_WINDOW_SIZE - 1;
 //
 // private boolean replicateBorder;
 //
 // /**
-// * Initializes SortedNeighborhood.SlidingWindow.
+// * Initializes SortedNeighborhood.SingleSourceSlidingWindow.
 // */
-// public SlidingWindow() {
+// public SingleSourceSlidingWindow() {
 // }
 //
 // /**
@@ -434,7 +983,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 // * @param windowSize
 // * the windowSize to set
 // */
-// public SlidingWindow withWindowSize(int windowSize) {
+// public SingleSourceSlidingWindow withWindowSize(int windowSize) {
 // setWindowSize(windowSize);
 // return this;
 // }
@@ -455,7 +1004,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 // * @param replicateBorder
 // * the replicateBorder to set
 // */
-// public SlidingWindow withReplicateBorder(boolean replicateBorder) {
+// public SingleSourceSlidingWindow withReplicateBorder(boolean replicateBorder) {
 // setReplicateBorder(replicateBorder);
 // return this;
 // }
@@ -475,7 +1024,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 //
 // private CandidateComparison candidateComparison = new CandidateComparison();
 //
-// private transient FastList<IJsonNode> ringBuffer = new FastList<IJsonNode>();
+// private transient FastList<IJsonNode> smallerBuffer = new FastList<IJsonNode>();
 //
 // private boolean replicateBorder;
 //
