@@ -25,7 +25,6 @@ package eu.stratosphere.sopremo.cleansing.similarity.aggregation;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.cleansing.similarity.ConstantSimilarity;
@@ -37,7 +36,6 @@ import eu.stratosphere.sopremo.type.ObjectNode;
  * 
  * @author Matthias Pohl
  */
-@Ignore
 public class MinSimilarityTest {
 	
 	private final IJsonNode node1 = new ObjectNode(), node2 = new ObjectNode();
@@ -49,27 +47,27 @@ public class MinSimilarityTest {
 	public void testCompareObjectsIJsonNodeIJsonNode() {
 		MinSimilarity similarity = new MinSimilarity();
 		
-		assertEquals(1.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(Float.NaN, similarity.getSimilarity(this.node1, this.node2), 0);
 		
 		similarity.add(new ConstantSimilarity(1.0f));
 		
-		assertEquals(1.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(1.0f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.9f));
 		
-		assertEquals(0.9, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.9f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.5f));
 		
-		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.5f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.5f));
 		
-		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.5f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.0f));
 		
-		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.0f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 	}
 
 }
