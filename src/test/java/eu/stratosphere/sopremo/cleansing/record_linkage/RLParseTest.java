@@ -36,6 +36,7 @@ import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 import eu.stratosphere.sopremo.type.TextNode;
 
 /**
@@ -80,33 +81,33 @@ public class RLParseTest extends MeteorParseTest {
 	@Test
 	public void testSorting() throws IOException {
 		final SopremoPlan actualPlan = parseScript("using cleansing;"
-				+ "$persons = read from 'file:///input1.json';"
-				+ "$politicians = read from 'file:///input2.json';"
-				+ "$duplicates = link records $persons, $politicians "
-				+ "  where levenshtein($persons.name, $politicians.fullName) >= 0.7"
-				+ "  sort on {$persons.age : $politicians.ageField}"
-				+ "  with window 20"
-				+ ";"
-				+ "write $duplicates to 'file:///output.json';");
+			+ "$persons = read from 'file:///input1.json';"
+			+ "$politicians = read from 'file:///input2.json';"
+			+ "$duplicates = link records $persons, $politicians "
+			+ "  sort on {$persons.age : $politicians.ageField}"
+			+ "  where levenshtein($persons.name, $politicians.fullName) >= 0.7"
+			// + "  with window 20"
+			+ ";"
+			+ "write $duplicates to 'file:///output.json';");
 
-		/*final SopremoPlan expectedPlan = new SopremoPlan();
+		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input1 = new Source("file:/input1.json");
 		final Source input2 = new Source("file:/input2.json");
-		final RecordLinkage duplicateDetection = new RecordLinkage()
+		final RecordLinkage duplicateDetection =
+			new RecordLinkage()
 				.withImplementation(DuplicateDetectionImplementation.SNM)
 				.withInputs(input1, input2)
 				.withComparison(getComparison())
 				.withCandidateSelection(
-						new CandidateSelection().withSelectionHint(
-								SelectionHint.SORT).withPass()
-								);
-		((SortedNeighborhood) duplicateDetection.getAlgorithm())
-				.setWindowSize(20);
+					new CandidateSelection().withSelectionHint(SelectionHint.SORT).withPass(
+						new ObjectAccess("age"), new ObjectAccess("ageField")));
+		// ((SortedNeighborhood) duplicateDetection.getAlgorithm())
+		// .setWindowSize(20);
 
 		final Sink output = new Sink("file:/output.json")
-				.withInputs(duplicateDetection);
+			.withInputs(duplicateDetection);
 		expectedPlan.setSinks(output);
 
-		assertPlanEquals(expectedPlan, actualPlan);*/
+		assertPlanEquals(expectedPlan, actualPlan);
 	}
 }

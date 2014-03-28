@@ -29,7 +29,7 @@ public class DuplicateDetectionFactory {
 	public CompositeDuplicateDetectionAlgorithm<?> getMatchingAlgorithm(CandidateSelection selection, int numInputs) {
 		if (selection.getPasses().isEmpty())
 			return new NaiveDuplicateDetection();
-		if (selection.getSelectionHint() == SelectionHint.BLOCK || numInputs > 1)
+		if (selection.getSelectionHint() == SelectionHint.BLOCK)
 			return new Blocking();
 		return new SortedNeighborhood();
 	}
