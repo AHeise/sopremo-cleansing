@@ -16,15 +16,9 @@ package eu.stratosphere.sopremo.cleansing;
 
 import static eu.stratosphere.sopremo.expressions.ExpressionUtil.makePath;
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.base.GlobalEnumeration;
-import eu.stratosphere.sopremo.base.Grouping;
-import eu.stratosphere.sopremo.base.Join;
-import eu.stratosphere.sopremo.base.Selection;
-import eu.stratosphere.sopremo.base.UnionAll;
-import eu.stratosphere.sopremo.base.ValueSplit;
+import eu.stratosphere.sopremo.base.*;
 import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.IterativeOperator;
@@ -41,8 +35,6 @@ import eu.stratosphere.sopremo.type.JsonUtil;
 @OutputCardinality(1)
 @Name(verb = "cluster transitively")
 public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
-	private boolean sourcePositionRetained = false;
-
 	/**
 	 * Initializes TransitiveClosure.
 	 */
@@ -51,30 +43,6 @@ public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 		setMaximumNumberOfIterations(1000);
 	}
 
-	/**
-	 * Sets the sourcePositionRetained to the specified value.
-	 * 
-	 * @param sourcePositionRetained
-	 *        the sourcePositionRetained to set
-	 */
-	public void setSourcePositionRetained(boolean sourcePositionRetained) {
-		this.sourcePositionRetained = sourcePositionRetained;
-	}
-
-	/**
-	 * Returns the sourcePositionRetained.
-	 * 
-	 * @return the sourcePositionRetained
-	 */
-	public boolean isSourcePositionRetained() {
-		return this.sourcePositionRetained;
-	}
-
-	public TransitiveClosure withSourcePositionRetained(boolean sourcePositionRetained) {
-		setSourcePositionRetained(sourcePositionRetained);
-		return this;
-	}
-	
 	@Override
 	public void addImplementation(IterativeSopremoModule iterativeSopremoModule) {
 		JsonStream edges = iterativeSopremoModule.getInput(0);
@@ -85,21 +53,11 @@ public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 			withEnumerationExpression(new ArrayAccess(2));
 
 		final ValueSplit vertexWithComponentId;
-		if (this.sourcePositionRetained)
-			// [v1, v2, id] -> [[v1, 0], id]; [[v2, 1], id]
-			vertexWithComponentId =
-				new ValueSplit().withInputs(pairWithComponentId).
-					withProjections(
-						new ArrayCreation(new ArrayCreation(new ArrayAccess(0), new ConstantExpression(0)),
-							new ArrayAccess(2)),
-						new ArrayCreation(new ArrayCreation(new ArrayAccess(1), new ConstantExpression(1)),
-							new ArrayAccess(2)));
-		else
-			// [v1, v2, id] -> [v1, id]; [v2, id]
-			vertexWithComponentId = new ValueSplit().
-				withInputs(pairWithComponentId).
-				withProjections(new ArrayCreation(new ArrayAccess(0), new ArrayAccess(2)),
-					new ArrayCreation(new ArrayAccess(1), new ArrayAccess(2)));
+		// [v1, v2, id] -> [v1, id]; [v2, id]
+		vertexWithComponentId = new ValueSplit().
+			withInputs(pairWithComponentId).
+			withProjections(new ArrayCreation(new ArrayAccess(0), new ArrayAccess(2)),
+				new ArrayCreation(new ArrayAccess(1), new ArrayAccess(2)));
 
 		// [v, id1], ..., [v, idn] -> [v, min(id1, ... idn)] -> initial workset
 		final BatchAggregationExpression bae = new BatchAggregationExpression();
