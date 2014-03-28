@@ -1,7 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.similarity;
 
 import org.junit.Assert;
-
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.EqualCloneTest;

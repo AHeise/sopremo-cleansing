@@ -3,7 +3,6 @@ package eu.stratosphere.sopremo.cleansing.similarity.contentbased;
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.Ignore;
 import org.junit.runners.Parameterized.Parameters;
 
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;

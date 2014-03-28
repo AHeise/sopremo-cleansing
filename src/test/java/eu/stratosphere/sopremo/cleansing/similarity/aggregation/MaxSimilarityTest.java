@@ -47,27 +47,27 @@ public class MaxSimilarityTest {
 	public void testCompareObjectsIJsonNodeIJsonNode() {
 		MaxSimilarity similarity = new MaxSimilarity();
 		
-		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.0f));
 		
-		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.0f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.1f));
 		
-		assertEquals(0.1, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.1f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.5f));
 		
-		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.5f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(0.5f));
 		
-		assertEquals(0.5, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(0.5f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 		
 		similarity.add(new ConstantSimilarity(1.0f));
 		
-		assertEquals(1.0, similarity.getSimilarity(this.node1, this.node2), 0.0);
+		assertEquals(1.0f, similarity.getSimilarity(this.node1, this.node2), 0.0f);
 	}
 
 }
