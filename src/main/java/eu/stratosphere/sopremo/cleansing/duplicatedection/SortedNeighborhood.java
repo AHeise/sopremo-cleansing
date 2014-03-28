@@ -297,7 +297,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			 * 
 			 * @param value
 			 * @param partitionNumber
-			 * @param afterReplicationIndices
+			 * @param beforeReplicationIndices
 			 */
 			public ValueWithIndices(IJsonNode value, int partitionNumber, int count, int[] beforeReplicationIndices) {
 				super();
