@@ -191,6 +191,9 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 			final PathSegmentExpression targetExpression = mapping
 					.getTargetExpression();
 			// if (targetExpression.equalsThisSeqment(targetExpression)) {
+			
+			// TODO add case for ObjectAccess to allow complex objects
+			// Testcase: ScrubbingComplexTest.java
 			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
 				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
 						field, chainedSegmentExpression));
