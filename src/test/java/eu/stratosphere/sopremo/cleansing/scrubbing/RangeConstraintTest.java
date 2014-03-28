@@ -1,6 +1,7 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.EqualCloneTest;

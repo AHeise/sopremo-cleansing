@@ -3,6 +3,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 import java.io.File;
 import java.io.IOException;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
