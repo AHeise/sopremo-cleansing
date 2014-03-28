@@ -12,22 +12,12 @@ import eu.stratosphere.sopremo.cleansing.fusion.ChooseRandomResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
-import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
-import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.LenientParser;
-import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.RangeConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.TypeConstraint;
-import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
-import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
-import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
-import eu.stratosphere.sopremo.cleansing.scrubbing.WhiteListConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.*;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
 import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
+import eu.stratosphere.sopremo.cleansing.similarity.text.JaroSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
@@ -38,17 +28,8 @@ import eu.stratosphere.sopremo.function.MacroBase;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
 import eu.stratosphere.sopremo.operator.Name;
-import eu.stratosphere.sopremo.packages.BuiltinProvider;
-import eu.stratosphere.sopremo.packages.ConstantRegistryCallback;
-import eu.stratosphere.sopremo.packages.FunctionRegistryCallback;
-import eu.stratosphere.sopremo.packages.IConstantRegistry;
-import eu.stratosphere.sopremo.packages.IFunctionRegistry;
-import eu.stratosphere.sopremo.type.CachingArrayNode;
-import eu.stratosphere.sopremo.type.IArrayNode;
-import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.MissingNode;
-import eu.stratosphere.sopremo.type.TextNode;
-import eu.stratosphere.sopremo.type.TypeCoercer;
+import eu.stratosphere.sopremo.packages.*;
+import eu.stratosphere.sopremo.type.*;
 //0.2compability
 //import eu.stratosphere.sopremo.SopremoEnvironment;
 
@@ -96,6 +77,7 @@ public class CleansFunctions implements BuiltinProvider,
 		registry.put("jaccard", new SimilarityMacro(new JaccardSimilarity()));
 		registry.put("levenshtein", new SimilarityMacro(new LevenshteinSimilarity()));
 		registry.put("jaroWinkler", new SimilarityMacro(new JaroWinklerSimilarity()));
+		registry.put("jaro", new SimilarityMacro(new JaroSimilarity()));
 
 		// scrubbing constraint macros
 		this.registerMacro(new ConstraintMacro(PatternValidationConstraint.class) {
@@ -179,7 +161,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode call(final TextNode input) {
 			this.soundex.clear();
 			try {
-				eu.stratosphere.sopremo.cleansing.SoundEx.generateSoundExInto(input, this.soundex);
+				eu.stratosphere.sopremo.cleansing.similarity.SoundEx.generateSoundExInto(input, this.soundex);
 			} catch (final IOException e) {
 			}
 			return this.soundex;

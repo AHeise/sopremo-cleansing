@@ -74,7 +74,7 @@ public class DuplicateDetectionIT extends MeteorIT {
 		final SopremoPlan plan = parseScript("using cleansing;" +
 			"$persons = read from '" + this.input.toURI() + "';" +
 			"$duplicates = detect duplicates $persons " +
-			"  where (levenshtein($persons.firstName) + 3*jaro($persons.lastName))/2 > 0.8" +
+			"  where levenshtein($persons.firstName) >= 0.7" +
 			"  partition on $persons.age;" +
 			"write $duplicates to '" + this.output.toURI() + "';");
 
@@ -92,15 +92,14 @@ public class DuplicateDetectionIT extends MeteorIT {
 			"$persons = read from '" + this.input.toURI() + "';" +
 			"$duplicates = detect duplicates $persons " +
 			"  where levenshtein($persons.firstName) >= 0.7" +
-			"  sort on $persons.age" +
-			"  with window 20;" +
+			"  sort on concat([$persons.age as string, $persons.firstName])" +
+			"  with window 2;" +
 			"write $duplicates to '" + this.output.toURI() + "';");
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		this.testServer.checkContentsOf("output.json",
 			JsonUtil.createArrayNode(r0, r10),
-			JsonUtil.createArrayNode(r2, r12),
-			JsonUtil.createArrayNode(r4, r14));
+			JsonUtil.createArrayNode(r14, r4));
 	}
 }

@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.CoreFunctions;
@@ -22,6 +23,7 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.Operator;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * 
@@ -91,6 +93,35 @@ public class TransitiveClosureTest {
 		testPlan.getExpectedOutput(0).
 			addArray("a", "b", "c", "d").
 			addArray("u", "v", "w", "x");
+
+		testPlan.run();
+	}
+
+	@Test
+	public void shouldSupportVarlength() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray("aa", "b").
+			addArray("b", "ac").
+			addArray("ac", "d");
+		testPlan.getExpectedOutput(0).
+			addArray("aa", "ac", "b", "d");
+
+		testPlan.run();
+	}
+	
+	@Test
+	public void shouldRetainSourcePosition() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure().withSourcePositionRetained(true);
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray("aa", "b").
+			addArray("ac", "b");
+		testPlan.getExpectedOutput(0).
+			addArray(JsonUtil.createArrayNode("aa", 0), JsonUtil.createArrayNode("ac", 0), JsonUtil.createArrayNode("b", 1));
 
 		testPlan.run();
 	}

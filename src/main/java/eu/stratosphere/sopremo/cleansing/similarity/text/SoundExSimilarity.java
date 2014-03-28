@@ -26,7 +26,7 @@ package eu.stratosphere.sopremo.cleansing.similarity.text;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 
-import eu.stratosphere.sopremo.cleansing.SoundEx;
+import eu.stratosphere.sopremo.cleansing.similarity.SoundEx;
 import eu.stratosphere.util.CharSequenceUtil;
 
 /**
