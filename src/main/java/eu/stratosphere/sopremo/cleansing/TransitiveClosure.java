@@ -22,11 +22,7 @@ import eu.stratosphere.sopremo.base.Join;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.base.ValueSplit;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ArrayProjection;
-import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.function.FunctionUtil;
@@ -43,8 +39,9 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  */
 @InputCardinality(1)
 @OutputCardinality(1)
-@Name(verb="cluster transitively")
+@Name(verb = "cluster transitively")
 public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
+	private boolean sourcePositionRetained = false;
 
 	/**
 	 * Initializes TransitiveClosure.
@@ -54,6 +51,30 @@ public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 		setMaximumNumberOfIterations(1000);
 	}
 
+	/**
+	 * Sets the sourcePositionRetained to the specified value.
+	 * 
+	 * @param sourcePositionRetained
+	 *        the sourcePositionRetained to set
+	 */
+	public void setSourcePositionRetained(boolean sourcePositionRetained) {
+		this.sourcePositionRetained = sourcePositionRetained;
+	}
+
+	/**
+	 * Returns the sourcePositionRetained.
+	 * 
+	 * @return the sourcePositionRetained
+	 */
+	public boolean isSourcePositionRetained() {
+		return this.sourcePositionRetained;
+	}
+
+	public TransitiveClosure withSourcePositionRetained(boolean sourcePositionRetained) {
+		setSourcePositionRetained(sourcePositionRetained);
+		return this;
+	}
+	
 	@Override
 	public void addImplementation(IterativeSopremoModule iterativeSopremoModule) {
 		JsonStream edges = iterativeSopremoModule.getInput(0);
@@ -63,11 +84,22 @@ public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 			withInputs(edges).
 			withEnumerationExpression(new ArrayAccess(2));
 
-		// [v1, v2, id] -> [v1, id]; [v2, id]
-		final ValueSplit vertexWithComponentId = new ValueSplit().
-			withInputs(pairWithComponentId).
-			withProjections(new ArrayCreation(new ArrayAccess(0), new ArrayAccess(2)),
-				new ArrayCreation(new ArrayAccess(1), new ArrayAccess(2)));
+		final ValueSplit vertexWithComponentId;
+		if (this.sourcePositionRetained)
+			// [v1, v2, id] -> [[v1, 0], id]; [[v2, 1], id]
+			vertexWithComponentId =
+				new ValueSplit().withInputs(pairWithComponentId).
+					withProjections(
+						new ArrayCreation(new ArrayCreation(new ArrayAccess(0), new ConstantExpression(0)),
+							new ArrayAccess(2)),
+						new ArrayCreation(new ArrayCreation(new ArrayAccess(1), new ConstantExpression(1)),
+							new ArrayAccess(2)));
+		else
+			// [v1, v2, id] -> [v1, id]; [v2, id]
+			vertexWithComponentId = new ValueSplit().
+				withInputs(pairWithComponentId).
+				withProjections(new ArrayCreation(new ArrayAccess(0), new ArrayAccess(2)),
+					new ArrayCreation(new ArrayAccess(1), new ArrayAccess(2)));
 
 		// [v, id1], ..., [v, idn] -> [v, min(id1, ... idn)] -> initial workset
 		final BatchAggregationExpression bae = new BatchAggregationExpression();
@@ -84,10 +116,10 @@ public class TransitiveClosure extends IterativeOperator<TransitiveClosure> {
 		// here starts the iteration
 		// [v1, id] |X| [v2, v1] -> [v2, id]
 		final Join neighbor1WithComponentId = new Join().withName("neighbor1WithComponentId").
-				withInputs(iterativeSopremoModule.getWorkingSet(), edges).
-				withJoinCondition(new ComparativeExpression(JsonUtil.createPath("0", "[0]"),
-					BinaryOperator.EQUAL, JsonUtil.createPath("1", "[1]"))).
-				withResultProjection(new ArrayCreation(JsonUtil.createPath("1", "[0]"), JsonUtil.createPath("0", "[1]")));
+			withInputs(iterativeSopremoModule.getWorkingSet(), edges).
+			withJoinCondition(new ComparativeExpression(JsonUtil.createPath("0", "[0]"),
+				BinaryOperator.EQUAL, JsonUtil.createPath("1", "[1]"))).
+			withResultProjection(new ArrayCreation(JsonUtil.createPath("1", "[0]"), JsonUtil.createPath("0", "[1]")));
 		// [v1, id] |X| [v1, v2] -> [v2, id]
 		final Join neighbor2WithComponentId = new Join().withName("neighbor2WithComponentId").
 			withInputs(iterativeSopremoModule.getWorkingSet(), edges).

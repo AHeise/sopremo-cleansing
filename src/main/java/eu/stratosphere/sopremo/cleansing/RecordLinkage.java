@@ -71,7 +71,7 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 		if (candidateSelection == null)
 			throw new NullPointerException("candidateSelection must not be null");
 
-		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 1));
+//		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 1));
 		this.algorithm.setCandidateSelection(candidateSelection);
 	}
 
