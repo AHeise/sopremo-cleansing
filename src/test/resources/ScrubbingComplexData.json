@@ -1,0 +1,5 @@
+[
+	{"firstName": "A", "worksFor": {"id": 1, "name": "name_A", "ceos": ["B", "C"]}},
+	{"firstName": "B", "worksFor": {"id": 1, "name": "name_B", "ceos": ["B", "C"]}},
+	{"firstName": "C", "worksFor": {"id": 1, "name": "name_C", "ceos": null}}
+]
