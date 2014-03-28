@@ -33,7 +33,6 @@ import org.junit.runners.Parameterized;
 import eu.stratosphere.sopremo.EvaluationContext;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.JavaToJsonMapper;
-import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * <code>SimilarityBaseTest</code> provides {@link IJsonNode} test instances that can be used by all comparator tests.

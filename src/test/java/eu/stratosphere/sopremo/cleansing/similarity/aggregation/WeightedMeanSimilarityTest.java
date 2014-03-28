@@ -37,7 +37,7 @@ import eu.stratosphere.sopremo.type.ObjectNode;
  */
 public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimilarity> {
 
-	private final static double ACCURACY = 0.00000000000001;
+	private final static float ACCURACY = 1e-6f;
 
 	private final IJsonNode node1 = new ObjectNode(), node2 = new ObjectNode();
 
@@ -60,7 +60,7 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 		expectedValue = 0.0;
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 	}
-	
+
 	/**
 	 * Tests the behavior of {@link HarmonicMeanComparator#getSimilarity(IJsonNode, IJsonNode)} without weights.
 	 */
@@ -72,22 +72,22 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 
 		similarity.add(new ConstantSimilarity(0.1f));
 
-		double expectedValue = 1.0 / (1.0 / 0.1);
+		float expectedValue = 1.0f / (1.0f / 0.1f);
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
 		similarity.add(new ConstantSimilarity(0.5f));
 
-		expectedValue = 2.0 / ((1.0 / 0.1) + (1.0 / 0.5));
+		expectedValue = 2.0f / ((1.0f / 0.1f) + (1.0f / 0.5f));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
 		similarity.add(new ConstantSimilarity(0.5f));
 
-		expectedValue = 3.0 / ((1.0 / 0.1) + (1.0 / 0.5) + (1.0 / 0.5));
+		expectedValue = 3.0f / ((1.0f / 0.1f) + (1.0f / 0.5f) + (1.0f / 0.5f));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 
 		similarity.add(new ConstantSimilarity(1.0f));
 
-		expectedValue = 4.0 / ((1.0 / 0.1) + (1.0 / 0.5) + (1.0 / 0.5) + (1.0 / 1.0));
+		expectedValue = 4.0f / ((1.0f / 0.1f) + (1.0f / 0.5f) + (1.0f / 0.5f) + (1.0f / 1.0f));
 		assertEquals(expectedValue, similarity.getSimilarity(this.node1, this.node2), ACCURACY);
 	}
 
@@ -127,63 +127,64 @@ public class WeightedMeanSimilarityTest extends EqualCloneTest<WeightedMeanSimil
 	@Test
 	public void arithmeticMeanShouldWorkWithoutWeights() {
 		WeightedMeanSimilarity similarity = new WeightedMeanSimilarity();
-		
+
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.0f));
-		
+
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.1f));
-		
+
 		assertEquals(0.05, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.5f));
-		
+
 		assertEquals(0.2, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.5f));
-		
+
 		assertEquals(0.275, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(1.0f));
-		
+
 		assertEquals(0.42, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 	}
-	
+
 	/**
 	 * Tests the behavior of {@link WeightedMeanSimilarity#getSimilarity(IJsonNode, IJsonNode)} with weights.
 	 */
 	@Test
 	public void arithmeticMeanShouldWorkWithWeights() {
 		WeightedMeanSimilarity similarity = new WeightedMeanSimilarity();
-		
+
 		assertEquals(Double.NaN, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.0f), 1);
-		
+
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.0f), 2);
-		
+
 		assertEquals(0.0, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.1f), 2);
-		
+
 		assertEquals(0.04, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.4f), 4);
-		
+
 		assertEquals(0.2, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(0.4f), 1);
-		
+
 		assertEquals(0.22, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
-		
+
 		similarity.add(new ConstantSimilarity(1.0f), 10);
-		
+
 		assertEquals(0.61, similarity.getSimilarity(this.node1, this.node2), WeightedMeanSimilarityTest.ACCURACY);
 	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.EqualVerifyTest#createDefaultInstance(int)
