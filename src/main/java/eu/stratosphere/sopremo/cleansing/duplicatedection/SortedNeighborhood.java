@@ -142,7 +142,7 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 	protected Operator<?> getImplementation(List<Operator<?>> inputs, CandidateSelection selection,
 			PairFilter pairFilter, CandidateComparison comparison) {
 		final Grouping countRecords = new Grouping().
-			withInputs(inputs).
+			withInputs(inputs.get(0)).
 			withResultProjection(CoreFunctions.COUNT.inline(new InputSelection(0)));
 		List<JsonStream> passResults = new ArrayList<JsonStream>();
 		for (Pass pass : selection.getPasses()) {

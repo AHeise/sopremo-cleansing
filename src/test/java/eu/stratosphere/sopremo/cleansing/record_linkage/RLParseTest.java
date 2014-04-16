@@ -25,6 +25,7 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
@@ -84,7 +85,7 @@ public class RLParseTest extends MeteorParseTest {
 			+ "$duplicates = link records $persons, $politicians "
 			+ "  sort on {$persons.age : $politicians.ageField}"
 			+ "  where levenshtein($persons.name, $politicians.fullName) >= 0.7"
-			// + "  with window 20"
+			+ "  with window 20"
 			+ ";"
 			+ "write $duplicates to 'file:///output.json';");
 
@@ -99,8 +100,7 @@ public class RLParseTest extends MeteorParseTest {
 				.withCandidateSelection(
 					new CandidateSelection().withSelectionHint(SelectionHint.SORT).withPass(
 						new ObjectAccess("age"), new ObjectAccess("ageField")));
-		// ((SortedNeighborhood) duplicateDetection.getAlgorithm())
-		// .setWindowSize(20);
+		((SortedNeighborhood) duplicateDetection.getAlgorithm()).setWindowSize(20);
 
 		final Sink output = new Sink("file:/output.json")
 			.withInputs(duplicateDetection);

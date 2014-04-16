@@ -189,15 +189,16 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 			
 			// TODO add case for ObjectAccess to allow complex objects
 			// Testcase: ScrubbingComplexTest.java
-			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
+			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE){
 				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
 						field, chainedSegmentExpression));
-			else
+			}
+			else{
 				this.addToObjectCreation(objectCreation,
-						(PathSegmentExpression) remainingPath.getInputExpression(), completePath,
+						(PathSegmentExpression) remainingPath
+								.getInputExpression(), completePath,
 						chainedSegmentExpression);
-			return;
-			// }
+			}
 		}
 
 		if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)

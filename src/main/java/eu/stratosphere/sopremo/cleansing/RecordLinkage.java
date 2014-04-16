@@ -113,9 +113,9 @@ public class RecordLinkage extends CompositeOperator<RecordLinkage> {
 	@Name(preposition = "partition on")
 	public void setPartitionKeyExpression(EvaluationExpression expression) {
 		final CandidateSelection candidateSelection = getCandidateSelection();
-		candidateSelection.parse(expression, 1);
+		candidateSelection.parse(expression, 2);
 		candidateSelection.setSelectionHint(SelectionHint.BLOCK);
-		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 1));
+		changeAlgorithm(DuplicateDetectionFactory.getInstance().getMatchingAlgorithm(candidateSelection, 2));
 	}
 
 	@Property
