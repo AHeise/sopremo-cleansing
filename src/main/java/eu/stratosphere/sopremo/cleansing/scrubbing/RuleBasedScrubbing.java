@@ -193,9 +193,8 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
 						field, chainedSegmentExpression));
 			else
-				this.addToObjectCreation((ObjectCreation) mapping
-						.getExpression(), (PathSegmentExpression) remainingPath
-						.getInputExpression(), completePath,
+				this.addToObjectCreation(objectCreation,
+						(PathSegmentExpression) remainingPath.getInputExpression(), completePath,
 						chainedSegmentExpression);
 			return;
 			// }

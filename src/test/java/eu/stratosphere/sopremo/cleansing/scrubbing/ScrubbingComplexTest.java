@@ -58,7 +58,7 @@ public class ScrubbingComplexTest extends MeteorIT {
 
 				+ "$data_scrubbed = scrub $data with rules {"
 
-				// + "firstName: required"
+				+ "firstName: required,"
 
 				+ "	worksFor: {"
 				+ "		name: notContainedIn([\"name_B\"]),"
