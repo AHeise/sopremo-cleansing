@@ -14,9 +14,11 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
+import javolution.text.TypeFormat;
 import eu.stratosphere.api.common.operators.Order;
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.aggregation.Aggregation;
@@ -184,10 +186,8 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 			// [id, v1, v2, sim]
 			IArrayNode<IJsonNode> match = (IArrayNode<IJsonNode>) element;
 			if(!this.matchedLeft.contains(match.get(1)) && !this.matchedRight.contains(match.get(2))) {
-				match.remove(0);
-				match.remove(2);
-				final IJsonNode left = match.get(0).clone();
-				final IJsonNode right = match.get(1).clone();
+				final IJsonNode left = match.get(1).clone();
+				final IJsonNode right = match.get(2).clone();
 				this.matchedLeft.add(left);
 				this.matchedRight.add(right);
 				this.matches.add(JsonUtil.asArray(left, right));
@@ -201,4 +201,52 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 			return this.matches;
 		}
 	};
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = super.hashCode();
+		result = prime
+				* result
+				+ ((similarityExpression == null) ? 0 : similarityExpression
+						.hashCode());
+		result = prime * result
+				+ ((tieChooser == null) ? 0 : tieChooser.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (!super.equals(obj))
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		GlobalMatching other = (GlobalMatching) obj;
+		if (similarityExpression == null) {
+			if (other.similarityExpression != null)
+				return false;
+		} else if (!similarityExpression.equals(other.similarityExpression))
+			return false;
+		if (tieChooser == null) {
+			if (other.tieChooser != null)
+				return false;
+		} else if (!tieChooser.equals(other.tieChooser))
+			return false;
+		return true;
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.operator.Operator#appendAsString(java.lang.Appendable)
+	 */
+	@Override
+	public void appendAsString(Appendable appendable) throws IOException {
+		super.appendAsString(appendable);
+		appendable.append(", with rule: ");
+		this.similarityExpression.appendAsString(appendable);
+		appendable.append(", with tie breaker: ");
+		this.tieChooser.appendAsString(appendable);
+	}
 }

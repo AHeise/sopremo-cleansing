@@ -81,7 +81,7 @@ public class RecordLinkageIT extends MeteorIT {
 				"$personsR = read from '" + this.inputR.toURI() + "';" +
 				"$personsS = read from '" + this.inputS.toURI() + "';" +
 				"$duplicates = link records $personsR, $personsS " +
-				"  partition on {$personsR.lastName : $personsS.lName}" +
+				"  partition on {substring($personsR.lastName, 0, 3) : substring($personsS.lName, 0, 3)}" +
 				"  where (jaro($personsR.firstName, $personsS.fName)*3 + jaro($personsR.lastName, $personsS.lName))/4 >= 0.7;" +
 				"write $duplicates to '" + this.output.toURI() + "';");
 

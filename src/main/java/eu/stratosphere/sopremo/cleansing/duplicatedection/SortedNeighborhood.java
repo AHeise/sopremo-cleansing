@@ -877,8 +877,12 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			@Override
 			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2,
 					JsonCollector<IJsonNode> out) {
+				Iterator<IJsonNode> iterator2 = values2.iterator();
+				if(!iterator2.hasNext()){
+					return;
+				}
 				@SuppressWarnings("unchecked")
-				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
+				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) iterator2.next();
 				final int partitionNumber = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 				@SuppressWarnings("unchecked")
 				final IArrayNode<IntNode> beforeReplicationIndices = (IArrayNode<IntNode>) sortingKeyRank.get(2);
@@ -951,8 +955,12 @@ public class SortedNeighborhood extends CompositeDuplicateDetectionAlgorithm<Sor
 			@Override
 			protected void coGroup(IStreamNode<IJsonNode> values1, IStreamNode<IJsonNode> values2,
 					JsonCollector<IJsonNode> out) {
+				Iterator<IJsonNode> iterator2 = values2.iterator();
+				if(!iterator2.hasNext()){
+					return;
+				}
 				@SuppressWarnings("unchecked")
-				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) values2.iterator().next();
+				final IArrayNode<IJsonNode> sortingKeyRank = (IArrayNode<IJsonNode>) iterator2.next();
 				final int keyRank = ((IntNode) sortingKeyRank.get(1)).getIntValue();
 				final int numberOfRecords = ((IntNode) sortingKeyRank.get(2)).getIntValue();
 
