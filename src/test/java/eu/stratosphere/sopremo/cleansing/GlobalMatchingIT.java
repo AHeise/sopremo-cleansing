@@ -32,14 +32,12 @@ public class GlobalMatchingIT extends MeteorIT {
 	private File pairs, output;
 
 	private final static IArrayNode<?>
-			r0 = JsonUtil.createArrayNode(createObjectNode("id", 1, "value", 5), createObjectNode("id", 2, "value", 5)),
-			r1 = JsonUtil.createArrayNode(createObjectNode("id", 3, "value", 5), createObjectNode("id", 4, "value", 5)),
-			r2 = JsonUtil.createArrayNode(createObjectNode("id", 5, "value", 8), createObjectNode("id", 6, "value", 8)),
-			r3 = JsonUtil.createArrayNode(createObjectNode("id", 7, "value", 8), createObjectNode("id", 8, "value", 8));
+			r0 = JsonUtil.createArrayNode(createObjectNode("id", 1, "value", 1), createObjectNode("id", 2, "value", 3)),
+			r1 = JsonUtil.createArrayNode(createObjectNode("id", 3, "value", 2), createObjectNode("id", 4, "value", 3));
 
 	@Before
 	public void createInput() throws IOException {
-		this.pairs = this.testServer.createFile("pairs.json", r0, r1, r2, r3);
+		this.pairs = this.testServer.createFile("pairs.json", r0, r1);
 		this.output = this.testServer.getOutputFile("output.json");
 	}
 
@@ -54,7 +52,7 @@ public class GlobalMatchingIT extends MeteorIT {
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 //		this.testServer.checkContentsOf("output.json",
-//			JsonUtil.createArrayNode(r0, s0),
+//			JsonUtil.createArrayNode(r1, s1),
 //			JsonUtil.createArrayNode(r0, s4),
 //			JsonUtil.createArrayNode(r1, s1),
 //			JsonUtil.createArrayNode(r2, s2),

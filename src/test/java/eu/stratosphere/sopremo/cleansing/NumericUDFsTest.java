@@ -15,20 +15,33 @@
 package eu.stratosphere.sopremo.cleansing;
 
 import static eu.stratosphere.sopremo.testing.FunctionTest.assertReturn;
-import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
 
 import org.junit.Test;
 
+import eu.stratosphere.sopremo.type.DoubleNode;
+import eu.stratosphere.sopremo.type.IntNode;
+import eu.stratosphere.sopremo.type.MissingNode;
 import eu.stratosphere.sopremo.type.TextNode;
 
 /**
  * Tests for StringUDFs
  */
-public class StringUDFsTest {
+public class NumericUDFsTest {
 	@Test
-	public void shouldRemoveAllStringOccurences() {
-		assertReturn(TextNode.valueOf("Foobar "),
-				StringUDFs.REMOVE_ALL_STRINGS, "Foobar Corporation",
-				createArrayNode("Corporation", "Corp", "Co"));
+	public void shouldReturnAbsoluteDiffForIntNodes() {
+		assertReturn(IntNode.valueOf(5), NumericUDFs.ABS_DIFF,
+				IntNode.valueOf(-10), IntNode.valueOf(5));
+	}
+	
+	@Test
+	public void shouldReturnZeroForAnyOtherType() {
+		assertReturn(IntNode.ZERO, NumericUDFs.ABS_DIFF,
+				TextNode.valueOf("foo"), MissingNode.getInstance());
+	}
+	
+	@Test
+	public void shouldReturnAbsoluteValueForIntNode() {
+		assertReturn(DoubleNode.valueOf(5.0), NumericUDFs.ABS,
+				IntNode.valueOf(-5));
 	}
 }

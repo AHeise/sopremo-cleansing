@@ -110,6 +110,21 @@ public class TransitiveClosureTest {
 		testPlan.run();
 	}
 	
+	@Test
+	public void shouldHandleSameValueAsOneValue() {
+		TransitiveClosure transitiveClosure = new TransitiveClosure();
+		SopremoTestPlan testPlan = new SopremoTestPlan(getSortedResults(transitiveClosure));
+
+		testPlan.getInput(0).
+			addArray(1, 3).
+			addArray(1, 2).
+			addArray(2, 3);
+		testPlan.getExpectedOutput(0).
+			addArray(1, 2, 3);
+
+		testPlan.run();
+	}
+	
 	private Operator<?> getSortedResults(TransitiveClosure transitiveClosure) {
 		return new Projection().
 			withInputs(transitiveClosure).

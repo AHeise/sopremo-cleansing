@@ -18,17 +18,38 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import javolution.text.TypeFormat;
 import eu.stratosphere.api.common.operators.Order;
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.aggregation.Aggregation;
-import eu.stratosphere.sopremo.base.*;
-import eu.stratosphere.sopremo.expressions.*;
+import eu.stratosphere.sopremo.base.ArraySplit;
+import eu.stratosphere.sopremo.base.GlobalEnumeration;
+import eu.stratosphere.sopremo.base.Grouping;
+import eu.stratosphere.sopremo.base.Projection;
+import eu.stratosphere.sopremo.base.Selection;
+import eu.stratosphere.sopremo.base.TwoSourceJoin;
+import eu.stratosphere.sopremo.expressions.ArithmeticExpression;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.OrderingExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.io.Source;
-import eu.stratosphere.sopremo.operator.*;
-import eu.stratosphere.sopremo.type.*;
+import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.JsonStream;
+import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
+import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.type.ArrayNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * 
@@ -37,6 +58,10 @@ import eu.stratosphere.sopremo.type.*;
 @OutputCardinality(1)
 @Name(verb = "global match")
 public class GlobalMatching extends CompositeOperator<GlobalMatching> {
+	
+	private ConstantExpression threshold;
+	private BinaryOperator thresholdOperator;
+	
 	/**
 	 * 
 	 */
@@ -66,8 +91,14 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 	public void setSimilarityExpression(EvaluationExpression similarityExpression) {
 		if (similarityExpression == null)
 			throw new NullPointerException("similarityExpression must not be null");
-
-		this.similarityExpression = similarityExpression;
+		if(similarityExpression instanceof ArithmeticExpression){
+		this.similarityExpression = similarityExpression.remove(InputSelection.class);
+		}else if (similarityExpression instanceof ComparativeExpression){
+			ComparativeExpression comparativeSimilarityExpression = (ComparativeExpression)similarityExpression;
+			this.thresholdOperator = comparativeSimilarityExpression.getBinaryOperator();
+			this.threshold = (ConstantExpression) comparativeSimilarityExpression.getExpr2();
+			this.similarityExpression = comparativeSimilarityExpression.getExpr1().remove(InputSelection.class);
+		}
 	}
 
 	public EvaluationExpression getTieChooser() {
@@ -151,9 +182,19 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 				new ChainedSegmentExpression(
 					new ArrayCreation(JsonUtil.createPath("[0]", "[1]"), JsonUtil.createPath("[1]", "[1]")),
 					this.similarityExpression)));
+		
+		JsonStream groupingInput = join;
+		
+		if(this.threshold != null && this.thresholdOperator != null){
+		final Selection filterThreshold = new Selection().withInputs(join)
+				.withCondition(
+						new ComparativeExpression(new ArrayAccess(3),
+								this.thresholdOperator, this.threshold));
+		groupingInput = filterThreshold;
+		}
 
 		final Grouping bestInGroups = new Grouping().
-			withInputs(join).
+			withInputs(groupingInput).
 			withGroupingKey(new ArrayAccess(0)).
 			withResultProjection(FunctionUtil.createFunctionCall(TAKE_BEST, new InputSelection(0))).
 			withInnerGroupOrdering(0, new OrderingExpression(Order.DESCENDING, new ArrayAccess(3)));

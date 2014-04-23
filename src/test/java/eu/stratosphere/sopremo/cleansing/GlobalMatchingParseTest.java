@@ -21,10 +21,14 @@ import org.junit.Test;
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.expressions.ArithmeticExpression;
 import eu.stratosphere.sopremo.expressions.ArithmeticExpression.ArithmeticOperator;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
@@ -37,7 +41,7 @@ public class GlobalMatchingParseTest extends MeteorParseTest {
 		final SopremoPlan actualPlan = parseScript("using cleansing;" +
 			"$pairs = read from 'file:///input1.json';" +
 			"$cluster = global match $pair in $pairs " +
-			"  with $pair[0].value - $pair[1].value;" +
+			"  with $pair[0].value - $pair[1].value >= 5;" +
 			"write $cluster to 'file:///output.json';");
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
@@ -53,7 +57,7 @@ public class GlobalMatchingParseTest extends MeteorParseTest {
 	}
 
 	private EvaluationExpression getExpression() {
-		return new ArithmeticExpression(JsonUtil.createPath("0", "[0]", "value") , ArithmeticOperator.SUBTRACTION,
-				JsonUtil.createPath("0", "[1]", "value"));
+		return new ComparativeExpression(new ArithmeticExpression(JsonUtil.createPath("0", "[0]", "value") , ArithmeticOperator.SUBTRACTION,
+				JsonUtil.createPath("0", "[1]", "value")), BinaryOperator.GREATER_EQUAL, new ConstantExpression(IntNode.valueOf(5)));
 	}
 }
