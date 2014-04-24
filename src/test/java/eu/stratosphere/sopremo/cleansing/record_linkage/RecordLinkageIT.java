@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -74,7 +75,7 @@ public class RecordLinkageIT extends MeteorIT {
 			JsonUtil.createArrayNode(r4, s0));
 	}
 
-	@Test
+	@Test @Ignore
 	public void testBlocking1() throws IOException {
 
 		final SopremoPlan plan = parseScript("using cleansing;" +

@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
@@ -32,12 +33,14 @@ public class GlobalMatchingIT extends MeteorIT {
 	private File pairs, output;
 
 	private final static IArrayNode<?>
-			r0 = JsonUtil.createArrayNode(createObjectNode("id", 1, "value", 1), createObjectNode("id", 2, "value", 3)),
-			r1 = JsonUtil.createArrayNode(createObjectNode("id", 3, "value", 2), createObjectNode("id", 4, "value", 3));
+			r0 = JsonUtil.createArrayNode(createObjectNode("id", 1, "name", "Johnson"), createObjectNode("id", 2, "name", "John")),
+			r1 = JsonUtil.createArrayNode(createObjectNode("id", 4, "name", "John"), createObjectNode("id", 2, "name", "John")),
+			r2 = JsonUtil.createArrayNode(createObjectNode("id", 4, "name", "John"), createObjectNode("id", 3, "name", "J.")),
+			r3 = JsonUtil.createArrayNode(createObjectNode("id", 5, "name", "Meyer"), createObjectNode("id", 6, "name", "Mayer"));
 
 	@Before
 	public void createInput() throws IOException {
-		this.pairs = this.testServer.createFile("pairs.json", r0, r1);
+		this.pairs = this.testServer.createFile("pairs.json", r0, r1, r2, r3);
 		this.output = this.testServer.getOutputFile("output.json");
 	}
 
@@ -46,18 +49,29 @@ public class GlobalMatchingIT extends MeteorIT {
 		final SopremoPlan plan = parseScript("using cleansing;" +
 			"$pairs = read from '" + this.pairs.toURI() + "';" +
 			"$cluster = global match $pair in $pairs " +
-			"  with $pair[0].value-$pair[1].value;" +
+			"  by jaro($pair[0].name, $pair[1].name);" +
 			"write $cluster to '" + this.output.toURI() + "';");
-
+		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
-//		this.testServer.checkContentsOf("output.json",
-//			JsonUtil.createArrayNode(r1, s1),
-//			JsonUtil.createArrayNode(r0, s4),
-//			JsonUtil.createArrayNode(r1, s1),
-//			JsonUtil.createArrayNode(r2, s2),
-//			JsonUtil.createArrayNode(r3, s3),
-//			JsonUtil.createArrayNode(r4, s4),
-//			JsonUtil.createArrayNode(r4, s0));
+		this.testServer.checkContentsOf("output.json",
+				JsonUtil.createArrayNode(createObjectNode("id", 4, "name", "John"), createObjectNode("id", 2, "name", "John")),
+				JsonUtil.createArrayNode(createObjectNode("id", 1, "name", "Johnson"), createObjectNode("id", 3, "name", "J.")),
+				JsonUtil.createArrayNode(createObjectNode("id", 5, "name", "Meyer"), createObjectNode("id", 6, "name", "Mayer")));
+	}
+	
+	@Test
+	public void testWithThreshold() throws IOException {
+		final SopremoPlan plan = parseScript("using cleansing;" +
+			"$pairs = read from '" + this.pairs.toURI() + "';" +
+			"$cluster = global match $pair in $pairs " +
+			"  by jaro($pair[0].name, $pair[1].name) > 0.7;" +
+			"write $cluster to '" + this.output.toURI() + "';");
+		SopremoUtil.trace();
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("output.json",
+				JsonUtil.createArrayNode(createObjectNode("id", 4, "name", "John"), createObjectNode("id", 2, "name", "John")),
+				JsonUtil.createArrayNode(createObjectNode("id", 5, "name", "Meyer"), createObjectNode("id", 6, "name", "Mayer")));
 	}
 }

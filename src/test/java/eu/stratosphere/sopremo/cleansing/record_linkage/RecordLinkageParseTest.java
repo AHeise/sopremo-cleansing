@@ -28,7 +28,6 @@ import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Sel
 import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
@@ -38,7 +37,6 @@ import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IntNode;
 
 /**
@@ -69,10 +67,10 @@ public class RecordLinkageParseTest extends MeteorParseTest {
 	}
 
 	private CandidateComparison getComparison() {
-		final SimilarityExpression similarityExpression = new SimilarityExpression(new PathSimilarity<IJsonNode>(
+		final SimilarityExpression similarityExpression = new SimilarityExpression(
 			new ObjectAccess("name"),
 			new CoercingSimilarity(new LevenshteinSimilarity()),
-			new ObjectAccess("fullName")));
+			new ObjectAccess("fullName"));
 		return new CandidateComparison().
 			withDuplicateExpression(
 			new ComparativeExpression(similarityExpression,

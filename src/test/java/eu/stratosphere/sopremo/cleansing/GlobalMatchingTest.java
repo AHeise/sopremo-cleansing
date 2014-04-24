@@ -39,7 +39,7 @@ public class GlobalMatchingTest {
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 3).addArray(2, 3);
-		testPlan.getExpectedOutput(0).addArray(2, 3);
+		testPlan.getExpectedOutput(0).addArray(2, 3).addArray(1,3);
 
 		testPlan.trace();
 		testPlan.run();

@@ -27,7 +27,6 @@ import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.base.TwoSourceJoin;
-import eu.stratosphere.sopremo.expressions.ArithmeticExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
@@ -87,17 +86,17 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 	}
 
 	@Property
-	@Name(preposition = "with")
+	@Name(preposition = "by")
 	public void setSimilarityExpression(EvaluationExpression similarityExpression) {
 		if (similarityExpression == null)
 			throw new NullPointerException("similarityExpression must not be null");
-		if(similarityExpression instanceof ArithmeticExpression){
-		this.similarityExpression = similarityExpression.remove(InputSelection.class);
-		}else if (similarityExpression instanceof ComparativeExpression){
+		if (similarityExpression instanceof ComparativeExpression){
 			ComparativeExpression comparativeSimilarityExpression = (ComparativeExpression)similarityExpression;
 			this.thresholdOperator = comparativeSimilarityExpression.getBinaryOperator();
 			this.threshold = (ConstantExpression) comparativeSimilarityExpression.getExpr2();
 			this.similarityExpression = comparativeSimilarityExpression.getExpr1().remove(InputSelection.class);
+		}else{
+			this.similarityExpression = similarityExpression.remove(InputSelection.class);
 		}
 	}
 

@@ -21,10 +21,12 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.cleansing.DuplicateDetection;
-import eu.stratosphere.sopremo.cleansing.duplicatedection.*;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateComparison;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.SelectionHint;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.DuplicateDetectionImplementation;
+import eu.stratosphere.sopremo.cleansing.duplicatedection.SortedNeighborhood;
 import eu.stratosphere.sopremo.cleansing.similarity.CoercingSimilarity;
-import eu.stratosphere.sopremo.cleansing.similarity.PathSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression;
@@ -33,7 +35,6 @@ import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.io.Sink;
 import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
  * @author arv
@@ -61,10 +62,10 @@ public class DDParseTest extends MeteorParseTest {
 	}
 
 	private CandidateComparison getComparison() {
-		final SimilarityExpression similarityExpression = new SimilarityExpression(new PathSimilarity<IJsonNode>(
+		final SimilarityExpression similarityExpression = new SimilarityExpression(
 			new ObjectAccess("firstName"),
 			new CoercingSimilarity(new LevenshteinSimilarity()),
-			new ObjectAccess("firstName")));
+			new ObjectAccess("firstName"));
 		return new CandidateComparison().
 			withDuplicateExpression(
 			new ComparativeExpression(similarityExpression,

@@ -12,7 +12,18 @@ import eu.stratosphere.sopremo.cleansing.fusion.ChooseRandomResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.DefaultValueResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MergeDistinctResolution;
 import eu.stratosphere.sopremo.cleansing.fusion.MostFrequentResolution;
-import eu.stratosphere.sopremo.cleansing.scrubbing.*;
+import eu.stratosphere.sopremo.cleansing.scrubbing.BlackListConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.DefaultValueCorrection;
+import eu.stratosphere.sopremo.cleansing.scrubbing.IllegalCharacterConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.LenientParser;
+import eu.stratosphere.sopremo.cleansing.scrubbing.NonNullConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.PatternValidationConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.RangeConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.TypeConstraint;
+import eu.stratosphere.sopremo.cleansing.scrubbing.UnresolvableCorrection;
+import eu.stratosphere.sopremo.cleansing.scrubbing.ValidationRule;
+import eu.stratosphere.sopremo.cleansing.scrubbing.ValueCorrection;
+import eu.stratosphere.sopremo.cleansing.scrubbing.WhiteListConstraint;
 import eu.stratosphere.sopremo.cleansing.similarity.Similarity;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityExpression;
 import eu.stratosphere.sopremo.cleansing.similarity.SimilarityFactory;
@@ -20,16 +31,27 @@ import eu.stratosphere.sopremo.cleansing.similarity.set.JaccardSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.JaroWinklerSimilarity;
 import eu.stratosphere.sopremo.cleansing.similarity.text.LevenshteinSimilarity;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.ExpressionUtil;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.function.MacroBase;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
 import eu.stratosphere.sopremo.operator.Name;
-import eu.stratosphere.sopremo.packages.*;
-import eu.stratosphere.sopremo.type.*;
+import eu.stratosphere.sopremo.packages.BuiltinProvider;
+import eu.stratosphere.sopremo.packages.ConstantRegistryCallback;
+import eu.stratosphere.sopremo.packages.FunctionRegistryCallback;
+import eu.stratosphere.sopremo.packages.IConstantRegistry;
+import eu.stratosphere.sopremo.packages.IFunctionRegistry;
+import eu.stratosphere.sopremo.type.CachingArrayNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.MissingNode;
+import eu.stratosphere.sopremo.type.TextNode;
+import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
 //import eu.stratosphere.sopremo.SopremoEnvironment;
 
@@ -256,28 +278,33 @@ public class CleansFunctions implements BuiltinProvider,
 					throw new IllegalArgumentException(
 						"Can only expand simple path expressions");
 
-			Similarity<IJsonNode> similarity;
+			Similarity<IJsonNode> similarity=(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, true);
+			final EvaluationExpression leftPath;
+			final EvaluationExpression rightPath;
 			if (params.length > 1) {
 				final InputSelection input0 = params[0].findFirst(InputSelection.class);
 				final InputSelection input1 = params[1].findFirst(InputSelection.class);
 				if (input0 == null || input1 == null)
 					throw new IllegalArgumentException("Paths are incomplete (source is unknown) " +
 						Arrays.asList(params));
-				if (input0.getIndex() == input1.getIndex())
-					throw new IllegalArgumentException("Paths are using the same source " + Arrays.asList(params));
-				final PathSegmentExpression left =
-					(PathSegmentExpression) (input0.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
-				final PathSegmentExpression right =
-					(PathSegmentExpression) (input1.getIndex() == 0 ? params[0] : params[1]).remove(InputSelection.class);
-
-				similarity =
-					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, left, right, true);
+				//case for use in duplicate detection (one input)
+				if (input0.getIndex() != input1.getIndex()) {
+					leftPath = params[0];
+					rightPath = params[1];
+				//common case
+				} else {
+					leftPath =
+							(PathSegmentExpression) params[0].remove(InputSelection.class);
+					rightPath =
+							(PathSegmentExpression) params[1].remove(InputSelection.class);
+					similarity =
+							(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, true);
+				}
 			} else {
-				final PathSegmentExpression path = (PathSegmentExpression) params[0].remove(InputSelection.class);
-				similarity =
-					(Similarity<IJsonNode>) SimilarityFactory.INSTANCE.create(this.similarity, path, path, true);
+				leftPath = params[0].clone().replace(new InputSelection(0), new ArrayAccess(0));
+				rightPath = params[0].clone().replace(new InputSelection(0), new ArrayAccess(1));
 			}
-			return new SimilarityExpression(similarity);
+			return new SimilarityExpression(leftPath, similarity, rightPath);
 		}
 	}
 

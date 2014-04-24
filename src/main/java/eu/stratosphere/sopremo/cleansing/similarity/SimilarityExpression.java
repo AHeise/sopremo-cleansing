@@ -18,7 +18,6 @@ import java.io.IOException;
 
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.type.DoubleNode;
-import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
 /**
@@ -27,9 +26,11 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class SimilarityExpression extends EvaluationExpression {
 
 	private final Similarity<IJsonNode> similarity;
+	private final EvaluationExpression leftPath;
+	private final EvaluationExpression rightPath;
 
 	SimilarityExpression() {
-		this(null);
+		this(null, null, null);
 	}
 
 	/**
@@ -38,8 +39,18 @@ public class SimilarityExpression extends EvaluationExpression {
 	 * @param similarity
 	 */
 	@SuppressWarnings("unchecked")
-	public SimilarityExpression(Similarity<? extends IJsonNode> similarity) {
+	public SimilarityExpression(EvaluationExpression leftPath, Similarity<? extends IJsonNode> similarity,EvaluationExpression rightPath) {
+		this.leftPath = leftPath;
 		this.similarity = (Similarity<IJsonNode>) similarity;
+		this.rightPath = rightPath;
+	}
+
+	public EvaluationExpression getLeftPath() {
+		return leftPath;
+	}
+
+	public EvaluationExpression getRightPath() {
+		return rightPath;
 	}
 
 	/**
@@ -94,9 +105,7 @@ public class SimilarityExpression extends EvaluationExpression {
 	 */
 	@Override
 	public IJsonNode evaluate(IJsonNode node) {
-		final IArrayNode<?> pair = (IArrayNode<?>) node;
-		this.result.setValue(this.similarity.getSimilarity(pair.get(0), pair.get(1)));
+		this.result.setValue(this.similarity.getSimilarity(leftPath.evaluate(node), rightPath.evaluate(node)));
 		return this.result;
 	}
-
 }
