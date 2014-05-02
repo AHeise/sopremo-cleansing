@@ -53,7 +53,7 @@ public class EntityMappingIT7 extends MeteorIT {
 				"    name: $usCongressMembers.name,\n" +
 				"    worksFor: $legalEntity.id" + 
 				"  }," + 
-				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
+				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
 				"  }" + 
 				"];\n" + 
 				"write $person to '" + this.person.toURI() + "';\n" +
@@ -83,7 +83,7 @@ public class EntityMappingIT7 extends MeteorIT {
 				"    name: {fullName: $usCongressMembers.name},\n" +
 				"    worksFor: $legalEntity.id" + 
 				"  }," + 
-				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
+				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
 				"  }" + 
 				"];\n" + 
 				"write $person to '" + this.person.toURI() + "';\n" +

@@ -21,7 +21,6 @@ import com.google.common.collect.Multimap;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
-import eu.stratosphere.sopremo.cleansing.ScrubbingSpecificChainedSegmentExpression;
 import eu.stratosphere.sopremo.cleansing.fusion.ValueTreeContains;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;

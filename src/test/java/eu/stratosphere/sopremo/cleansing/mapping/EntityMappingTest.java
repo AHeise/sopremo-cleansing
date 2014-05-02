@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import eu.stratosphere.sopremo.cleansing.EntityMapping;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;

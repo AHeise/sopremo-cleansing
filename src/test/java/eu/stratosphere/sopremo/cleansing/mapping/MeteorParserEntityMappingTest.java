@@ -28,6 +28,7 @@ import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.meteor.QueryParser;
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.aggregation.AggregationFunction;
+import eu.stratosphere.sopremo.cleansing.EntityMapping;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.InputSelection;

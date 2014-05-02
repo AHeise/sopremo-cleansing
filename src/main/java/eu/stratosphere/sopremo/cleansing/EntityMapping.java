@@ -1,4 +1,4 @@
-package eu.stratosphere.sopremo.cleansing.mapping;
+package eu.stratosphere.sopremo.cleansing;
 
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
@@ -11,6 +11,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
+import eu.stratosphere.sopremo.cleansing.mapping.MappingInformation;
+import eu.stratosphere.sopremo.cleansing.mapping.MappingJoinCondition;
+import eu.stratosphere.sopremo.cleansing.mapping.MappingKeyConstraint;
+import eu.stratosphere.sopremo.cleansing.mapping.MappingSchema;
+import eu.stratosphere.sopremo.cleansing.mapping.MappingValueCorrespondence;
+import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
+import eu.stratosphere.sopremo.cleansing.mapping.SpicyPathExpression;
 import eu.stratosphere.sopremo.expressions.AggregationExpression;
 import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
@@ -42,21 +50,21 @@ import eu.stratosphere.sopremo.operator.SopremoModule;
 @OutputCardinality(min = 1)
 public class EntityMapping extends CompositeOperator<EntityMapping> {
 
-	protected static final String type = "XML";
+	public static final String type = "XML";
 
-	protected static final String targetStr = "target";
+	public static final String targetStr = "target";
 
-	protected static final String sourceStr = "source";
+	public static final String sourceStr = "source";
 
-	protected static final String entitiesStr = "entities_";
+	public static final String entitiesStr = "entities_";
 
-	protected static final String entityStr = "entity_";
+	public static final String entityStr = "entity_";
 
-	protected static final String idStr = "id";
+	public static final String idStr = "id";
 	
-	protected static final String separator = ".";
+	public static final String separator = ".";
 
-	protected static INode dummy = new LeafNode("dummy");
+	public static final INode dummy = new LeafNode("dummy");
 
 	private SpicyMappingTransformation spicyMappingTransformation = new SpicyMappingTransformation();
 
@@ -191,7 +199,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				final EvaluationExpression expr = mapping.getExpression();
 
 				if (expr instanceof FunctionCall || expr instanceof ArrayAccess || expr instanceof TernaryExpression
-						|| expr instanceof ObjectCreation || expr instanceof ArrayCreation
+						|| expr instanceof ObjectCreation
 						|| expr instanceof ConstantExpression) {
 					handleSpecialExpression(foreignKeys, mappingInformation, targetInputIndex, targetNesting, mapping,
 							expr);

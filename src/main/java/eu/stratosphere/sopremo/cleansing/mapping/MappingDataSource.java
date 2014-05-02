@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.cleansing.EntityMapping;
 
 public class MappingDataSource extends AbstractSopremoType {
 
