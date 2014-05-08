@@ -18,6 +18,8 @@ import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
+import it.unibas.spicy.model.datasource.nodes.TupleNode;
+import it.unibas.spicy.model.datasource.nodes.UnionNode;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -87,22 +89,40 @@ public class MappingSchema extends AbstractSopremoType {
 
 		for (Entry<Integer, Set<String>> grouping : this.groupings.entrySet()) {
 			for (String value : grouping.getValue()) {
-
+				String[] valueSteps = value.split("\\"+EntityMapping.separator);
 				INode sourceAttr;
 
-				INode sourceEntity = schema.getChild(
+				INode sourceNode = schema.getChild(
 					EntityMapping.entitiesStr + grouping.getKey())
 					.getChild(EntityMapping.entityStr + grouping.getKey());
-
-				if (sourceEntity.getChild(value) == null) {
-					sourceAttr = new AttributeNode(value);
+				
+				for(int i = 0; i < valueSteps.length-1; i++){
+					sourceNode = addToSchemaTree(valueSteps[i], sourceNode);
+				}
+				
+				if (sourceNode.getChild(valueSteps[valueSteps.length-1]) == null) {
+					sourceAttr = new AttributeNode(valueSteps[valueSteps.length-1]);
 					sourceAttr.addChild(EntityMapping.dummy);
-					sourceEntity.addChild(sourceAttr);
+					sourceNode.addChild(sourceAttr);
 				}
 			}
 		}
 
 		return schema;
+	}
+
+	private INode addToSchemaTree(String value, INode sourceNode) {
+		if (sourceNode.getChild(value) == null) {
+			INode newSetNode = new UnionNode(value);
+			sourceNode.addChild(newSetNode);
+			
+			INode newSeequenceNode = new TupleNode(EntityMapping.dummy.getLabel());
+			
+			newSetNode.addChild(newSeequenceNode);
+			return newSetNode;
+		}else {
+			return sourceNode.getChild(value);
+		}
 	}
 
 	/*

@@ -325,25 +325,29 @@ public class SpicyMappingTransformation extends
 			if (aa != null) {
 				ObjectCreation oc = (ObjectCreation) aa.get(targetIndex);
 				if (oc != null) {
+					
 					for (Mapping<?> mapping : oc.getMappings()) {
 						String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
-						SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr + EntityMapping.separator + EntityMapping.entitiesStr
-								+ outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
-						
-						boolean takeAll = false;
-						for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
-							if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
-								takeAll = true;
-								break;
-							}
-						}
-						if(takeAll){
-							finalSchema.addMapping(fieldName,
-									FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
-						}else{
-							finalSchema.addMapping(fieldName,
-									FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
-						}
+//						SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr + EntityMapping.separator + EntityMapping.entitiesStr
+//								+ outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
+//						
+//						boolean takeAll = false;
+//						for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
+//							if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
+//								takeAll = true;
+//								break;
+//							}
+//						}
+//						if(takeAll){
+//							finalSchema.addMapping(fieldName,
+//									FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+//						}else{
+//							finalSchema.addMapping(fieldName,
+//									FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+//						}
+						this.mappingTask.getTargetProxy().getSchema().getChildren();
+						finalSchema.addMapping(fieldName,
+								FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
 					}
 				}
 			}
@@ -480,7 +484,7 @@ public class SpicyMappingTransformation extends
 			arrayCreationForTargets);
 		Operator<?> child1 = processChild(difference.getChildren().get(1),
 			arrayCreationForTargets);
-
+		
 		// antijoin condition
 		ArrayCreation arrayLeft = new ArrayCreation();
 		for (VariableCorrespondence varCor : difference

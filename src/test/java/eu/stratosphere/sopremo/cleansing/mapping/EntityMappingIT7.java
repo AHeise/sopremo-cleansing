@@ -21,11 +21,11 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 public class EntityMappingIT7 extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
@@ -35,7 +35,8 @@ public class EntityMappingIT7 extends MeteorIT {
 		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json", 
 				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"));
 		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json", 
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"));
+				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"),
+				createObjectNode("biographyId", "A000029", "worksFor", "CompanyABC"));
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
@@ -100,7 +101,6 @@ public class EntityMappingIT7 extends MeteorIT {
 				createObjectNode("id", "CompanyXYZ"));
 	}
 	
-	@Ignore
 	@Test
 	public void testEmbeddedForeignKeyReferences() throws IOException {
 
@@ -111,21 +111,20 @@ public class EntityMappingIT7 extends MeteorIT {
 				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
 				"into [\n" +  
 				"  entity $usCongressMembers identified by $usCongressMembers.name with {" + 
-				"    name: $usCongressMembers.name,\n" +
-				"    worksFor: {legalEntity: $legalEntity.id}" + 
+				"    employers: {legalEntity: $legalEntity.id}" + 
 				"  }," + 
-				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
+				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
 				"  }" + 
 				"];\n" + 
 				"write $person to '" + this.person.toURI() + "';\n" +
 				"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		
+		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 		
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 		
 		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor", "CompanyXYZ"));
+				createObjectNode("id", "Andrew Adams", "employer", createObjectNode("legalEntity", "CompanyXYZ")));
 		
 		this.testServer.checkContentsOf("legalEntity.json",
 				createObjectNode("id", "CompanyXYZ"));

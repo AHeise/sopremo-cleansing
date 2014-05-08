@@ -15,6 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import static eu.stratosphere.sopremo.type.JsonUtil.createPath;
+import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
@@ -52,9 +53,23 @@ public class EntityMappingUtil {
 	
 	public static List<String> getRelevantPathSteps(VariablePathExpression spicyPath) {
 		List<String> steps = new ArrayList<String>();
+		//TODO right check if embedded element needed
+		if(spicyPath.getPathSteps().size()!=1){
 		steps.add( "["+String.valueOf(spicyPath.getStartingVariable().getId()) +"]");
-		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
-			steps.add( spicyPath.getPathSteps().get(i) );			
+		
+			for (int i = 1; i < spicyPath.getPathSteps().size(); i++) { // always
+																		// ignore
+																		// [0],
+																		// is
+																		// replaced
+																		// by
+																		// sourceId
+																		// v0
+				steps.add(spicyPath.getPathSteps().get(i));
+		}
+		}else {
+			steps = getRelevantPathSteps(spicyPath.getStartingVariable().getBindingPathExpression());
+			steps.add(spicyPath.getPathSteps().get(0));
 		}
 		return steps;
 	}
