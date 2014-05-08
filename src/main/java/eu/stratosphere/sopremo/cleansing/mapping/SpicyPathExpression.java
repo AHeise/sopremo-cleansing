@@ -41,7 +41,7 @@ public class SpicyPathExpression extends AbstractSopremoType {
 		 */
 		@SuppressWarnings("unchecked")
 		@Override
-		public SpicyPathExpression read(Kryo kryo, Input input, Class<SpicyPathExpression> type) {
+		public SpicyPathExpression read(final Kryo kryo, final Input input, final Class<SpicyPathExpression> type) {
 			return new SpicyPathExpression(new PathExpression((List<String>) kryo.readClassAndObject(input)));
 		}
 
@@ -51,22 +51,23 @@ public class SpicyPathExpression extends AbstractSopremoType {
 		 * com.esotericsoftware.kryo.io.Output, java.lang.Object)
 		 */
 		@Override
-		public void write(Kryo kryo, Output output, SpicyPathExpression object) {
+		public void write(final Kryo kryo, final Output output, final SpicyPathExpression object) {
 			kryo.writeClassAndObject(output, object.getPathExpression().getPathSteps());
 		}
-		
-		/* (non-Javadoc)
+
+		/*
+		 * (non-Javadoc)
 		 * @see com.esotericsoftware.kryo.Serializer#copy(com.esotericsoftware.kryo.Kryo, java.lang.Object)
 		 */
 		@Override
-		public SpicyPathExpression copy(Kryo kryo, SpicyPathExpression original) {
+		public SpicyPathExpression copy(final Kryo kryo, final SpicyPathExpression original) {
 			return new SpicyPathExpression(new PathExpression(original.getPathExpression()));
 		}
 	}
 
 	private final PathExpression pathExpression;
 
-	public SpicyPathExpression(PathExpression pathExpression) {
+	public SpicyPathExpression(final PathExpression pathExpression) {
 		this.pathExpression = pathExpression;
 	}
 
@@ -83,7 +84,7 @@ public class SpicyPathExpression extends AbstractSopremoType {
 	 * @param targetNesting
 	 * @param targetAttr
 	 */
-	public SpicyPathExpression(String... path) {
+	public SpicyPathExpression(final String... path) {
 		this(new PathExpression(Lists.newArrayList(path)));
 	}
 
@@ -101,7 +102,7 @@ public class SpicyPathExpression extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append(this.pathExpression.toString());
 	}
 
@@ -117,25 +118,25 @@ public class SpicyPathExpression extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((pathExpression == null) ? 0 : pathExpression.hashCode());
+		result = prime * result + (this.pathExpression == null ? 0 : this.pathExpression.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		SpicyPathExpression other = (SpicyPathExpression) obj;
-		if (pathExpression == null) {
+		final SpicyPathExpression other = (SpicyPathExpression) obj;
+		if (this.pathExpression == null) {
 			if (other.pathExpression != null)
 				return false;
-		} else if (!pathExpression.equals(other.pathExpression))
+		} else if (!this.pathExpression.equals(other.pathExpression))
 			return false;
 		return true;
 	}
-	
+
 }

@@ -15,7 +15,6 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import static eu.stratosphere.sopremo.type.JsonUtil.createPath;
-import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
@@ -24,66 +23,62 @@ import java.util.List;
 
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 
-
 /**
  * @author Andrina Mascher, Arvid Heise
- *
  */
 public class EntityMappingUtil {
 
-	public static PathSegmentExpression convertSpicyPath(String inputIndex, VariablePathExpression spicyPath) {
-		/* e.g. spicyPath 					= 	v0.usCongressMember.biography
-		 * spicyPath.getAbsolutePath()	 	= 	usCongress.usCongressMembers.usCongressMember.biography
-		 * spicyPath.getPathSteps()			=	[usCongressMember, biography]
-		 * spicyPath.getStartingVariable()	=	v0 in usCongress.usCongressMembers
+	public static PathSegmentExpression convertSpicyPath(final String inputIndex, final VariablePathExpression spicyPath) {
+		/*
+		 * e.g. spicyPath = v0.usCongressMember.biography
+		 * spicyPath.getAbsolutePath() = usCongress.usCongressMembers.usCongressMember.biography
+		 * spicyPath.getPathSteps() = [usCongressMember, biography]
+		 * spicyPath.getStartingVariable() = v0 in usCongress.usCongressMembers
 		 */
 
 		// create steps such as [0, v0, biography]
-		List<String> pathSteps = new ArrayList<String>(); 
-		if( inputIndex!=null ) {
-			pathSteps.add( inputIndex ); //needed for multiple input operator e.g. join input 0 or 1
-		} else {
-			pathSteps.add( "0" ); 
-		}
-		
+		final List<String> pathSteps = new ArrayList<String>();
+		if (inputIndex != null)
+			pathSteps.add(inputIndex); // needed for multiple input operator e.g. join input 0 or 1
+		else
+			pathSteps.add("0");
+
 		pathSteps.addAll(getRelevantPathSteps(spicyPath));
-		
-		return createPath(pathSteps); 
+
+		return createPath(pathSteps);
 	}
-	
-	public static List<String> getRelevantPathSteps(VariablePathExpression spicyPath) {
+
+	public static List<String> getRelevantPathSteps(final VariablePathExpression spicyPath) {
 		List<String> steps = new ArrayList<String>();
-		//TODO right check if embedded element needed
-		if(spicyPath.getPathSteps().size()!=1){
-		steps.add( "["+String.valueOf(spicyPath.getStartingVariable().getId()) +"]");
-		
-			for (int i = 1; i < spicyPath.getPathSteps().size(); i++) { // always
-																		// ignore
-																		// [0],
-																		// is
-																		// replaced
-																		// by
-																		// sourceId
-																		// v0
+		// TODO right check if embedded element needed
+		if (spicyPath.getPathSteps().size() != 1) {
+			steps.add("[" + String.valueOf(spicyPath.getStartingVariable().getId()) + "]");
+
+			for (int i = 1; i < spicyPath.getPathSteps().size(); i++)
+				// ignore
+				// [0],
+				// is
+				// replaced
+				// by
+				// sourceId
+				// v0
 				steps.add(spicyPath.getPathSteps().get(i));
-		}
-		}else {
+		} else {
 			steps = getRelevantPathSteps(spicyPath.getStartingVariable().getBindingPathExpression());
 			steps.add(spicyPath.getPathSteps().get(0));
 		}
 		return steps;
 	}
-	
-	public static List<String> getRelevantPathStepsWithoutInput(VariablePathExpression spicyPath) {
-		List<String> steps = new ArrayList<String>();
+
+	public static List<String> getRelevantPathStepsWithoutInput(final VariablePathExpression spicyPath) {
+		final List<String> steps = new ArrayList<String>();
 		steps.add(String.valueOf(spicyPath.getStartingVariable().getId()));
-		for(int i=1; i<spicyPath.getPathSteps().size(); i++) { //always ignore [0], is replaced by sourceId v0
-			steps.add( spicyPath.getPathSteps().get(i) );			
-		}
+		for (int i = 1; i < spicyPath.getPathSteps().size(); i++)
+			steps.add(spicyPath.getPathSteps().get(i));
 		return steps;
 	}
-	
-	public static int getSourceIdForArrayAccess(SetAlias setAlias) { 
-		return setAlias.getId(); //e.g. "v0" as used by spicy
+
+	public static int getSourceIdForArrayAccess(final SetAlias setAlias) {
+		return setAlias.getId(); // e.g. "v0" as used by spicy
 	}
 }

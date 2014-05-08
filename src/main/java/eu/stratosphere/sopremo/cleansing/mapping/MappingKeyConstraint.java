@@ -32,7 +32,7 @@ public class MappingKeyConstraint extends AbstractSopremoType {
 
 	}
 
-	public MappingKeyConstraint(String nesting, String attribute) {
+	public MappingKeyConstraint(final String nesting, final String attribute) {
 		super();
 		this.nesting = nesting;
 		this.attribute = attribute;
@@ -69,14 +69,14 @@ public class MappingKeyConstraint extends AbstractSopremoType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		MappingKeyConstraint other = (MappingKeyConstraint) obj;
+		final MappingKeyConstraint other = (MappingKeyConstraint) obj;
 		return this.nesting.equals(other.nesting) && this.attribute.equals(other.attribute);
 	}
 
@@ -85,7 +85,7 @@ public class MappingKeyConstraint extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append("MappingKeyConstraint [nesting=");
 		appendable.append(this.nesting);
 		appendable.append(", attribute=");

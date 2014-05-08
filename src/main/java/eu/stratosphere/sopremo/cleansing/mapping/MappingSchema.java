@@ -15,35 +15,36 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
 import it.unibas.spicy.model.datasource.nodes.TupleNode;
 import it.unibas.spicy.model.datasource.nodes.UnionNode;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import javolution.text.TypeFormat;
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
+import eu.stratosphere.util.reflect.ReflectUtil;
 
 public class MappingSchema extends AbstractSopremoType {
 
 	private int size = 0;
 
 	private String label = "";
-	private Map<Integer, Set<String>> groupings = new HashMap<Integer, Set<String>>();
+
+	private final Map<Integer, Map<String, Class<? extends INode>>> groupings = new HashMap<Integer, Map<String, Class<? extends INode>>>();
 
 	MappingSchema() {
 
 	}
 
-	public MappingSchema(int size, String label) {
+	public MappingSchema(final int size, final String label) {
 		this.size = size;
 		this.label = label;
 	}
@@ -52,21 +53,16 @@ public class MappingSchema extends AbstractSopremoType {
 		return this.size;
 	}
 
-	public Map<Integer, Set<String>> getGroupings() {
-		return this.groupings;
-	}
-
-	public void addKeyToInput(Integer input, String key) {
-		if (this.groupings.containsKey(input)) {
-			this.groupings.get(input).add(key);
-		}else{
-			this.groupings.put(input, new HashSet<String>());
-			addKeyToInput(input, key);
-		}
+	public void addKeyToInput(final Integer input, final String key, Class<? extends INode> type) {
+		Map<String, Class<? extends INode>> group = this.groupings.get(input);
+		if (group == null) 
+			this.groupings.put(input, group = new LinkedHashMap<String, Class<? extends INode>>());
+		if(!group.containsKey(key))
+			group.put(key, type);
 	}
 
 	public INode generateSpicyType() {
-		SequenceNode schema = new SequenceNode(this.label);
+		final SequenceNode schema = new SequenceNode(this.label);
 
 		INode sourceEntities;
 
@@ -78,7 +74,7 @@ public class MappingSchema extends AbstractSopremoType {
 
 		for (int index = 0; index < this.size; index++) {
 			final Integer input = index;
-			INode tempEntity = new SequenceNode(EntityMapping.entityStr + input);
+			final INode tempEntity = new SequenceNode(EntityMapping.entityStr + input);
 			sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
 			sourceEntities.addChild(tempEntity);
 			schema.addChild(sourceEntities);
@@ -87,42 +83,39 @@ public class MappingSchema extends AbstractSopremoType {
 
 		// ##### extend schema #####
 
-		for (Entry<Integer, Set<String>> grouping : this.groupings.entrySet()) {
-			for (String value : grouping.getValue()) {
-				String[] valueSteps = value.split("\\"+EntityMapping.separator);
-				INode sourceAttr;
+		for (final Entry<Integer, Map<String, Class<? extends INode>>> grouping : this.groupings.entrySet())
+			for (final Map.Entry<String, Class<? extends INode>> groupingEntry : grouping.getValue().entrySet()) {
+				final String value = groupingEntry.getKey();
+				final String[] valueSteps = value.split("\\" + EntityMapping.separator);
 
-				INode sourceNode = schema.getChild(
-					EntityMapping.entitiesStr + grouping.getKey())
-					.getChild(EntityMapping.entityStr + grouping.getKey());
-				
-				for(int i = 0; i < valueSteps.length-1; i++){
-					sourceNode = addToSchemaTree(valueSteps[i], sourceNode);
-				}
-				
-				if (sourceNode.getChild(valueSteps[valueSteps.length-1]) == null) {
-					sourceAttr = new AttributeNode(valueSteps[valueSteps.length-1]);
+				INode sourceNode = schema.getChild(EntityMapping.entitiesStr + grouping.getKey()).
+					getChild(EntityMapping.entityStr + grouping.getKey());
+
+				for (int i = 0; i < valueSteps.length - 1; i++)
+					sourceNode = this.addToSchemaTree(valueSteps[i], sourceNode);
+
+				if (sourceNode.getChild(valueSteps[valueSteps.length - 1]) == null) {
+					String step = valueSteps[valueSteps.length - 1];
+					INode sourceAttr = ReflectUtil.newInstance(groupingEntry.getValue(), step);
 					sourceAttr.addChild(EntityMapping.dummy);
 					sourceNode.addChild(sourceAttr);
 				}
 			}
-		}
 
 		return schema;
 	}
 
-	private INode addToSchemaTree(String value, INode sourceNode) {
+	private INode addToSchemaTree(final String value, final INode sourceNode) {
 		if (sourceNode.getChild(value) == null) {
-			INode newSetNode = new UnionNode(value);
+			final INode newSetNode = new UnionNode(value);
 			sourceNode.addChild(newSetNode);
-			
-			INode newSeequenceNode = new TupleNode(EntityMapping.dummy.getLabel());
-			
+
+			final INode newSeequenceNode = new TupleNode(EntityMapping.dummy.getLabel());
+
 			newSetNode.addChild(newSeequenceNode);
 			return newSetNode;
-		}else {
-			return sourceNode.getChild(value);
 		}
+		return sourceNode.getChild(value);
 	}
 
 	/*
@@ -130,14 +123,14 @@ public class MappingSchema extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append("MappingSchema [size=");
 		TypeFormat.format(this.size, appendable);
 		appendable.append(", label=");
 		appendable.append(this.label);
 		appendable.append(", groupings=");
 		appendable.append(this.groupings.toString());
-		//TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
+		// TextFormat.getDefault(this.groupings.getClass()).format(this.groupings);
 		appendable.append("]");
 	}
 
@@ -152,14 +145,14 @@ public class MappingSchema extends AbstractSopremoType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		MappingSchema other = (MappingSchema) obj;
+		final MappingSchema other = (MappingSchema) obj;
 		return this.size == other.size && this.label.equals(other.label) && this.groupings.equals(other.groupings);
 	}
 

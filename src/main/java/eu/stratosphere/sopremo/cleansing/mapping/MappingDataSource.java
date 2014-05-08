@@ -25,7 +25,7 @@ import eu.stratosphere.sopremo.cleansing.EntityMapping;
 
 public class MappingDataSource extends AbstractSopremoType {
 
-	private List<MappingKeyConstraint> keyConstraints = new ArrayList<MappingKeyConstraint>();
+	private final List<MappingKeyConstraint> keyConstraints = new ArrayList<MappingKeyConstraint>();
 
 	private MappingSchema targetSchema = new MappingSchema();
 
@@ -35,7 +35,7 @@ public class MappingDataSource extends AbstractSopremoType {
 	/**
 	 * @param targetKey
 	 */
-	public void addKeyConstraint(MappingKeyConstraint targetKey) {
+	public void addKeyConstraint(final MappingKeyConstraint targetKey) {
 		this.keyConstraints.add(targetKey);
 	}
 
@@ -43,7 +43,7 @@ public class MappingDataSource extends AbstractSopremoType {
 		return this.targetSchema;
 	}
 
-	public void setTargetSchema(MappingSchema targetSchema) {
+	public void setTargetSchema(final MappingSchema targetSchema) {
 		if (targetSchema == null)
 			throw new NullPointerException("targetSchema must not be null");
 
@@ -51,10 +51,9 @@ public class MappingDataSource extends AbstractSopremoType {
 	}
 
 	public DataSource generateSpicyType() {
-		DataSource dataSource = new DataSource(EntityMapping.type, this.targetSchema.generateSpicyType());
-		for (MappingKeyConstraint keyConstraint : this.keyConstraints) {
+		final DataSource dataSource = new DataSource(EntityMapping.type, this.targetSchema.generateSpicyType());
+		for (final MappingKeyConstraint keyConstraint : this.keyConstraints)
 			dataSource.addKeyConstraint(keyConstraint.generateSpicyType());
-		}
 		return dataSource;
 	}
 
@@ -68,14 +67,14 @@ public class MappingDataSource extends AbstractSopremoType {
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		MappingDataSource other = (MappingDataSource) obj;
+		final MappingDataSource other = (MappingDataSource) obj;
 		return this.targetSchema.equals(other.targetSchema) && this.keyConstraints.equals(other.keyConstraints);
 	}
 
@@ -84,9 +83,9 @@ public class MappingDataSource extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append("MappingDataSource [keyConstraints=");
-		append(appendable, this.keyConstraints, ",");
+		this.append(appendable, this.keyConstraints, ",");
 		appendable.append(", targetSchema=");
 		this.targetSchema.appendAsString(appendable);
 		appendable.append("]");

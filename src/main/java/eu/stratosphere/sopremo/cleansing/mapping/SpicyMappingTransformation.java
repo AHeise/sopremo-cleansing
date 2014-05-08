@@ -15,13 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import static eu.stratosphere.sopremo.type.JsonUtil.createPath;
-import it.unibas.spicy.model.algebra.Compose;
-import it.unibas.spicy.model.algebra.IAlgebraOperator;
-import it.unibas.spicy.model.algebra.Merge;
-import it.unibas.spicy.model.algebra.Nest;
-import it.unibas.spicy.model.algebra.Project;
-import it.unibas.spicy.model.algebra.SelectOnTargetValues;
-import it.unibas.spicy.model.algebra.Unnest;
+import it.unibas.spicy.model.algebra.*;
 import it.unibas.spicy.model.datasource.DataSource;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
@@ -32,35 +26,16 @@ import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.base.ArrayUnion;
-import eu.stratosphere.sopremo.base.Grouping;
-import eu.stratosphere.sopremo.base.Projection;
-import eu.stratosphere.sopremo.base.Selection;
-import eu.stratosphere.sopremo.base.TwoSourceJoin;
-import eu.stratosphere.sopremo.base.UnionAll;
+import eu.stratosphere.sopremo.base.*;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
-import eu.stratosphere.sopremo.expressions.AggregationExpression;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.ElementInSetExpression;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression.Quantor;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
-import eu.stratosphere.sopremo.expressions.UnaryExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.*;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
@@ -106,7 +81,7 @@ public class SpicyMappingTransformation extends
 		return this.inputIndex;
 	}
 
-	public void setInputIndex(Map<String, Integer> inputIndex) {
+	public void setInputIndex(final Map<String, Integer> inputIndex) {
 		this.inputIndex = inputIndex;
 	}
 
@@ -114,7 +89,7 @@ public class SpicyMappingTransformation extends
 		return this.outputIndex;
 	}
 
-	public void setOutputIndex(Map<String, Integer> outputIndex) {
+	public void setOutputIndex(final Map<String, Integer> outputIndex) {
 		this.outputIndex = outputIndex;
 	}
 
@@ -122,7 +97,7 @@ public class SpicyMappingTransformation extends
 		return this.mappingTask;
 	}
 
-	public void setMappingTask(MappingTask mappingTask) {
+	public void setMappingTask(final MappingTask mappingTask) {
 		this.mappingTask = mappingTask;
 	}
 
@@ -130,7 +105,7 @@ public class SpicyMappingTransformation extends
 		return this.mappingInformation;
 	}
 
-	public void setMappingInformation(MappingInformation mappingInformation) {
+	public void setMappingInformation(final MappingInformation mappingInformation) {
 		this.mappingInformation = mappingInformation;
 	}
 
@@ -145,14 +120,14 @@ public class SpicyMappingTransformation extends
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (!super.equals(obj))
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		SpicyMappingTransformation other = (SpicyMappingTransformation) obj;
+		final SpicyMappingTransformation other = (SpicyMappingTransformation) obj;
 		return this.inputIndex.equals(other.inputIndex) && this.outputIndex.equals(other.outputIndex) &&
 			this.mappingInformation.equals(other.mappingInformation);
 	}
@@ -164,15 +139,13 @@ public class SpicyMappingTransformation extends
 	 * .sopremo.EvaluationContext)
 	 */
 	@Override
-	public void addImplementation(SopremoModule module) {
+	public void addImplementation(final SopremoModule module) {
 
-		if (this.mappingTask == null) {
-			createMappingTaskFromMappingInformation();
-		}
-		if (this.inputIndex == null || this.outputIndex == null) {
+		if (this.mappingTask == null)
+			this.createMappingTaskFromMappingInformation();
+		if (this.inputIndex == null || this.outputIndex == null)
 			throw new IllegalStateException(
 				"MappingGenerator needs inputIndex and outputIndex");
-		}
 
 		// init
 		this.module = module;
@@ -180,16 +153,15 @@ public class SpicyMappingTransformation extends
 		this.reuseProjections = new HashMap<Integer, Projection>(this.inputIndex.size());
 		this.reuseJoins = new HashMap<String, TwoSourceJoin>(4);
 		this.tgdIndex = new HashMap<String, FORule>();
-		for (FORule tgd : this.mappingTask.getMappingData().getRewrittenRules()) {
+		for (final FORule tgd : this.mappingTask.getMappingData().getRewrittenRules())
 			this.tgdIndex.put(tgd.getId(), tgd);
-		}
-		IAlgebraOperator tree = this.mappingTask.getMappingData().getAlgebraTree(); // tree
+		final IAlgebraOperator tree = this.mappingTask.getMappingData().getAlgebraTree(); // tree
 		// contains
 		// rewritten
 		// tgd
 		// rules
 		SopremoUtil.LOG.debug("Spicy mapping tree:\n" + tree);
-		processTree(tree);
+		this.processTree(tree);
 	}
 
 	private void createMappingTaskFromMappingInformation() {
@@ -198,118 +170,112 @@ public class SpicyMappingTransformation extends
 			this.mappingInformation.getSourceSchema().generateSpicyType()),
 			this.mappingInformation.getTarget().generateSpicyType(),
 			this.mappingInformation.getValueCorrespondencesAsSpicyTypes());
-		
-		for (MappingJoinCondition cond : this.mappingInformation
-				.getSourceJoinConditions()) {
-				this.mappingTask.getSourceProxy().addJoinCondition(
-					cond.generateSpicyType());
-			}
 
-		for (MappingJoinCondition cond : this.mappingInformation
-			.getTargetJoinConditions()) {
+		for (final MappingJoinCondition cond : this.mappingInformation
+			.getSourceJoinConditions())
+			this.mappingTask.getSourceProxy().addJoinCondition(
+				cond.generateSpicyType());
+
+		for (final MappingJoinCondition cond : this.mappingInformation
+			.getTargetJoinConditions())
 			this.mappingTask.getTargetProxy().addJoinCondition(
 				cond.generateSpicyType());
-		}
 
 	}
 
-	private Operator<?> processChild(IAlgebraOperator treeElement,
-			ArrayCreation arrayCreationForTargets) {
+	private Operator<?> processChild(final IAlgebraOperator treeElement,
+			final ArrayCreation arrayCreationForTargets) {
 		// pass on objectCreationForTargets until end of "OnTargetValues" is
 		// reached
-		if (treeElement instanceof it.unibas.spicy.model.algebra.JoinOnTargetValues) {
-			return processJoinOnTargetValues(treeElement);
-		} else if (treeElement instanceof it.unibas.spicy.model.algebra.DifferenceOnTargetValues) {
-			return processDifferenceOnTargetValues(treeElement,
-					arrayCreationForTargets);
-		} else if (treeElement instanceof SelectOnTargetValues) {
-			return processSelectOnTargetValues(treeElement,
-					arrayCreationForTargets);
-		}
+		if (treeElement instanceof it.unibas.spicy.model.algebra.JoinOnTargetValues)
+			return this.processJoinOnTargetValues(treeElement);
+		else if (treeElement instanceof it.unibas.spicy.model.algebra.DifferenceOnTargetValues)
+			return this.processDifferenceOnTargetValues(treeElement, arrayCreationForTargets);
+		else if (treeElement instanceof SelectOnTargetValues)
+			return this.processSelectOnTargetValues(treeElement, arrayCreationForTargets);
 
 		// projection is included the first time that no "onTargetValues" is
 		// used
 		Operator<?> child = null;
-		if (treeElement instanceof it.unibas.spicy.model.algebra.Join) {
-			child = processJoin(treeElement);
-		} else if (treeElement instanceof it.unibas.spicy.model.algebra.Difference) {
-			child = processDifference(treeElement);
-		} else if (treeElement instanceof Unnest) {
-			child = processUnnest(treeElement);
-		} else {
+		if (treeElement instanceof it.unibas.spicy.model.algebra.Join)
+			child = this.processJoin(treeElement);
+		else if (treeElement instanceof it.unibas.spicy.model.algebra.Difference)
+			child = this.processDifference(treeElement);
+		else if (treeElement instanceof Unnest)
+			child = this.processUnnest(treeElement);
+		else
 			throw new IllegalArgumentException(
 				"Schema is too complex and cannot be parsed. Spicy tree element cannot be processed "
 					+ treeElement);
-		}
 
 		if (arrayCreationForTargets != null) {
-			Projection tgd = new Projection().withResultProjection(
-					arrayCreationForTargets).withInputs(child);
+			final Projection tgd = new Projection().withInputs(child).
+				withResultProjection(arrayCreationForTargets).
+				withName("Projection " + treeElement.getId());
 			return tgd; // don't save tgd-projection for reuse
-		} else {
-			return child;
 		}
+		return child;
 	}
-	
-	private void processTree(IAlgebraOperator treeRoot) {
-		Compose compose = (Compose) treeRoot;
-		Merge merge = (Merge) compose.getChildren().get(0); // always one merge
-															// as child
+
+	private void processTree(final IAlgebraOperator treeRoot) {
+		final Compose compose = (Compose) treeRoot;
+		final Merge merge = (Merge) compose.getChildren().get(0); // always one merge
+		// as child
 
 		// build input list for every target
 		// each setAlias represents one target instance, e.g. <v2 as
 		// legalEntities>
-		HashMap<SetAlias, List<Operator<?>>> targetInputMapping = new HashMap<SetAlias, List<Operator<?>>>();
-		for (IAlgebraOperator child : merge.getChildren()) {
-			Nest nest = (Nest) child;
-			List<SetAlias> targetsOfTgd = getTargetsOfTGD(nest); // use with
-																	// getId()
-			Operator<?> childOperator = processNest(nest);
+		final HashMap<SetAlias, List<Operator<?>>> targetInputMapping = new HashMap<SetAlias, List<Operator<?>>>();
+		for (final IAlgebraOperator child : merge.getChildren()) {
+			final Nest nest = (Nest) child;
+			final List<SetAlias> targetsOfTgd = this.getTargetsOfTGD(nest); // use with
+			// getId()
+			final Operator<?> childOperator = this.processNest(nest);
 
-			for (SetAlias target : targetsOfTgd) {
-				if (targetInputMapping.containsKey(target)) {
+			for (final SetAlias target : targetsOfTgd)
+				if (targetInputMapping.containsKey(target))
 					targetInputMapping.get(target).add(childOperator);
-				} else {
-					List<Operator<?>> newList = new ArrayList<Operator<?>>();
+				else {
+					final List<Operator<?>> newList = new ArrayList<Operator<?>>();
 					newList.add(childOperator);
 					targetInputMapping.put(target, newList);
 				}
-			}
 		}
 
 		// build operator for every target using the input
-		HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
+		final HashMap<SetAlias, Operator<?>> finalOperatorsIndex = new HashMap<SetAlias, Operator<?>>();
 		int outputIndex = 0;
-		for (Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping
-			.entrySet()) {
-			int target = targetInput.getKey().getId();
-			
-			UnionAll unionAll = new UnionAll().withInputs(targetInput
+		for (final Entry<SetAlias, List<Operator<?>>> targetInput : targetInputMapping.entrySet()) {
+			final int target = targetInput.getKey().getId();
+
+			final UnionAll unionAll = new UnionAll().withInputs(targetInput
 				.getValue());
-			
-			Selection selectAndTransform = new Selection()
+
+			final Selection selectAndTransform = new Selection()
 				.withInputs(unionAll)
 				.withCondition(
 					new UnaryExpression(new ArrayAccess(target)))
 				.withResultProjection(new ArrayAccess(target));
-			
-			// duplicate removal
-			ObjectCreation finalSchema = createTargetSchemaFromOperatorList(targetInput.getValue(), target, outputIndex);
 
-			Grouping grouping = new Grouping().withInputs(selectAndTransform).
-					withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
-					withResultProjection(finalSchema);
-			
+			// duplicate removal
+			final ObjectCreation finalSchema =
+				this.createTargetSchemaFromOperatorList(targetInput.getValue(), target, outputIndex);
+
+			final Grouping grouping = new Grouping().withInputs(selectAndTransform).
+				withGroupingKey(new ObjectAccess(EntityMapping.idStr)).
+				withResultProjection(finalSchema).
+				withName("Grouping " + target);
+
 			finalOperatorsIndex.put(targetInput.getKey(), grouping);
 			outputIndex++;
 		}
 
-		for (Entry<SetAlias, Operator<?>> entry : finalOperatorsIndex
+		for (final Entry<SetAlias, Operator<?>> entry : finalOperatorsIndex
 			.entrySet()) {
-			String targetName = entry.getKey()
+			final String targetName = entry.getKey()
 				.getAbsoluteBindingPathExpression().getPathSteps().get(1);
 
-			int i = this.outputIndex.get(targetName);
+			final int i = this.outputIndex.get(targetName);
 			SopremoUtil.LOG.debug("output " + this.outputIndex.get(targetName)
 				+ " is " + targetName);
 			this.module.getOutput(i).setInput(0, entry.getValue());
@@ -317,49 +283,53 @@ public class SpicyMappingTransformation extends
 		SopremoUtil.LOG.info("generated schema mapping module:\n " + this.module);
 	}
 
-	private  ObjectCreation createTargetSchemaFromOperatorList(List<Operator<?>> operatorList, int targetIndex, int outputIndex) {
-		ObjectCreation finalSchema = new ObjectCreation();
-		for(Operator<?> op : operatorList){
-			ElementaryOperator<?> eop = (ElementaryOperator<?>)op;
-			ArrayCreation aa = eop.getResultProjection().findFirst(ArrayCreation.class);
+	private ObjectCreation createTargetSchemaFromOperatorList(final List<Operator<?>> operatorList,
+			final int targetIndex, final int outputIndex) {
+		final ObjectCreation finalSchema = new ObjectCreation();
+		for (final Operator<?> op : operatorList) {
+			final ElementaryOperator<?> eop = (ElementaryOperator<?>) op;
+			final ArrayCreation aa = eop.getResultProjection().findFirst(ArrayCreation.class);
 			if (aa != null) {
-				ObjectCreation oc = (ObjectCreation) aa.get(targetIndex);
-				if (oc != null) {
-					
-					for (Mapping<?> mapping : oc.getMappings()) {
-						String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
-//						SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr + EntityMapping.separator + EntityMapping.entitiesStr
-//								+ outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
-//						
-//						boolean takeAll = false;
-//						for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
-//							if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
-//								takeAll = true;
-//								break;
-//							}
-//						}
-//						if(takeAll){
-//							finalSchema.addMapping(fieldName,
-//									FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
-//						}else{
-//							finalSchema.addMapping(fieldName,
-//									FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
-//						}
+				final ObjectCreation oc = (ObjectCreation) aa.get(targetIndex);
+				if (oc != null)
+					for (final Mapping<?> mapping : oc.getMappings()) {
+						final String fieldName = mapping.getTargetExpression().findFirst(ObjectAccess.class).getField();
+						// SpicyPathExpression lookupPath = new SpicyPathExpression(EntityMapping.targetStr +
+						// EntityMapping.separator + EntityMapping.entitiesStr
+						// + outputIndex + EntityMapping.separator + EntityMapping.entityStr + outputIndex , fieldName);
+						//
+						// boolean takeAll = false;
+						// for(MappingValueCorrespondence mvc : this.mappingInformation.getValueCorrespondences()){
+						// if(mvc.getTargetPath().equals(lookupPath) && mvc.isTakeAllValuesOfGrouping()){
+						// takeAll = true;
+						// break;
+						// }
+						// }
+						// if(takeAll){
+						// finalSchema.addMapping(fieldName,
+						// FunctionUtil.createFunctionCall(CoreFunctions.ALL, new
+						// ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						// }else{
+						// finalSchema.addMapping(fieldName,
+						// FunctionUtil.createFunctionCall(CoreFunctions.FIRST, new
+						// ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						// }
 						this.mappingTask.getTargetProxy().getSchema().getChildren();
-						finalSchema.addMapping(fieldName,
-								FunctionUtil.createFunctionCall(CoreFunctions.ALL, new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
+						finalSchema.addMapping(
+							fieldName,
+							FunctionUtil.createFunctionCall(CoreFunctions.FIRST,
+								new ObjectAccess(fieldName).withInputExpression(new InputSelection(0))));
 					}
-				}
 			}
 		}
 		return finalSchema;
 	}
 
-	private List<SetAlias> getTargetsOfTGD(Nest nest) {
+	private List<SetAlias> getTargetsOfTGD(final Nest nest) {
 		return this.tgdIndex.get(nest.getId()).getTargetView().getVariables();
 	}
 
-	private Operator<?> processNest(Nest tgd) {
+	private Operator<?> processNest(final Nest tgd) {
 		/*
 		 * rename attributes according to this TGD we need to add mappings to
 		 * objectCreation like this: // addMapping("v3", new ObjectCreation().
@@ -371,56 +341,49 @@ public class SpicyMappingTransformation extends
 		 */
 
 		ArrayCreation arrayCreationForTargets = new ArrayCreation();
-		TGDGeneratorsMap generators = tgd.getGenerators();
-		for (SetAlias setAlias : getTargetsOfTGD(tgd)) { // generate
-															// source-to-target
-															// mapping for v2 or
-															// v3 and add to
-															// projection
-			Map<PathExpression, IValueGenerator> generatorVi = generators
+		final TGDGeneratorsMap generators = tgd.getGenerators();
+		for (final SetAlias setAlias : this.getTargetsOfTGD(tgd)) { // generate
+			// source-to-target
+			// mapping for v2 or
+			// v3 and add to
+			// projection
+			final Map<PathExpression, IValueGenerator> generatorVi = generators
 				.getGeneratorsForVariable(setAlias);
 
-			TreeMap<PathExpression, IValueGenerator> st_map = new TreeMap<PathExpression, IValueGenerator>();
-			for (Entry<PathExpression, IValueGenerator> tgdAttribute : generatorVi
-				.entrySet()) { // all
-								// mappings
-								// to
-								// this
-								// target
-				PathExpression spicyTargetPath = tgdAttribute.getKey();
-				if (!spicyTargetPath.getLastStep().equals(LEAF)) // consider
-																	// only
-																	// leafs
+			final TreeMap<PathExpression, IValueGenerator> st_map = new TreeMap<PathExpression, IValueGenerator>();
+			for (final Entry<PathExpression, IValueGenerator> tgdAttribute : generatorVi.entrySet()) {
+				// all mappings to this target
+				final PathExpression spicyTargetPath = tgdAttribute.getKey();
+				// consider only leafs
+				if (!spicyTargetPath.getLastStep().equals(LEAF)) 
 					continue;
-				st_map.put(spicyTargetPath, tgdAttribute.getValue()); // ("fullname.firstname",
-																		// createPath("v0",
+				st_map.put(spicyTargetPath, tgdAttribute.getValue()); // ("fullname.firstname", createPath("v0",
 																		// "old_name")
 																		// +
 																		// function)
 			}
-			ObjectCreation objectVi = this.correspondenceTransformation
+			final ObjectCreation objectVi = this.correspondenceTransformation
 				.createNestedObjectFromSpicyPaths(st_map, setAlias);
-			//TODO bäääh
-			List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
-			while(currentElements.size()<=setAlias.getId()){
+			// TODO bäääh
+			final List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
+			while (currentElements.size() <= setAlias.getId())
 				currentElements.add(ConstantExpression.MISSING);
-			}
 			currentElements.set(setAlias.getId(), objectVi);
-			arrayCreationForTargets= new ArrayCreation(currentElements); // e.g.
-																	// v3,
-																	// {target-attributes}
+			arrayCreationForTargets = new ArrayCreation(currentElements); // e.g.
+			// v3,
+			// {target-attributes}
 		}
 
-		Project project = (Project) tgd.getChildren().get(0); // we can ignore
-																// project here,
-																// because
-																// created
-																// transformation
-																// includes a
-																// projection,
-																// too
-		Operator<?> child = processChild(project.getChildren().get(0),
-				arrayCreationForTargets); // tgd
+		final Project project = (Project) tgd.getChildren().get(0); // we can ignore
+		// project here,
+		// because
+		// created
+		// transformation
+		// includes a
+		// projection,
+		// too
+		final Operator<?> child = this.processChild(project.getChildren().get(0),
+			arrayCreationForTargets); // tgd
 										// needs
 										// to
 										// be
@@ -436,34 +399,33 @@ public class SpicyMappingTransformation extends
 	}
 
 	private Operator<?> processSelectOnTargetValues(
-			IAlgebraOperator treeElement,
-			ArrayCreation arrayCreationForTargets) {
-		Operator<?> child = processChild(treeElement.getChildren().get(0),
+			final IAlgebraOperator treeElement,
+			final ArrayCreation arrayCreationForTargets) {
+		final Operator<?> child = this.processChild(treeElement.getChildren().get(0),
 			arrayCreationForTargets); // nothin
 										// todo
 		return child;
 	}
 
-	private Operator<?> processDifference(IAlgebraOperator treeElement) {
-		it.unibas.spicy.model.algebra.Difference difference = (it.unibas.spicy.model.algebra.Difference) treeElement;
+	private Operator<?> processDifference(final IAlgebraOperator treeElement) {
+		final it.unibas.spicy.model.algebra.Difference difference =
+			(it.unibas.spicy.model.algebra.Difference) treeElement;
 
 		if (this.reuseProjections.containsKey(difference.getId()))
 			return this.reuseProjections.get(difference.getId());
 
-		Operator<?> child0 = processChild(difference.getChildren().get(0), null);
-		Operator<?> child1 = processChild(difference.getChildren().get(1), null);
+		final Operator<?> child0 = this.processChild(difference.getChildren().get(0), null);
+		final Operator<?> child1 = this.processChild(difference.getChildren().get(1), null);
 
 		// antijoin condition
-		ArrayCreation arrayLeft = new ArrayCreation();
-		for (VariablePathExpression path : difference.getLeftPaths()) {
+		final ArrayCreation arrayLeft = new ArrayCreation();
+		for (final VariablePathExpression path : difference.getLeftPaths())
 			arrayLeft.add(EntityMappingUtil.convertSpicyPath("0", path));
-		}
-		ArrayCreation arrayRight = new ArrayCreation();
-		for (VariablePathExpression path : difference.getRightPaths()) {
+		final ArrayCreation arrayRight = new ArrayCreation();
+		for (final VariablePathExpression path : difference.getRightPaths())
 			arrayRight.add(EntityMappingUtil.convertSpicyPath("1", path));
-		}
 
-		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).withCondition(
+		final TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).withCondition(
 			new ElementInSetExpression(arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight));
 		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
 
@@ -472,50 +434,45 @@ public class SpicyMappingTransformation extends
 	}
 
 	private Operator<?> processDifferenceOnTargetValues(
-			IAlgebraOperator treeElement,
-			ArrayCreation arrayCreationForTargets) {
-		it.unibas.spicy.model.algebra.DifferenceOnTargetValues difference =
+			final IAlgebraOperator treeElement,
+			final ArrayCreation arrayCreationForTargets) {
+		final it.unibas.spicy.model.algebra.DifferenceOnTargetValues difference =
 			(it.unibas.spicy.model.algebra.DifferenceOnTargetValues) treeElement;
 
 		if (this.reuseProjections.containsKey(difference.getId()))
 			return this.reuseProjections.get(difference.getId());
 
-		Operator<?> child0 = processChild(difference.getChildren().get(0),
+		final Operator<?> child0 = this.processChild(difference.getChildren().get(0),
 			arrayCreationForTargets);
-		Operator<?> child1 = processChild(difference.getChildren().get(1),
+		final Operator<?> child1 = this.processChild(difference.getChildren().get(1),
 			arrayCreationForTargets);
-		
+
 		// antijoin condition
-		ArrayCreation arrayLeft = new ArrayCreation();
-		for (VariableCorrespondence varCor : difference
-			.getLeftCorrespondences()) {
+		final ArrayCreation arrayLeft = new ArrayCreation();
+		for (final VariableCorrespondence varCor : difference
+			.getLeftCorrespondences())
 			arrayLeft.add(EntityMappingUtil.convertSpicyPath("0",
 				varCor.getTargetPath()));
-		}
-		ArrayCreation arrayRight = new ArrayCreation();
-		for (VariableCorrespondence varCor : difference
-			.getRightCorrespondences()) {
+		final ArrayCreation arrayRight = new ArrayCreation();
+		for (final VariableCorrespondence varCor : difference
+			.getRightCorrespondences())
 			arrayRight.add(EntityMappingUtil.convertSpicyPath("1",
 				varCor.getTargetPath()));
-		}
-		TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1)
-			.withCondition(
-				new ElementInSetExpression(arrayLeft,
-					Quantor.EXISTS_NOT_IN, arrayRight));
-		antiJoin.setResultProjection(new AggregationExpression(new ArrayUnion()));
+		final TwoSourceJoin antiJoin = new TwoSourceJoin().withInputs(child0, child1).
+			withCondition(new ElementInSetExpression(arrayLeft, Quantor.EXISTS_NOT_IN, arrayRight));
 
 		this.reuseJoins.put(difference.getId(), antiJoin);
 		return antiJoin;
 	}
 
-	private Operator<?> processJoin(IAlgebraOperator treeElement) {
-		it.unibas.spicy.model.algebra.Join spicyJoin = (it.unibas.spicy.model.algebra.Join) treeElement;
+	private Operator<?> processJoin(final IAlgebraOperator treeElement) {
+		final it.unibas.spicy.model.algebra.Join spicyJoin = (it.unibas.spicy.model.algebra.Join) treeElement;
 
 		if (this.reuseProjections.containsKey(spicyJoin.getId()))
 			return this.reuseProjections.get(spicyJoin.getId());
 
-		Operator<?> child0 = processChild(spicyJoin.getChildren().get(0), null);
-		Operator<?> child1 = processChild(spicyJoin.getChildren().get(1), null);
+		final Operator<?> child0 = this.processChild(spicyJoin.getChildren().get(0), null);
+		final Operator<?> child1 = this.processChild(spicyJoin.getChildren().get(1), null);
 
 		// join conditions
 		// TODO multiple join paths result in concurrency problem. join may not
@@ -537,7 +494,7 @@ public class SpicyMappingTransformation extends
 		// BinaryOperator.EQUAL, arrayRight)
 		// );
 		//
-		TwoSourceJoin sopremoJoin =
+		final TwoSourceJoin sopremoJoin =
 			new TwoSourceJoin().withInputs(child0, child1).
 				withCondition(
 					new ComparativeExpression(EntityMappingUtil.convertSpicyPath("0",
@@ -549,25 +506,25 @@ public class SpicyMappingTransformation extends
 		return sopremoJoin;
 	}
 
-	private Operator<?> processJoinOnTargetValues(IAlgebraOperator treeElement) {
-		it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin =
+	private Operator<?> processJoinOnTargetValues(final IAlgebraOperator treeElement) {
+		final it.unibas.spicy.model.algebra.JoinOnTargetValues spicyJoin =
 			(it.unibas.spicy.model.algebra.JoinOnTargetValues) treeElement;
 
 		if (this.reuseProjections.containsKey(spicyJoin.getId()))
 			return this.reuseProjections.get(spicyJoin.getId());
 
 		// rewrite projections left and right with correspondences
-		ArrayCreation arrayCreationForTargetsLeft = this.correspondenceTransformation
+		final ArrayCreation arrayCreationForTargetsLeft = this.correspondenceTransformation
 			.createArrayFromSpicyPaths(spicyJoin
 				.getLeftCorrespondences());
-		ArrayCreation arrayCreationForTargetsRight = this.correspondenceTransformation
+		final ArrayCreation arrayCreationForTargetsRight = this.correspondenceTransformation
 			.createArrayFromSpicyPaths(spicyJoin
 				.getRightCorrespondences());
 
-		Operator<?> child0 = processChild(spicyJoin.getChildren().get(0),
-				arrayCreationForTargetsLeft);
-		Operator<?> child1 = processChild(spicyJoin.getChildren().get(1),
-				arrayCreationForTargetsRight);
+		final Operator<?> child0 = this.processChild(spicyJoin.getChildren().get(0),
+			arrayCreationForTargetsLeft);
+		final Operator<?> child1 = this.processChild(spicyJoin.getChildren().get(1),
+			arrayCreationForTargetsRight);
 
 		// join conditions
 		// TODO
@@ -588,7 +545,7 @@ public class SpicyMappingTransformation extends
 		// BinaryOperator.EQUAL, arrayRight)
 		// );
 
-		TwoSourceJoin sopremoJoin = new TwoSourceJoin().withInputs(child0,
+		final TwoSourceJoin sopremoJoin = new TwoSourceJoin().withInputs(child0,
 			child1).withCondition(
 			new ComparativeExpression(EntityMappingUtil
 				.convertSpicyPath("0", spicyJoin.getJoinCondition()
@@ -600,12 +557,12 @@ public class SpicyMappingTransformation extends
 		return sopremoJoin;
 	}
 
-	private Operator<?> processUnnest(IAlgebraOperator treeElement) {
-		Unnest unnest = (Unnest) treeElement; // e.g.
-												// "unnest v0 in usCongress.usCongressMembers"
-		SetAlias sourceAlias = unnest.getVariable();
-		int sourceId = sourceAlias.getId(); // v0
-		String sourceName = sourceAlias.getBindingPathExpression()
+	private Operator<?> processUnnest(final IAlgebraOperator treeElement) {
+		final Unnest unnest = (Unnest) treeElement; // e.g.
+		// "unnest v0 in usCongress.usCongressMembers"
+		final SetAlias sourceAlias = unnest.getVariable();
+		final int sourceId = sourceAlias.getId(); // v0
+		final String sourceName = sourceAlias.getBindingPathExpression()
 			.getLastStep(); // usCongressMembers
 
 		if (this.reuseProjections.containsKey(sourceId))
@@ -614,13 +571,12 @@ public class SpicyMappingTransformation extends
 		// TODO unnest can have selectionCondition and provenanceCondition,
 		// research: what is this
 
-		ArrayCreation positionEncodedArray = new ArrayCreation();
-		for(int i = 0; i<sourceId; i++){
+		final ArrayCreation positionEncodedArray = new ArrayCreation();
+		for (int i = 0; i < sourceId; i++)
 			positionEncodedArray.add(ConstantExpression.MISSING);
-		}
 		positionEncodedArray.add(new ObjectCreation(new ObjectCreation.CopyFields(createPath("0"))));
-		
-		Projection projection = new Projection().withResultProjection(positionEncodedArray)
+
+		final Projection projection = new Projection().withResultProjection(positionEncodedArray)
 			.withInputs(this.module.getInput(this.inputIndex.get(sourceName)));
 
 		SopremoUtil.LOG.debug("Source Projection from: " + unnest.toString()

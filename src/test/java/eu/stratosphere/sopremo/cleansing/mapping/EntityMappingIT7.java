@@ -32,101 +32,173 @@ public class EntityMappingIT7 extends MeteorIT {
 
 	@Before
 	public void createInput() throws IOException {
-		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json", 
-				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"));
-		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json", 
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"),
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyABC"));
+		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json",
+			createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"));
+		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json",
+			createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"),
+			createObjectNode("biographyId", "A000029", "worksFor", "CompanyABC"),
+			createObjectNode("biographyId", "A000011", "worksFor", "CompanyUVW"));
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
-	
+
 	@Test
 	public void testNonEmbeddedForeignKeyReferences() throws IOException {
 
-		String query = "using cleansing;"+
-				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
-				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
-				"into [\n" +  
-				"  entity $usCongressMembers identified by $usCongressMembers.name with {" + 
-				"    name: $usCongressMembers.name,\n" +
-				"    worksFor: $legalEntity.id" + 
-				"  }," + 
-				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
-				"  }" + 
-				"];\n" + 
-				"write $person to '" + this.person.toURI() + "';\n" +
-				"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    name: $usCongressMembers.name,\n" +
+			"    worksFor: $legalEntity.id" +
+			"  }," +
+			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+
 		final SopremoPlan plan = parseScript(query);
-		
+		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
-		
+
 		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor", "CompanyXYZ"));
-		
+			createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor", "CompanyXYZ"));
+
 		this.testServer.checkContentsOf("legalEntity.json",
-				createObjectNode("id", "CompanyXYZ"));
+			createObjectNode("id", "CompanyXYZ"),
+			createObjectNode("id", "CompanyABC"),
+			createObjectNode("id", "CompanyUVW"));
 	}
-	
+
+	@Test
+	public void testNonEmbeddedForeignKeyArrayReferences() throws IOException {
+
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    name: $usCongressMembers.name,\n" +
+			"    worksFor: [$legalEntity.id]" +
+			"  }," +
+			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+
+		final SopremoPlan plan = parseScript(query);
+		SopremoUtil.trace();
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor", "CompanyXYZ"));
+
+		this.testServer.checkContentsOf("legalEntity.json",
+			createObjectNode("id", "CompanyXYZ"),
+			createObjectNode("id", "CompanyABC"),
+			createObjectNode("id", "CompanyUVW"));
+	}
+
 	@Test
 	public void testEmbeddedReferences() throws IOException {
 
-		String query = "using cleansing;"+
-				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
-				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
-				"into [\n" +  
-				"  entity $usCongressMembers identified by $usCongressMembers.name with {" + 
-				"    name: {fullName: $usCongressMembers.name},\n" +
-				"    worksFor: $legalEntity.id" + 
-				"  }," + 
-				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
-				"  }" + 
-				"];\n" + 
-				"write $person to '" + this.person.toURI() + "';\n" +
-				"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    name: {fullName: $usCongressMembers.name},\n" +
+			"    worksFor: $legalEntity.id" +
+			"  }," +
+			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+
 		final SopremoPlan plan = parseScript(query);
-		
+
 		Assert.assertNotNull(this.client.submit(plan, null, true));
-		
-		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "Andrew Adams",  "name", createObjectNode("fullName","Andrew Adams"), "worksFor", "CompanyXYZ"));
-		
+
+		this.testServer.checkContentsOf(
+			"person.json",
+			createObjectNode("id", "Andrew Adams", "name", createObjectNode("fullName", "Andrew Adams"), "worksFor",
+				"CompanyXYZ"));
+
 		this.testServer.checkContentsOf("legalEntity.json",
-				createObjectNode("id", "CompanyXYZ"));
+			createObjectNode("id", "CompanyXYZ"),
+			createObjectNode("id", "CompanyABC"),
+			createObjectNode("id", "CompanyUVW"));
 	}
-	
+
 	@Test
 	public void testEmbeddedForeignKeyReferences() throws IOException {
 
-		String query = "using cleansing;"+
-				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
-				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
-				"into [\n" +  
-				"  entity $usCongressMembers identified by $usCongressMembers.name with {" + 
-				"    employers: {legalEntity: $legalEntity.id}" + 
-				"  }," + 
-				"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" + 
-				"  }" + 
-				"];\n" + 
-				"write $person to '" + this.person.toURI() + "';\n" +
-				"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    employers: {legalEntity: $legalEntity.id}" +
+			"  }," +
+			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
 		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
-		
+
 		Assert.assertNotNull(this.client.submit(plan, null, true));
-		
+
 		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "Andrew Adams", "employer", createObjectNode("legalEntity", "CompanyXYZ")));
-		
+			createObjectNode("id", "Andrew Adams", "employer", createObjectNode("legalEntity", "CompanyXYZ")));
+
 		this.testServer.checkContentsOf("legalEntity.json",
-				createObjectNode("id", "CompanyXYZ"));
+			createObjectNode("id", "CompanyABC"),
+			createObjectNode("id", "CompanyUVW"),
+			createObjectNode("id", "CompanyXYZ"));
+	}
+	
+	@Test
+	public void testEmbeddedForeignArrayKeyReferences() throws IOException {
+
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    employers: [{legalEntity: $legalEntity.id}]" +
+			"  }," +
+			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+		SopremoUtil.trace();
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "employer", createObjectNode("legalEntity", "CompanyXYZ")));
+
+		this.testServer.checkContentsOf("legalEntity.json",
+			createObjectNode("id", "CompanyABC"),
+			createObjectNode("id", "CompanyUVW"),
+			createObjectNode("id", "CompanyXYZ"));
 	}
 }

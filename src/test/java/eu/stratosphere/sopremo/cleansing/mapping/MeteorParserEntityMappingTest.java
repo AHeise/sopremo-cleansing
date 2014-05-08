@@ -14,12 +14,9 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+
+import java.util.*;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -89,20 +86,20 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		MappingInformation info = new MappingInformation();
 
 		MappingSchema schema = new MappingSchema(2, "source");
-		schema.addKeyToInput(1, "worksFor_o");
-		schema.addKeyToInput(0, "id_o");
-		schema.addKeyToInput(0, "name_o");
+		schema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		schema.addKeyToInput(0, "id_o", AttributeNode.class);
+		schema.addKeyToInput(0, "name_o", AttributeNode.class);
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_0.entity_0", "id"));
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_1.entity_1", "id"));
 		MappingSchema targetSchema = new MappingSchema(2, "target");
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -158,22 +155,22 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		info.setTargetJoinConditions(targetJoinConditions);
 
 		MappingSchema schema = new MappingSchema(2, "source");
-		schema.addKeyToInput(1, "worksFor_o");
-		schema.addKeyToInput(1, "biographyId_o");
-		schema.addKeyToInput(0, "id_o");
-		schema.addKeyToInput(0, "name_o");
-		schema.addKeyToInput(0, "biography_o");
+		schema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		schema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
+		schema.addKeyToInput(0, "id_o", AttributeNode.class);
+		schema.addKeyToInput(0, "name_o", AttributeNode.class);
+		schema.addKeyToInput(0, "biography_o", AttributeNode.class);
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_0.entity_0", "id"));
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_1.entity_1", "id"));
 		MappingSchema targetSchema = new MappingSchema(2, "target");
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -214,10 +211,10 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(1, "worksFor_o");
+		sourceSchema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
 
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "name_o");
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -226,12 +223,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 
@@ -292,12 +289,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(1, "biographyId");
-		sourceSchema.addKeyToInput(1, "worksFor_o");
+		sourceSchema.addKeyToInput(1, "biographyId", AttributeNode.class);
+		sourceSchema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
 
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "name_o");
-		sourceSchema.addKeyToInput(0, "biography");
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "biography", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -306,12 +303,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 
@@ -367,22 +364,22 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		info.setTargetJoinConditions(targetJoinConditions);
 
 		MappingSchema schema = new MappingSchema(2, "source");
-		schema.addKeyToInput(1, "worksFor_o");
-		schema.addKeyToInput(1, "biographyId_o");
-		schema.addKeyToInput(0, "id_o");
-		schema.addKeyToInput(0, "name_o");
+		schema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		schema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
+		schema.addKeyToInput(0, "id_o", AttributeNode.class);
+		schema.addKeyToInput(0, "name_o", AttributeNode.class);
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_0.entity_0", "id"));
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_1.entity_1", "id"));
 		MappingSchema targetSchema = new MappingSchema(2, "target");
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
-		targetSchema.addKeyToInput(0, "biography_p");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "biography_p", AttributeNode.class);
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -440,8 +437,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "name_o");
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -450,12 +447,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 
@@ -527,22 +524,22 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		info.setTargetJoinConditions(targetJoinConditions);
 
 		MappingSchema schema = new MappingSchema(2, "source");
-		schema.addKeyToInput(1, "worksFor_o");
-		schema.addKeyToInput(1, "biographyId_o");
-		schema.addKeyToInput(0, "id_o");
-		schema.addKeyToInput(0, "name_o");
-		schema.addKeyToInput(0, "biography_o");
+		schema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		schema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
+		schema.addKeyToInput(0, "id_o", AttributeNode.class);
+		schema.addKeyToInput(0, "name_o", AttributeNode.class);
+		schema.addKeyToInput(0, "biography_o", AttributeNode.class);
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_0.entity_0", "id"));
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_1.entity_1", "id"));
 		MappingSchema targetSchema = new MappingSchema(2, "target");
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "worksFor_p");
-		targetSchema.addKeyToInput(1, "name_p");
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_l", AttributeNode.class);
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -606,12 +603,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(1, "worksFor_o");
-		sourceSchema.addKeyToInput(1, "biographyId_o");
+		sourceSchema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
 
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "biography_o");
-		sourceSchema.addKeyToInput(0, "name_o");
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "biography_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -620,12 +617,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 
@@ -715,14 +712,14 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(2, "name");
-		sourceSchema.addKeyToInput(2, "letterCode");
-		sourceSchema.addKeyToInput(1, "worksFor_o");
-		sourceSchema.addKeyToInput(1, "biographyId_o");
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "state");
-		sourceSchema.addKeyToInput(0, "name_o");
-		sourceSchema.addKeyToInput(0, "biography_o");
+		sourceSchema.addKeyToInput(2, "name", AttributeNode.class);
+		sourceSchema.addKeyToInput(2, "letterCode", AttributeNode.class);
+		sourceSchema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "state", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "biography_o", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -731,13 +728,13 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
-		targetSchema.addKeyToInput(0, "state_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "state_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 
@@ -813,11 +810,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		info.setTargetJoinConditions(targetJoinConditions);
 
 		MappingSchema schema = new MappingSchema(2, "source");
-		schema.addKeyToInput(1, "worksFor_o");
-		schema.addKeyToInput(1, "biographyId_o");
-		schema.addKeyToInput(0, "id_o");
-		schema.addKeyToInput(0, "name_o");
-		schema.addKeyToInput(0, "biography_o");
+		schema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
+		schema.addKeyToInput(1, "biographyId_o", AttributeNode.class);
+		schema.addKeyToInput(0, "id_o", AttributeNode.class);
+		schema.addKeyToInput(0, "name_o", AttributeNode.class);
+		schema.addKeyToInput(0, "biography_o", AttributeNode.class);
 		info.setSourceSchema(schema);
 
 		MappingDataSource target = new MappingDataSource();
@@ -825,12 +822,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_1.entity_1", "id"));
 		target.addKeyConstraint(new MappingKeyConstraint("target.entities_2.entity_2", "id"));
 		MappingSchema targetSchema = new MappingSchema(3, "target");
-		targetSchema.addKeyToInput(2, "id");
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(2, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 		target.setTargetSchema(targetSchema);
 		info.setTarget(target);
 
@@ -873,10 +870,10 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		mappingInformation.setSourceSchema(sourceSchema);
 
-		sourceSchema.addKeyToInput(1, "worksFor_o");
+		sourceSchema.addKeyToInput(1, "worksFor_o", AttributeNode.class);
 
-		sourceSchema.addKeyToInput(0, "id_o");
-		sourceSchema.addKeyToInput(0, "name_o");
+		sourceSchema.addKeyToInput(0, "id_o", AttributeNode.class);
+		sourceSchema.addKeyToInput(0, "name_o", AttributeNode.class);
 
 		// target
 		MappingDataSource target = new MappingDataSource();
@@ -885,12 +882,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		MappingSchema targetSchema = new MappingSchema(2, "target");
 
-		targetSchema.addKeyToInput(1, "id");
-		targetSchema.addKeyToInput(1, "name_l");
+		targetSchema.addKeyToInput(1, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(1, "name_l", AttributeNode.class);
 
-		targetSchema.addKeyToInput(0, "id");
-		targetSchema.addKeyToInput(0, "worksFor_p");
-		targetSchema.addKeyToInput(0, "name_p");
+		targetSchema.addKeyToInput(0, "id", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "worksFor_p", AttributeNode.class);
+		targetSchema.addKeyToInput(0, "name_p", AttributeNode.class);
 
 		target.setTargetSchema(targetSchema);
 

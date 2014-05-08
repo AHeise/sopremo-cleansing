@@ -28,12 +28,7 @@ import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.aggregation.AggregationFunction;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.CoerceExpression;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.type.IntNode;
 
@@ -53,63 +48,60 @@ public class JepFunctionFactory {
 		}
 	};
 
-	public static FunctionCall create(ASTFunNode topNode, List<VariablePathExpression> sourcePaths) {
-		String functionName = topNode.getName();
+	public static FunctionCall create(final ASTFunNode topNode, final List<VariablePathExpression> sourcePaths) {
+		final String functionName = topNode.getName();
 		if (functions.containsKey(functionName)) {
-			JepFunctionHandler handler = functions.get(functionName);
+			final JepFunctionHandler handler = functions.get(functionName);
 			return handler.create(topNode, sourcePaths);
-		} else {
+		} else
 			throw new IllegalArgumentException("No such jep-function found: "
 				+ functionName);
-		}
 	}
 
 	public static abstract class JepFunctionHandler {
 
-		private SopremoFunction function;
+		private final SopremoFunction function;
 
-		public JepFunctionHandler(SopremoFunction function) {
+		public JepFunctionHandler(final SopremoFunction function) {
 			this.function = function;
 		}
 
-		public FunctionCall create(ASTFunNode topNode, List<VariablePathExpression> sourcePaths) {
+		public FunctionCall create(final ASTFunNode topNode, final List<VariablePathExpression> sourcePaths) {
 			return new FunctionCall(this.function, this.handleInputs(topNode, sourcePaths));
 		}
 
-		protected EvaluationExpression processJepFunctionNode(Node topNode,
-				List<VariablePathExpression> sourcePaths) {
-			if (topNode instanceof ASTVarNode) { // usual 1:1-mapping without a
-													// function
-				return createFunctionSourcePath(
+		protected EvaluationExpression processJepFunctionNode(final Node topNode,
+				final List<VariablePathExpression> sourcePaths) {
+			if (topNode instanceof ASTVarNode)
+				// function
+				return this.createFunctionSourcePath(
 					((ASTVarNode) topNode).getVarName(), sourcePaths);
-			} else if (topNode instanceof ASTFunNode) { // uses a function
+			else if (topNode instanceof ASTFunNode)
 				return JepFunctionFactory.create((ASTFunNode) topNode,
 					sourcePaths);
-			} else if (topNode instanceof ASTConstant) {
+			else if (topNode instanceof ASTConstant)
 				return new ConstantExpression(
 					((ASTConstant) topNode).getValue());
-			}
 			return null;
 		}
 
 		private PathSegmentExpression createFunctionSourcePath(
-				String pathFromFunction,
-				List<VariablePathExpression> sourcePaths) {
+				final String pathFromFunction,
+				final List<VariablePathExpression> sourcePaths) {
 			// path =
 			// usCongress.usCongressBiographies.usCongressBiography.worksFor;
-			String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
+			final String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
 			// String[] pathFromFunctionStepsTrunc =
 			// Arrays.copyOfRange(pathFromFunctionSteps, 2,
 			// pathFromFunctionSteps.length);
 
 			// chose suitable sourcePath that matches pathFromFunction
 			// sourcePath[0] = v1.usCongressBiography.worksFor;
-			for (VariablePathExpression exp : sourcePaths) {
+			for (final VariablePathExpression exp : sourcePaths)
 				if (exp.getLastStep()
 					.equals(pathFromFunctionSteps[pathFromFunctionSteps.length - 1])) // TODO
 																						// check!!!
 					return EntityMappingUtil.convertSpicyPath("0", exp);
-			}
 			return null;
 		}
 
@@ -124,17 +116,17 @@ public class JepFunctionFactory {
 		}
 
 		@Override
-		protected List<EvaluationExpression> handleInputs(ASTFunNode topNode,
-				List<VariablePathExpression> sourcePaths) {
+		protected List<EvaluationExpression> handleInputs(final ASTFunNode topNode,
+				final List<VariablePathExpression> sourcePaths) {
 
-			ArrayCreation input = new ArrayCreation(); // (sourcePath, new
-														// ConstantExpression("---"));
+			final ArrayCreation input = new ArrayCreation(); // (sourcePath, new
+			// ConstantExpression("---"));
 			for (int childI = 0; childI < topNode.jjtGetNumChildren(); childI++) {
-				Node child = topNode.jjtGetChild(childI);
+				final Node child = topNode.jjtGetChild(childI);
 				input.add(this.processJepFunctionNode(child, sourcePaths));
 			}
 
-			List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
+			final List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
 			inputList.add(input);
 
 			return inputList;
@@ -149,17 +141,17 @@ public class JepFunctionFactory {
 		}
 
 		@Override
-		protected List<EvaluationExpression> handleInputs(ASTFunNode topNode,
-				List<VariablePathExpression> sourcePaths) {
+		protected List<EvaluationExpression> handleInputs(final ASTFunNode topNode,
+				final List<VariablePathExpression> sourcePaths) {
 
-			List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
+			final List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
 
 			for (int childI = 0; childI < topNode.jjtGetNumChildren(); childI++) {
-				Node child = topNode.jjtGetChild(childI);
-				EvaluationExpression expr = this.processJepFunctionNode(child,
+				final Node child = topNode.jjtGetChild(childI);
+				final EvaluationExpression expr = this.processJepFunctionNode(child,
 					sourcePaths);
 
-				inputList.add((childI != 0) ? new CoerceExpression(
+				inputList.add(childI != 0 ? new CoerceExpression(
 					IntNode.class).withInputExpression(expr) : expr);
 			}
 
@@ -176,13 +168,13 @@ public class JepFunctionFactory {
 		}
 
 		@Override
-		protected List<EvaluationExpression> handleInputs(ASTFunNode topNode,
-				List<VariablePathExpression> sourcePaths) {
+		protected List<EvaluationExpression> handleInputs(final ASTFunNode topNode,
+				final List<VariablePathExpression> sourcePaths) {
 
-			List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
+			final List<EvaluationExpression> inputList = new LinkedList<EvaluationExpression>();
 
 			for (int childI = 0; childI < topNode.jjtGetNumChildren(); childI++) {
-				Node child = topNode.jjtGetChild(childI);
+				final Node child = topNode.jjtGetChild(childI);
 				inputList.add(this.processJepFunctionNode(child, sourcePaths));
 			}
 

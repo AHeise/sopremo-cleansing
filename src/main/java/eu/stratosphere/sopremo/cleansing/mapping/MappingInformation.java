@@ -18,7 +18,7 @@ import eu.stratosphere.sopremo.AbstractSopremoType;
  */
 
 public class MappingInformation extends AbstractSopremoType {
-	private List<MappingJoinCondition>  sourceJoinConditions = new ArrayList<MappingJoinCondition>();
+	private List<MappingJoinCondition> sourceJoinConditions = new ArrayList<MappingJoinCondition>();
 
 	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
 
@@ -36,7 +36,7 @@ public class MappingInformation extends AbstractSopremoType {
 		return this.sourceJoinConditions;
 	}
 
-	public void setSourceJoinCondition(List<MappingJoinCondition> sourceJoinCondition) {
+	public void setSourceJoinCondition(final List<MappingJoinCondition> sourceJoinCondition) {
 		this.sourceJoinConditions = sourceJoinCondition;
 	}
 
@@ -44,7 +44,7 @@ public class MappingInformation extends AbstractSopremoType {
 		return this.sourceSchema;
 	}
 
-	public void setSourceSchema(MappingSchema sourceSchema) {
+	public void setSourceSchema(final MappingSchema sourceSchema) {
 		this.sourceSchema = sourceSchema;
 	}
 
@@ -52,7 +52,7 @@ public class MappingInformation extends AbstractSopremoType {
 		return this.target;
 	}
 
-	public void setTarget(MappingDataSource target) {
+	public void setTarget(final MappingDataSource target) {
 		this.target = target;
 	}
 
@@ -61,7 +61,7 @@ public class MappingInformation extends AbstractSopremoType {
 	}
 
 	public void setTargetJoinConditions(
-			List<MappingJoinCondition> targetJoinConditions) {
+			final List<MappingJoinCondition> targetJoinConditions) {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 
@@ -70,15 +70,14 @@ public class MappingInformation extends AbstractSopremoType {
 	}
 
 	public List<ValueCorrespondence> getValueCorrespondencesAsSpicyTypes() {
-		List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
-		for (MappingValueCorrespondence mvc : this.getValueCorrespondences()) {
+		final List<ValueCorrespondence> valueCorrespondences = new ArrayList<ValueCorrespondence>();
+		for (final MappingValueCorrespondence mvc : this.getValueCorrespondences())
 			valueCorrespondences.add(mvc.generateSpicyType());
-		}
 		return valueCorrespondences;
 	}
 
 	public void setValueCorrespondences(
-			Set<MappingValueCorrespondence> valueCorrespondences) {
+			final Set<MappingValueCorrespondence> valueCorrespondences) {
 		this.valueCorrespondences = valueCorrespondences;
 	}
 
@@ -87,17 +86,17 @@ public class MappingInformation extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append("MappingInformation [sourceJoinCondition=");
-		append(appendable, this.sourceJoinConditions, ",");
+		this.append(appendable, this.sourceJoinConditions, ",");
 		appendable.append(", targetJoinConditions=");
-		append(appendable, this.targetJoinConditions, ",");
+		this.append(appendable, this.targetJoinConditions, ",");
 		appendable.append(", sourceSchema=");
 		this.sourceSchema.appendAsString(appendable);
 		appendable.append(", target=");
 		this.target.appendAsString(appendable);
 		appendable.append(", valueCorrespondences=");
-		append(appendable, this.valueCorrespondences, ",");
+		this.append(appendable, this.valueCorrespondences, ",");
 		appendable.append("]");
 	}
 
@@ -105,49 +104,49 @@ public class MappingInformation extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((sourceJoinConditions == null) ? 0 : sourceJoinConditions.hashCode());
-		result = prime * result + ((sourceSchema == null) ? 0 : sourceSchema.hashCode());
-		result = prime * result + ((target == null) ? 0 : target.hashCode());
-		result = prime * result + ((targetJoinConditions == null) ? 0 : targetJoinConditions.hashCode());
-		result = prime * result + ((valueCorrespondences == null) ? 0 : valueCorrespondences.hashCode());
+		result = prime * result + (this.sourceJoinConditions == null ? 0 : this.sourceJoinConditions.hashCode());
+		result = prime * result + (this.sourceSchema == null ? 0 : this.sourceSchema.hashCode());
+		result = prime * result + (this.target == null ? 0 : this.target.hashCode());
+		result = prime * result + (this.targetJoinConditions == null ? 0 : this.targetJoinConditions.hashCode());
+		result = prime * result + (this.valueCorrespondences == null ? 0 : this.valueCorrespondences.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		MappingInformation other = (MappingInformation) obj;
-		if (sourceJoinConditions == null) {
+		final MappingInformation other = (MappingInformation) obj;
+		if (this.sourceJoinConditions == null) {
 			if (other.sourceJoinConditions != null)
 				return false;
-		} else if (!sourceJoinConditions.equals(other.sourceJoinConditions))
+		} else if (!this.sourceJoinConditions.equals(other.sourceJoinConditions))
 			return false;
-		if (sourceSchema == null) {
+		if (this.sourceSchema == null) {
 			if (other.sourceSchema != null)
 				return false;
-		} else if (!sourceSchema.equals(other.sourceSchema))
+		} else if (!this.sourceSchema.equals(other.sourceSchema))
 			return false;
-		if (target == null) {
+		if (this.target == null) {
 			if (other.target != null)
 				return false;
-		} else if (!target.equals(other.target))
+		} else if (!this.target.equals(other.target))
 			return false;
-		if (targetJoinConditions == null) {
+		if (this.targetJoinConditions == null) {
 			if (other.targetJoinConditions != null)
 				return false;
-		} else if (!targetJoinConditions.equals(other.targetJoinConditions))
+		} else if (!this.targetJoinConditions.equals(other.targetJoinConditions))
 			return false;
-		if (valueCorrespondences == null) {
+		if (this.valueCorrespondences == null) {
 			if (other.valueCorrespondences != null)
 				return false;
-		} else if (!valueCorrespondences.equals(other.valueCorrespondences))
+		} else if (!this.valueCorrespondences.equals(other.valueCorrespondences))
 			return false;
 		return true;
 	}
-	
+
 }

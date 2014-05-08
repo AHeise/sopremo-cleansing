@@ -39,16 +39,16 @@ public class MappingJoinCondition extends AbstractSopremoType {
 
 	}
 
-	public MappingJoinCondition(List<SpicyPathExpression> fromPaths,
-			List<SpicyPathExpression> toPaths, boolean isMandatory,
-			boolean isMonodirectional) {
+	public MappingJoinCondition(final List<SpicyPathExpression> fromPaths,
+			final List<SpicyPathExpression> toPaths, final boolean isMandatory,
+			final boolean isMonodirectional) {
 		this.fromPaths = fromPaths;
 		this.toPaths = toPaths;
 		this.isMandatory = isMandatory;
 		this.isMonodirectional = isMonodirectional;
 	}
 
-	public MappingJoinCondition(JoinCondition condition) {
+	public MappingJoinCondition(final JoinCondition condition) {
 		this.fromPaths = MappingUtil.extractPathFrom(condition.getFromPaths());
 		this.toPaths = MappingUtil.extractPathFrom(condition.getToPaths());
 		this.isMandatory = condition.isMandatory();
@@ -72,8 +72,8 @@ public class MappingJoinCondition extends AbstractSopremoType {
 	}
 
 	public JoinCondition generateSpicyType() {
-		List<PathExpression> fromPaths = MappingUtil.createPaths(this.fromPaths);
-		List<PathExpression> toPaths = MappingUtil.createPaths(this.toPaths);
+		final List<PathExpression> fromPaths = MappingUtil.createPaths(this.fromPaths);
+		final List<PathExpression> toPaths = MappingUtil.createPaths(this.toPaths);
 		return new JoinCondition(fromPaths, toPaths, this.isMonodirectional,
 			this.isMandatory);
 	}
@@ -83,13 +83,13 @@ public class MappingJoinCondition extends AbstractSopremoType {
 	 * @see eu.stratosphere.util.IAppending#appendAsString(java.lang.Appendable)
 	 */
 	@Override
-	public void appendAsString(Appendable appendable) throws IOException {
+	public void appendAsString(final Appendable appendable) throws IOException {
 		appendable.append("MappingJoinCondition [");
 		appendable.append("fromPaths=");
-		append(appendable, this.fromPaths, ",");
+		this.append(appendable, this.fromPaths, ",");
 		appendable.append(", ");
 		appendable.append("toPaths=");
-		append(appendable, this.toPaths, ",");
+		this.append(appendable, this.toPaths, ",");
 		appendable.append(", ");
 		appendable.append("isMandatory=");
 		TypeFormat.format(this.isMandatory, appendable);
@@ -102,38 +102,37 @@ public class MappingJoinCondition extends AbstractSopremoType {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((fromPaths == null) ? 0 : fromPaths.hashCode());
-		result = prime * result + (isMandatory ? 1231 : 1237);
-		result = prime * result + (isMonodirectional ? 1231 : 1237);
-		result = prime * result + ((toPaths == null) ? 0 : toPaths.hashCode());
+		result = prime * result + (this.fromPaths == null ? 0 : this.fromPaths.hashCode());
+		result = prime * result + (this.isMandatory ? 1231 : 1237);
+		result = prime * result + (this.isMonodirectional ? 1231 : 1237);
+		result = prime * result + (this.toPaths == null ? 0 : this.toPaths.hashCode());
 		return result;
 	}
 
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (this == obj)
 			return true;
 		if (obj == null)
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
-		MappingJoinCondition other = (MappingJoinCondition) obj;
-		if (fromPaths == null) {
+		final MappingJoinCondition other = (MappingJoinCondition) obj;
+		if (this.fromPaths == null) {
 			if (other.fromPaths != null)
 				return false;
-		} else if (!fromPaths.equals(other.fromPaths))
+		} else if (!this.fromPaths.equals(other.fromPaths))
 			return false;
-		if (isMandatory != other.isMandatory)
+		if (this.isMandatory != other.isMandatory)
 			return false;
-		if (isMonodirectional != other.isMonodirectional)
+		if (this.isMonodirectional != other.isMonodirectional)
 			return false;
-		if (toPaths == null) {
+		if (this.toPaths == null) {
 			if (other.toPaths != null)
 				return false;
-		} else if (!toPaths.equals(other.toPaths))
+		} else if (!this.toPaths.equals(other.toPaths))
 			return false;
 		return true;
 	}
-
 
 }
