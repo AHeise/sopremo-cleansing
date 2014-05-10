@@ -11,9 +11,9 @@ import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 public class MappingValueCorrespondence extends AbstractSopremoType {
-	private List<SpicyPathExpression> sourcePaths = new ArrayList<SpicyPathExpression>();
+	private List<EvaluationExpression> sourcePaths = new ArrayList<EvaluationExpression>();
 
-	private SpicyPathExpression targetPath;
+	private EvaluationExpression targetPath;
 
 	private EvaluationExpression expr;
 
@@ -22,13 +22,13 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 	MappingValueCorrespondence() {
 	}
 
-	public MappingValueCorrespondence(final SpicyPathExpression sourcePath, final SpicyPathExpression targetPath) {
+	public MappingValueCorrespondence(final EvaluationExpression sourcePath, final EvaluationExpression targetPath) {
 		this.sourcePaths.add(sourcePath);
 		this.targetPath = targetPath;
 	}
 
-	public MappingValueCorrespondence(final List<SpicyPathExpression> sourcePaths,
-			final SpicyPathExpression targetPath, final EvaluationExpression expr) {
+	public MappingValueCorrespondence(final List<EvaluationExpression> sourcePaths,
+			final EvaluationExpression targetPath, final EvaluationExpression expr) {
 		this.sourcePaths = sourcePaths;
 		this.targetPath = targetPath;
 		this.expr = expr;
@@ -36,20 +36,19 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 
 	public ValueCorrespondence generateSpicyType() {
 		final List<PathExpression> spicyTypeSourcesPathes = new ArrayList<PathExpression>();
-		for (final SpicyPathExpression spe : this.sourcePaths)
-			spicyTypeSourcesPathes.add(spe.getPathExpression());
+		for (final EvaluationExpression spe : this.sourcePaths)
+			spicyTypeSourcesPathes.add(SpicyUtil.toSpicy(spe));
 		if (this.expr == null)
-			return new ValueCorrespondence(spicyTypeSourcesPathes.get(0), this.targetPath.getPathExpression());
-		else
-			return new ValueCorrespondence(spicyTypeSourcesPathes, this.targetPath.getPathExpression(),
-				new SopremoFunctionExpression(this.expr));
+			return new ValueCorrespondence(spicyTypeSourcesPathes.get(0), SpicyUtil.toSpicy(this.targetPath));
+		return new ValueCorrespondence(spicyTypeSourcesPathes, SpicyUtil.toSpicy(this.targetPath),
+			new SopremoFunctionExpression(this.expr));
 	}
 
-	public List<SpicyPathExpression> getSourcePaths() {
+	public List<EvaluationExpression> getSourcePaths() {
 		return this.sourcePaths;
 	}
 
-	public SpicyPathExpression getTargetPath() {
+	public EvaluationExpression getTargetPath() {
 		return this.targetPath;
 	}
 
@@ -74,7 +73,7 @@ public class MappingValueCorrespondence extends AbstractSopremoType {
 		appendable.append("MappingValueCorrespondence [");
 		if (this.sourcePaths != null) {
 			appendable.append("sourcePath=");
-			for (final SpicyPathExpression spe : this.sourcePaths) {
+			for (final EvaluationExpression spe : this.sourcePaths) {
 				spe.appendAsString(appendable);
 				appendable.append(", ");
 			}

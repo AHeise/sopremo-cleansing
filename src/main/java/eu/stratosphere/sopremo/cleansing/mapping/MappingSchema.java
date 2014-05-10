@@ -15,15 +15,21 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.datasource.INode;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+import it.unibas.spicy.model.datasource.nodes.LeafNode;
+import it.unibas.spicy.model.datasource.nodes.MetadataNode;
 import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
 import it.unibas.spicy.model.datasource.nodes.TupleNode;
 import it.unibas.spicy.model.datasource.nodes.UnionNode;
+import it.unibas.spicy.model.datasource.operators.INodeVisitor;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -55,16 +61,14 @@ public class MappingSchema extends AbstractSopremoType {
 
 	public void addKeyToInput(final Integer input, final String key, Class<? extends INode> type) {
 		Map<String, Class<? extends INode>> group = this.groupings.get(input);
-		if (group == null) 
+		if (group == null)
 			this.groupings.put(input, group = new LinkedHashMap<String, Class<? extends INode>>());
-		if(!group.containsKey(key))
+		if (!group.containsKey(key))
 			group.put(key, type);
 	}
 
 	public INode generateSpicyType() {
 		final SequenceNode schema = new SequenceNode(this.label);
-
-		INode sourceEntities;
 
 		// source : SequenceNode
 		// entities_in0 : SetNode
@@ -72,12 +76,14 @@ public class MappingSchema extends AbstractSopremoType {
 		// entities_in1 : SetNode
 		// entity_in1 : SequenceNode
 
+		List<INode> sourceNodes = new ArrayList<INode>();
 		for (int index = 0; index < this.size; index++) {
-			final Integer input = index;
-			final INode tempEntity = new SequenceNode(EntityMapping.entityStr + input);
-			sourceEntities = new SetNode(EntityMapping.entitiesStr + input);
-			sourceEntities.addChild(tempEntity);
+			INode sourceEntities = new SetNode(String.valueOf(index));
 			schema.addChild(sourceEntities);
+
+			final INode sourceEntity = new SequenceNode("object");
+			sourceEntities.addChild(sourceEntity);
+			sourceNodes.add(sourceEntity);
 		}
 		schema.setRoot(true);
 
@@ -88,8 +94,7 @@ public class MappingSchema extends AbstractSopremoType {
 				final String value = groupingEntry.getKey();
 				final String[] valueSteps = value.split("\\" + EntityMapping.separator);
 
-				INode sourceNode = schema.getChild(EntityMapping.entitiesStr + grouping.getKey()).
-					getChild(EntityMapping.entityStr + grouping.getKey());
+				INode sourceNode = sourceNodes.get(grouping.getKey());
 
 				for (int i = 0; i < valueSteps.length - 1; i++)
 					sourceNode = this.addToSchemaTree(valueSteps[i], sourceNode);
@@ -97,12 +102,25 @@ public class MappingSchema extends AbstractSopremoType {
 				if (sourceNode.getChild(valueSteps[valueSteps.length - 1]) == null) {
 					String step = valueSteps[valueSteps.length - 1];
 					INode sourceAttr = ReflectUtil.newInstance(groupingEntry.getValue(), step);
-					sourceAttr.addChild(EntityMapping.dummy);
 					sourceNode.addChild(sourceAttr);
 				}
 			}
 
+		addLeafNodes(schema);
+
 		return schema;
+	}
+
+	/**
+	 * 
+	 */
+	private void addLeafNodes(INode schema) {
+		List<INode> children = schema.getChildren();
+		if (children.isEmpty())
+			schema.addChild(EntityMapping.dummy);
+		else
+			for (INode child : children)
+				addLeafNodes(child);
 	}
 
 	private INode addToSchemaTree(final String value, final INode sourceNode) {

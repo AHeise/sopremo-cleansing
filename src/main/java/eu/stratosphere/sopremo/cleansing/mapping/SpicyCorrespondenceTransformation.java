@@ -14,6 +14,11 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import it.unibas.spicy.model.datasource.INode;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+import it.unibas.spicy.model.datasource.nodes.SetNode;
+import it.unibas.spicy.model.datasource.nodes.TupleNode;
+import it.unibas.spicy.model.datasource.operators.FindNode;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.FunctionGenerator;
 import it.unibas.spicy.model.generators.IValueGenerator;
@@ -34,6 +39,7 @@ import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
+import eu.stratosphere.util.CollectionUtil;
 
 /**
  * Reads Spicy Correspondence, i.e. source attribute to target attribute and creates Sopremo transformation.
@@ -43,23 +49,61 @@ import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
  */
 public class SpicyCorrespondenceTransformation {
 
-	public ObjectCreation createNestedObjectFromSpicyPaths(final TreeMap<PathExpression, IValueGenerator> st_map,
-			final SetAlias setAlias) {
-		final Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
-		final int ignoreTargetPrefixSteps = setAlias.getBindingPathExpression().getPathSteps().size() + 1; // we always
-																											// ignore 1
-																											// extra
-																											// tuple
-																											// access
-		for (final Entry<PathExpression, IValueGenerator> e : st_map.entrySet()) {
-			// target
-			final List<String> targetPathList = e.getKey().getPathSteps();
-			final List<String> targetPathListTrunc =
-				targetPathList.subList(ignoreTargetPrefixSteps, targetPathList.size() - 1); // usually remove first 3
-																							// and last step
-			this.addTargetAttributeCreationToMap(map, targetPathListTrunc, e.getValue());
+	public static EvaluationExpression createNestedObjectFromSpicyPaths(final Map<PathExpression, IValueGenerator> generatorVi,
+			final SetAlias setAlias, final INode schema) {
+		FindNode findNode = new FindNode();
+		INode rootNode = schema;
+
+		Map<List<String>, EvaluationExpression> expressions = new HashMap<List<String>, EvaluationExpression>();
+		for (Entry<PathExpression, IValueGenerator> pathElement : generatorVi.entrySet()) {
+			PathExpression path = pathElement.getKey();
+			if (path.getLastStep().equals("LEAF")) {
+				List<String> steps = path.getPathSteps();
+				int incompleteIndex = 0;
+				for (; incompleteIndex < steps.size(); incompleteIndex++)
+					if (expressions.get(steps.subList(0, incompleteIndex)) == null)
+						break;
+				EvaluationExpression newChild = recursivelyCreate(steps,
+					findNode.findNodeInSchema(new PathExpression(new ArrayList<String>(steps.subList(0, incompleteIndex))), rootNode),
+					incompleteIndex, pathElement.getValue(), expressions);
+				if (incompleteIndex > 0) {
+					EvaluationExpression parentExpr = expressions.get(steps.subList(0, incompleteIndex));
+					if (parentExpr instanceof ObjectCreation)
+						((ObjectCreation) parentExpr).addMapping(steps.get(incompleteIndex), newChild);
+					else
+						((ArrayCreation) parentExpr).add(newChild);
+				}
+			}
 		}
-		return this.createdNestedObject(map);
+		return expressions.get(Collections.EMPTY_LIST);
+	}
+
+	private static EvaluationExpression recursivelyCreate(List<String> steps, INode node, int index, IValueGenerator iValueGenerator, Map<List<String>, EvaluationExpression> expressions) {
+		final EvaluationExpression result;
+		if (node instanceof SetNode) {
+			ArrayCreation arrayCreation = new ArrayCreation();
+			arrayCreation.add(recursivelyCreate(steps, node.getChild(steps.get(index + 1)), index + 1, iValueGenerator, expressions));
+			result = arrayCreation;
+		} else if (node instanceof TupleNode) {
+			ObjectCreation objectCreation = new ObjectCreation();
+			objectCreation.addMapping(steps.get(index + 1),
+				recursivelyCreate(steps, node.getChild(steps.get(index + 1)), index + 1, iValueGenerator, expressions));
+			result = objectCreation;
+		} else if (node instanceof AttributeNode) {
+			if (iValueGenerator instanceof FunctionGenerator) {
+				final Expression function = ((FunctionGenerator) iValueGenerator).getFunction();
+				final Node topNode = function.getJepExpression().getTopNode();
+				result = processJepFunctionNode(topNode, function.getAttributePaths());
+			} else if (iValueGenerator instanceof SkolemFunctionGenerator)
+				result = ConstantExpression.NULL;
+			else if (iValueGenerator instanceof NullValueGenerator)
+				result = ConstantExpression.NULL;
+			else
+				throw new IllegalStateException("Unknown generator " + iValueGenerator);
+		} else
+			throw new IllegalStateException("Unknown node type " + node);
+		expressions.put(steps.subList(0, index+1), result);
+		return result;
 	}
 
 	public ArrayCreation createArrayFromSpicyPaths(final List<VariableCorrespondence> correspondences) {
@@ -75,21 +119,14 @@ public class SpicyCorrespondenceTransformation {
 		}
 		final ObjectCreation tempObject = this.createdNestedObject(map);
 
-		// List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
-		// while(currentElements.size()<=setAlias.getId()){
-		// currentElements.add(ConstantExpression.MISSING);
-		// }
-		// currentElements.set(setAlias.getId(), objectVi);
 		final List<EvaluationExpression> tempElements = new ArrayList<EvaluationExpression>();
 
 		for (final Mapping<?> mapping : tempObject.getMappings()) {
 			final int index = Integer.valueOf(mapping.getTarget().toString());
-			while (tempElements.size() <= index)
-				tempElements.add(ConstantExpression.MISSING);
+			CollectionUtil.ensureSize(tempElements, index + 1, ConstantExpression.MISSING);
 			tempElements.set(index, mapping.getExpression());
 		}
 		return new ArrayCreation(tempElements);
-		// return createdNestedObject(map);
 	}
 
 	public ObjectCreation createdNestedObject(final Map<String, List<TargetAttributeCreation>> map) {
@@ -142,11 +179,11 @@ public class SpicyCorrespondenceTransformation {
 		}
 	}
 
-	private EvaluationExpression processJepFunctionNode(final Node topNode,
+	private static EvaluationExpression processJepFunctionNode(final Node topNode,
 			final List<VariablePathExpression> sourcePaths) {
 		if (topNode instanceof ASTVarNode)
 			// function
-			return this.createFunctionSourcePath(((ASTVarNode) topNode).getVarName(), sourcePaths);
+			return createFunctionSourcePath(((ASTVarNode) topNode).getVarName(), sourcePaths);
 		// TODO remove JepFunctionFactory?!
 		else if (topNode instanceof FunctionNode) {
 			final FunctionNode fnNode = (FunctionNode) topNode;
@@ -155,10 +192,10 @@ public class SpicyCorrespondenceTransformation {
 			return new ConstantExpression(((ASTConstant) topNode).getValue());
 		else if (topNode instanceof ASTFunNode)
 			return JepFunctionFactory.create((ASTFunNode) topNode, sourcePaths);
-		return null;
+		throw new IllegalStateException("Unknown node type");
 	}
 
-	private PathSegmentExpression createFunctionSourcePath(final String pathFromFunction,
+	private static PathSegmentExpression createFunctionSourcePath(final String pathFromFunction,
 			final List<VariablePathExpression> sourcePaths) {
 		// e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;
 		final String[] pathFromFunctionSteps = pathFromFunction.split("\\.");

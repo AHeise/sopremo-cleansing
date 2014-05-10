@@ -142,15 +142,15 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourcePaths.add(new SpicyPathExpression("source.entities_0.entity_0", "biography_o"));
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
+		ComparativeExpression sourceJoinCondition = new ComparativeExpression(sourcePaths, targetPaths, true, true);
 		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "worksFor_p"));
 		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
 		targetPaths2.add(new SpicyPathExpression("target.entities_1.entity_1", "id"));
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourcePaths2, targetPaths2, true, true);
-		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourcePaths2, targetPaths2, true, true);
+		List<ComparativeExpression> targetJoinConditions = new LinkedList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		info.setTargetJoinConditions(targetJoinConditions);
 
@@ -280,7 +280,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetJoinConditionSourcePaths = Collections.singletonList(new SpicyPathExpression("source.entities_1.entity_1",
 				"biographyId"));
 
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths, targetJoinConditionSourcePaths, true, true);
+		ComparativeExpression sourceJoinCondition = new ComparativeExpression(sourceJoinConditionSourcePaths, targetJoinConditionSourcePaths, true, true);
 
 		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition);
 
@@ -358,8 +358,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourcePaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "worksFor_p"));
 		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
 		targetPaths2.add(new SpicyPathExpression("target.entities_1.entity_1", "id"));
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourcePaths2, targetPaths2, true, true);
-		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourcePaths2, targetPaths2, true, true);
+		List<ComparativeExpression> targetJoinConditions = new LinkedList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		info.setTargetJoinConditions(targetJoinConditions);
 
@@ -426,9 +426,9 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				"worksFor_p"));
 		List<SpicyPathExpression> targetJoinConditionSourcePaths = Collections.singletonList(new SpicyPathExpression("target.entities_1.entity_1", "id"));
 
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths, targetJoinConditionSourcePaths, true, true);
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourceJoinConditionSourcePaths, targetJoinConditionSourcePaths, true, true);
 
-		List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
+		List<ComparativeExpression> targetJoinConditions = new ArrayList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		mappingInformation.setTargetJoinConditions(targetJoinConditions);
 
@@ -511,15 +511,15 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourcePaths.add(new SpicyPathExpression("source.entities_0.entity_0", "biography_o"));
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
+		ComparativeExpression sourceJoinCondition = new ComparativeExpression(sourcePaths, targetPaths, true, true);
 		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_1.entity_1", "worksFor_p"));
 		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
 		targetPaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "id"));
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourcePaths2, targetPaths2, true, true);
-		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourcePaths2, targetPaths2, true, true);
+		List<ComparativeExpression> targetJoinConditions = new LinkedList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		info.setTargetJoinConditions(targetJoinConditions);
 
@@ -583,7 +583,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetJoinConditionSourcePaths1 = Collections.singletonList(new SpicyPathExpression("source.entities_0.entity_0",
 				"biography_o"));
 
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
+		ComparativeExpression sourceJoinCondition = new ComparativeExpression(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
 
 		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition);
 
@@ -592,9 +592,9 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				"worksFor_p"));
 		List<SpicyPathExpression> targetJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("target.entities_1.entity_1", "id"));
 
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
 
-		List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
+		List<ComparativeExpression> targetJoinConditions = new ArrayList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		mappingInformation.setTargetJoinConditions(targetJoinConditions);
 
@@ -684,14 +684,14 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<SpicyPathExpression> targetJoinConditionSourcePaths1 = Collections.singletonList(new SpicyPathExpression("source.entities_2.entity_2",
 				"letterCode"));
 
-		MappingJoinCondition sourceJoinCondition1 = new MappingJoinCondition(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
+		ComparativeExpression sourceJoinCondition1 = new ComparativeExpression(sourceJoinConditionSourcePaths1, targetJoinConditionSourcePaths1, true, true);
 		
 		List<SpicyPathExpression> sourceJoinConditionSourcePaths2 = Collections
 				.singletonList(new SpicyPathExpression("source.entities_0.entity_0", "biography_o"));
 		List<SpicyPathExpression> targetJoinConditionSourcePaths2 = Collections.singletonList(new SpicyPathExpression("source.entities_1.entity_1",
 				"biographyId_o"));
 
-		MappingJoinCondition sourceJoinCondition2 = new MappingJoinCondition(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
+		ComparativeExpression sourceJoinCondition2 = new ComparativeExpression(sourceJoinConditionSourcePaths2, targetJoinConditionSourcePaths2, true, true);
 
 		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition2);
 		mappingInformation.getSourceJoinConditions().add(sourceJoinCondition1);
@@ -701,9 +701,9 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 				"worksFor_p"));
 		List<SpicyPathExpression> targetJoinConditionSourcePaths3 = Collections.singletonList(new SpicyPathExpression("target.entities_1.entity_1", "id"));
 
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourceJoinConditionSourcePaths3, targetJoinConditionSourcePaths3, true, true);
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourceJoinConditionSourcePaths3, targetJoinConditionSourcePaths3, true, true);
 
-		List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
+		List<ComparativeExpression> targetJoinConditions = new ArrayList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		mappingInformation.setTargetJoinConditions(targetJoinConditions);
 
@@ -797,15 +797,15 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourcePaths.add(new SpicyPathExpression("source.entities_0.entity_0", "biography_o"));
 		List<SpicyPathExpression> targetPaths = new LinkedList<SpicyPathExpression>();
 		targetPaths.add(new SpicyPathExpression("source.entities_1.entity_1", "biographyId_o"));
-		MappingJoinCondition sourceJoinCondition = new MappingJoinCondition(sourcePaths, targetPaths, true, true);
+		ComparativeExpression sourceJoinCondition = new ComparativeExpression(sourcePaths, targetPaths, true, true);
 		info.getSourceJoinConditions().add(sourceJoinCondition);
 
 		List<SpicyPathExpression> sourcePaths2 = new LinkedList<SpicyPathExpression>();
 		sourcePaths2.add(new SpicyPathExpression("target.entities_0.entity_0", "worksFor_p"));
 		List<SpicyPathExpression> targetPaths2 = new LinkedList<SpicyPathExpression>();
 		targetPaths2.add(new SpicyPathExpression("target.entities_1.entity_1", "id"));
-		MappingJoinCondition targetJoinCondition = new MappingJoinCondition(sourcePaths2, targetPaths2, true, true);
-		List<MappingJoinCondition> targetJoinConditions = new LinkedList<MappingJoinCondition>();
+		ComparativeExpression targetJoinCondition = new ComparativeExpression(sourcePaths2, targetPaths2, true, true);
+		List<ComparativeExpression> targetJoinConditions = new LinkedList<ComparativeExpression>();
 		targetJoinConditions.add(targetJoinCondition);
 		info.setTargetJoinConditions(targetJoinConditions);
 

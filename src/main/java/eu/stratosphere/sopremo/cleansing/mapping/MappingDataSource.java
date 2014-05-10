@@ -15,6 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.datasource.DataSource;
+import it.unibas.spicy.model.datasource.KeyConstraint;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,10 +23,11 @@ import java.util.List;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 public class MappingDataSource extends AbstractSopremoType {
 
-	private final List<MappingKeyConstraint> keyConstraints = new ArrayList<MappingKeyConstraint>();
+	private final List<EvaluationExpression> keyConstraints = new ArrayList<EvaluationExpression>();
 
 	private MappingSchema targetSchema = new MappingSchema();
 
@@ -35,7 +37,7 @@ public class MappingDataSource extends AbstractSopremoType {
 	/**
 	 * @param targetKey
 	 */
-	public void addKeyConstraint(final MappingKeyConstraint targetKey) {
+	public void addKeyConstraint(final EvaluationExpression targetKey) {
 		this.keyConstraints.add(targetKey);
 	}
 
@@ -52,8 +54,8 @@ public class MappingDataSource extends AbstractSopremoType {
 
 	public DataSource generateSpicyType() {
 		final DataSource dataSource = new DataSource(EntityMapping.type, this.targetSchema.generateSpicyType());
-		for (final MappingKeyConstraint keyConstraint : this.keyConstraints)
-			dataSource.addKeyConstraint(keyConstraint.generateSpicyType());
+		for (final EvaluationExpression keyConstraint : this.keyConstraints)
+			dataSource.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(keyConstraint), true));
 		return dataSource;
 	}
 

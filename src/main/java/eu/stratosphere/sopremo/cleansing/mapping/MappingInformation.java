@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import eu.stratosphere.sopremo.AbstractSopremoType;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 
 /**
  * This class holds all relevant mapping information defined in a meteor script
@@ -18,9 +19,9 @@ import eu.stratosphere.sopremo.AbstractSopremoType;
  */
 
 public class MappingInformation extends AbstractSopremoType {
-	private List<MappingJoinCondition> sourceJoinConditions = new ArrayList<MappingJoinCondition>();
+	private List<ComparativeExpression> sourceJoinConditions = new ArrayList<ComparativeExpression>();
 
-	private List<MappingJoinCondition> targetJoinConditions = new ArrayList<MappingJoinCondition>();
+	private List<ComparativeExpression> targetJoinConditions = new ArrayList<ComparativeExpression>();
 
 	private MappingSchema sourceSchema = new MappingSchema();
 
@@ -32,11 +33,11 @@ public class MappingInformation extends AbstractSopremoType {
 
 	}
 
-	public List<MappingJoinCondition> getSourceJoinConditions() {
+	public List<ComparativeExpression> getSourceJoinConditions() {
 		return this.sourceJoinConditions;
 	}
 
-	public void setSourceJoinCondition(final List<MappingJoinCondition> sourceJoinCondition) {
+	public void setSourceJoinCondition(final List<ComparativeExpression> sourceJoinCondition) {
 		this.sourceJoinConditions = sourceJoinCondition;
 	}
 
@@ -56,12 +57,12 @@ public class MappingInformation extends AbstractSopremoType {
 		this.target = target;
 	}
 
-	public List<MappingJoinCondition> getTargetJoinConditions() {
+	public List<ComparativeExpression> getTargetJoinConditions() {
 		return this.targetJoinConditions;
 	}
 
 	public void setTargetJoinConditions(
-			final List<MappingJoinCondition> targetJoinConditions) {
+			final List<ComparativeExpression> targetJoinConditions) {
 		this.targetJoinConditions = targetJoinConditions;
 	}
 

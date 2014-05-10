@@ -14,7 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.createObjectNode;
+import static eu.stratosphere.sopremo.type.JsonUtil.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -170,7 +170,7 @@ public class EntityMappingIT7 extends MeteorIT {
 			createObjectNode("id", "CompanyUVW"),
 			createObjectNode("id", "CompanyXYZ"));
 	}
-	
+
 	@Test
 	public void testEmbeddedForeignArrayKeyReferences() throws IOException {
 
@@ -200,5 +200,71 @@ public class EntityMappingIT7 extends MeteorIT {
 			createObjectNode("id", "CompanyABC"),
 			createObjectNode("id", "CompanyUVW"),
 			createObjectNode("id", "CompanyXYZ"));
+	}
+
+	@Test
+	public void testEmbeddedObjectArray() throws IOException {
+
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person = map entities of $usCongressMembers\n" +
+			"into [\n" +
+			"  entity $person identified by $usCongressMembers.name with {" +
+			"    employers: [{legalEntity: $usCongressMembers.biography}]" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n";
+		SopremoUtil.trace();
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "employers", createArrayNode(createObjectNode("legalEntity", "A000029"))));
+	}
+	
+	@Test
+	public void testEmbeddedObject() throws IOException {
+
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person = map entities of $usCongressMembers\n" +
+			"into [\n" +
+			"  entity $person identified by $usCongressMembers.name with {" +
+			"    employers: {legalEntity: $usCongressMembers.biography}" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n";
+		SopremoUtil.trace();
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "employers", createObjectNode("legalEntity", "A000029")));
+	}
+	
+	@Test
+	public void testEmbeddedArray() throws IOException {
+
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person = map entities of $usCongressMembers\n" +
+			"into [\n" +
+			"  entity $person identified by $usCongressMembers.name with {" +
+			"    employers: [$usCongressMembers.biography]" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n";
+		SopremoUtil.trace();
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "employers", createArrayNode("A000029")));
 	}
 }
