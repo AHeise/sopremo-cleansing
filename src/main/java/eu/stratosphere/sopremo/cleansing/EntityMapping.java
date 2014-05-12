@@ -12,23 +12,11 @@ import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.NodeHandler;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
 import eu.stratosphere.sopremo.cleansing.mapping.TreeHandler;
-import eu.stratosphere.sopremo.expressions.AndExpression;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.JsonStreamExpression;
-import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.JsonStream;
@@ -51,7 +39,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 
 	private transient BooleanExpression foreignKeyExpression = new AndExpression();
 
-	private Set<ObjectCreation.SymbolicAssignment> sourceToValueCorrespondences = new HashSet<ObjectCreation.SymbolicAssignment>();
+	private Set<ObjectCreation.SymbolicAssignment> sourceToValueCorrespondences =
+		new HashSet<ObjectCreation.SymbolicAssignment>();
 
 	private List<EvaluationExpression> sourceSchema = new ArrayList<EvaluationExpression>(),
 			targetSchema = new ArrayList<EvaluationExpression>();
@@ -87,10 +76,10 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			return false;
 		EntityMapping other = (EntityMapping) obj;
 		return this.sourceFKs.equals(other.sourceFKs) &&
-			this.sourceFKs.equals(other.sourceFKs) &&
-			this.sourceFKs.equals(other.sourceFKs) &&
-			this.sourceFKs.equals(other.sourceFKs) &&
-			this.mappingExpression.equals(other.mappingExpression);
+			this.targetFKs.equals(other.targetFKs) &&
+			this.sourceToValueCorrespondences.equals(other.sourceToValueCorrespondences) &&
+			this.sourceSchema.equals(other.sourceSchema) &&
+			this.targetSchema.equals(other.targetSchema);
 	}
 
 	@Property
@@ -119,12 +108,14 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				public void handle(ComparativeExpression value, TreeHandler<Object> treeHandler) {
 					if (value.getBinaryOperator() != BinaryOperator.EQUAL)
 						throw new IllegalArgumentException("Only == supported");
-					SourceFKParser.this.foreignKeyExpressions.add(new ObjectCreation.SymbolicAssignment(value.getExpr1(), value.getExpr2()));
+					SourceFKParser.this.foreignKeyExpressions.add(new ObjectCreation.SymbolicAssignment(
+						value.getExpr1(), value.getExpr2()));
 				}
 			});
 		}
 
-		private Set<ObjectCreation.SymbolicAssignment> foreignKeyExpressions = new HashSet<ObjectCreation.SymbolicAssignment>();
+		private Set<ObjectCreation.SymbolicAssignment> foreignKeyExpressions =
+			new HashSet<ObjectCreation.SymbolicAssignment>();
 
 		@SuppressWarnings("unchecked")
 		public Set<ObjectCreation.SymbolicAssignment> convert(BooleanExpression value) {
@@ -153,9 +144,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
 			NestedOperatorExpression noe =
-				cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " + IdentifyOperator.class);
+				cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " +
+					IdentifyOperator.class);
 			final IdentifyOperator nestedOperator =
-				cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " + IdentifyOperator.class);
+				cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " +
+					IdentifyOperator.class);
 			JsonStream outVar = nestedOperator.getInput(0);
 			int targetIndex = outVar.getSource().getIndex();
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
@@ -178,10 +171,11 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 					for (Mapping<?> subExpr : value.getMappings()) {
 						FieldAssignment assignment = cast(subExpr, ObjectCreation.FieldAssignment.class, "");
 						TargetHandler.this.targetPath =
-							new ObjectAccess(assignment.getTarget()).withInputExpression(TargetHandler.this.targetPath);						
-						treeHandler.handle(assignment.getExpression());
+							new ObjectAccess(assignment.getTarget()).withInputExpression(TargetHandler.this.targetPath);
+						treeHandler.handle(TargetHandler.this.sourcePath = assignment.getExpression());
 						expected.addMapping(assignment.getTarget(), getExpectedTargetSchema());
-						TargetHandler.this.targetPath = (PathSegmentExpression) TargetHandler.this.targetPath.getInputExpression();
+						TargetHandler.this.targetPath =
+							(PathSegmentExpression) TargetHandler.this.targetPath.getInputExpression();
 					}
 					TargetHandler.this.expectedTargetSchema = expected;
 				}
@@ -191,7 +185,7 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				public void handle(ArrayCreation value, TreeHandler<Object> treeHandler) {
 					ArrayCreation expected = new ArrayCreation();
 					for (EvaluationExpression subExpr : value.getElements()) {
-						treeHandler.handle(subExpr);
+						treeHandler.handle(TargetHandler.this.sourcePath = subExpr);
 						expected.add(getExpectedTargetSchema());
 					}
 					TargetHandler.this.expectedTargetSchema = expected;
@@ -200,35 +194,21 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			put(ObjectAccess.class, new NodeHandler<ObjectAccess>() {
 				@Override
 				public void handle(ObjectAccess value, TreeHandler<Object> treeHandler) {
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) {
-						TargetHandler.this.sourcePath = value;
-						TargetHandler.this.expectedSourceSchema.push(EvaluationExpression.VALUE);
-					}
-//					TargetHandler.this.expectedSourceType.add(ObjectCreation.class);
-					TargetHandler.this.expectedSourceSchema.push(new ObjectCreation());
 					treeHandler.handle(value.getInputExpression());
-					ObjectCreation actualObject = cast(TargetHandler.this.actualSourceSchema, ObjectCreation.class, "");
-					TargetHandler.this.actualSourceSchema = actualObject.getExpression(value.getField());
-					EvaluationExpression expectedType = TargetHandler.this.expectedSourceSchema.pop();
-					if(!conforms(TargetHandler.this.actualSourceSchema, expectedType))
-						actualObject.addMapping(value.getField(), TargetHandler.this.actualSourceSchema = expectedType);
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE)
-						TargetHandler.this.sourcePath = value;
 				}
 			});
 			put(InputSelection.class, new NodeHandler<InputSelection>() {
 				@Override
 				public void handle(InputSelection value, TreeHandler<Object> treeHandler) {
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) 
-						TargetHandler.this.sourcePath  = value;
-//					} else
-//						EntityMapping.this.sourceHandler.addToSchema(TargetHandler.this.sourcePath, value.getIndex());
-					EntityMapping.this.sourceToValueCorrespondences.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(), TargetHandler.this.sourcePath));
+					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE)
+						TargetHandler.this.sourcePath = value;
+					else
+						EntityMapping.this.sourceSchema.set(value.getIndex(),
+							EntityMapping.this.sourceHandler.addToSchema(TargetHandler.this.sourcePath,
+								EntityMapping.this.sourceSchema.get(value.getIndex())));
+					EntityMapping.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
+						TargetHandler.this.targetPath.clone(), TargetHandler.this.sourcePath));
 					TargetHandler.this.sourcePath = EvaluationExpression.VALUE;
-					TargetHandler.this.actualSourceSchema = EntityMapping.this.sourceSchema.get(value.getIndex());
-					EvaluationExpression expectedType = TargetHandler.this.expectedSourceSchema.pop();
-					if(!conforms(TargetHandler.this.actualSourceSchema, expectedType))
-						EntityMapping.this.sourceSchema.set(value.getIndex(), TargetHandler.this.actualSourceSchema = expectedType);
 				}
 			});
 			put(JsonStreamExpression.class, new NodeHandler<JsonStreamExpression>() {
@@ -236,54 +216,51 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 				public void handle(JsonStreamExpression value, TreeHandler<Object> treeHandler) {
 					InputSelection output = new InputSelection(value.getStream().getSource().getIndex());
 					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE)
-						EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(), output));
-					else
 						EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(),
-							TargetHandler.this.sourcePath.clone().replace(value, output)));
+							output));
+					else {
+						final EvaluationExpression exprWithInputSel =
+							TargetHandler.this.sourcePath.clone().replace(value, output);
+						EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(),
+							exprWithInputSel));
+						EntityMapping.this.targetSchema.set(output.getIndex(),
+							EntityMapping.this.sourceHandler.addToSchema(exprWithInputSel,
+								EntityMapping.this.targetSchema.get(output.getIndex())));
+					}
 					TargetHandler.this.sourcePath = EvaluationExpression.VALUE;
 				}
 			});
 			put(ArrayAccess.class, new NodeHandler<ArrayAccess>() {
 				@Override
 				public void handle(ArrayAccess value, TreeHandler<Object> treeHandler) {
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) {
-						TargetHandler.this.sourcePath = value;
-					}
-//					TargetHandler.this.expectedSourceType.add(ArrayCreation.class);
 					treeHandler.handle(value.getInputExpression());
 				}
 			});
 			put(FunctionCall.class, new NodeHandler<FunctionCall>() {
-				public void handle(FunctionCall value, eu.stratosphere.sopremo.cleansing.mapping.TreeHandler<Object> treeHandler) {
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) {
-						// TargetHandler.this.sourcePath = value;
-					}
-					for (EvaluationExpression param : value.getParameters())
-						treeHandler.handle(param);
+				@Override
+				public void handle(FunctionCall value, TreeHandler<Object> treeHandler) {
+					throw new UnsupportedOperationException();
+					// if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) {
+					// // TargetHandler.this.sourcePath = value;
+					// }
+					// for (EvaluationExpression param : value.getParameters())
+					// treeHandler.handle(param);
 				}
 			});
 		}
 
-		protected boolean conforms(EvaluationExpression actualSourceSchema, EvaluationExpression expectedType) {
-			if(actualSourceSchema == null || actualSourceSchema == EvaluationExpression.VALUE)
-				return false;
-			if(actualSourceSchema.getClass() == expectedType.getClass())
-				return true;
-			throw new IllegalArgumentException("Incompatible source paths found");
-		}
+		private PathSegmentExpression targetPath;
 
-		private PathSegmentExpression targetPath, sourcePath;
-		
-		private EvaluationExpression expectedTargetSchema, actualSourceSchema;
-		
-		private Deque<EvaluationExpression> expectedSourceSchema = new LinkedList<EvaluationExpression>();
-		
+		private EvaluationExpression sourcePath;
+
+		private EvaluationExpression expectedTargetSchema;
+
 		private EvaluationExpression getExpectedTargetSchema() {
 			EvaluationExpression expected = TargetHandler.this.expectedTargetSchema;
 			TargetHandler.this.expectedTargetSchema = EvaluationExpression.VALUE;
 			return expected;
 		}
-		
+
 		public void process(EvaluationExpression expression, int targetIndex) {
 			this.targetPath = new InputSelection(targetIndex);
 			this.sourcePath = EvaluationExpression.VALUE;
@@ -303,19 +280,61 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 			put(ObjectAccess.class, new NodeHandler<ObjectAccess>() {
 				@Override
 				public void handle(ObjectAccess value, TreeHandler<Object> treeHandler) {
+					SourceHandler.this.expectedSourceSchema.push(new ObjectCreation());
 					treeHandler.handle(value.getInputExpression());
+					ObjectCreation oc = (ObjectCreation) SourceHandler.this.actualSourceSchema;
+					EvaluationExpression expectedType = SourceHandler.this.expectedSourceSchema.poll();
+					SourceHandler.this.actualSourceSchema = oc.getExpression(value.getField());
+					if (!conforms(SourceHandler.this.actualSourceSchema, expectedType))
+						oc.addMapping(value.getField(), SourceHandler.this.actualSourceSchema = expectedType);
 				}
 			});
 			put(ArrayAccess.class, new NodeHandler<ArrayAccess>() {
 				@Override
 				public void handle(ArrayAccess value, TreeHandler<Object> treeHandler) {
+					SourceHandler.this.expectedSourceSchema.push(new ArrayCreation());
 					treeHandler.handle(value.getInputExpression());
+					ArrayCreation ac = (ArrayCreation) SourceHandler.this.actualSourceSchema;
+					EvaluationExpression expectedType = SourceHandler.this.expectedSourceSchema.poll();
+					final List<EvaluationExpression> elements = ac.getElements();
+					CollectionUtil.ensureSize(elements, value.getStartIndex() + 1, EvaluationExpression.VALUE);
+					SourceHandler.this.actualSourceSchema = elements.get(value.getStartIndex());
+					if (!conforms(SourceHandler.this.actualSourceSchema, expectedType)) {
+						elements.set(value.getStartIndex(), SourceHandler.this.actualSourceSchema = expectedType);
+						ac.setElements(elements);
+					}
+				}
+			});
+			put(InputSelection.class, new NodeHandler<InputSelection>() {
+				@Override
+				public void handle(InputSelection value, TreeHandler<Object> treeHandler) {
+					SourceHandler.this.rootSchema = SourceHandler.this.actualSourceSchema;
+					EvaluationExpression expectedType = SourceHandler.this.expectedSourceSchema.poll();
+					if (!conforms(SourceHandler.this.actualSourceSchema, expectedType))
+						SourceHandler.this.rootSchema = SourceHandler.this.actualSourceSchema = expectedType;
 				}
 			});
 		}
 
-		public void addToSchema(EvaluationExpression sourcePath, int index) {
+		protected boolean conforms(EvaluationExpression actualSourceSchema, EvaluationExpression expectedType) {
+			if (expectedType == null)
+				return true;
+			if (actualSourceSchema == null || actualSourceSchema == EvaluationExpression.VALUE)
+				return false;
+			if (actualSourceSchema.getClass() == expectedType.getClass())
+				return true;
+			throw new IllegalArgumentException("Incompatible source paths found");
+		}
+
+		private Deque<EvaluationExpression> expectedSourceSchema = new LinkedList<EvaluationExpression>();
+
+		private EvaluationExpression actualSourceSchema, rootSchema;
+
+		public EvaluationExpression addToSchema(EvaluationExpression sourcePath, EvaluationExpression sourceSchema) {
+			this.expectedSourceSchema.push(EvaluationExpression.VALUE);
+			this.rootSchema = this.actualSourceSchema = sourceSchema;
 			handle(sourcePath);
+			return this.rootSchema;
 		}
 	}
 
@@ -729,7 +748,8 @@ public class EntityMapping extends CompositeOperator<EntityMapping> {
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
 		SopremoUtil.append(appendable, "EntityMapping [sourceFKs=", this.sourceFKs, ", targetFKs=", this.targetFKs,
-			", sourceToValueCorrespondences=", this.sourceToValueCorrespondences, ", sourceSchema=", this.sourceSchema, ", targetSchema=",
+			", sourceToValueCorrespondences=", this.sourceToValueCorrespondences, ", sourceSchema=", this.sourceSchema,
+			", targetSchema=",
 			this.targetSchema, "]");
 	}
 
