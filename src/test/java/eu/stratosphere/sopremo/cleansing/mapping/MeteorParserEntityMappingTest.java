@@ -941,12 +941,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		final SopremoPlan actualPlan = parseScript(query);
 
-		EntityMapping mapping1 = null;
-		EntityMapping mapping2 = null;
+		DataTransformationBase mapping1 = null;
+		DataTransformationBase mapping2 = null;
 		for (Operator<?> operator : actualPlan.getContainedOperators()) {
 			if (operator instanceof EntityMapping) {
-				mapping1 = (EntityMapping) operator;
-				mapping2 = ((EntityMapping) operator).copy();
+				mapping1 = (DataTransformationBase) operator;
+				mapping2 = ((DataTransformationBase) operator).copy();
 				break;
 			}
 		}

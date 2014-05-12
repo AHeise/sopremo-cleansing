@@ -15,10 +15,15 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQNames;
+import static eu.stratosphere.sopremo.pact.SopremoUtil.*;
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQSkolemHandler;
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQUtility;
 import it.unibas.spicy.model.datasource.INode;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+import it.unibas.spicy.model.datasource.nodes.LeafNode;
+import it.unibas.spicy.model.datasource.nodes.SequenceNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;
+import it.unibas.spicy.model.datasource.nodes.TupleNode;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.AppendSkolemPart;
 import it.unibas.spicy.model.generators.FunctionGenerator;
@@ -29,17 +34,21 @@ import it.unibas.spicy.model.generators.NullValueGenerator;
 import it.unibas.spicy.model.generators.SkolemFunctionGenerator;
 import it.unibas.spicy.model.generators.StringSkolemPart;
 import it.unibas.spicy.model.mapping.FORule;
+import it.unibas.spicy.model.mapping.IDataSourceProxy;
 import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.PathExpression;
 import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
+import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
 import it.unibas.spicy.utility.SpicyEngineUtility;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -55,6 +64,9 @@ import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.JsonStream;
 
@@ -99,7 +111,7 @@ public class SpicyUtil {
 			SkolemFunctionGenerator skolemGenerator = (SkolemFunctionGenerator) generator;
 			if (generator.getSubGenerators().size() > 0) {
 				List<EvaluationExpression> strings = skolemString(skolemGenerator, mappingTask);
-				if(strings.size() == 1)
+				if (strings.size() == 1)
 					return strings.get(0);
 				return FunctionUtil.createFunctionCall(CoreFunctions.CONCAT, new ArrayCreation(strings));
 			}
@@ -117,42 +129,41 @@ public class SpicyUtil {
 		}
 		throw new UnsupportedOperationException();
 	}
-	
+
 	public static List<EvaluationExpression> skolemString(SkolemFunctionGenerator generator, MappingTask mappingTask) {
-        if (generator.isLeafGenerator()) {
-            if (generator.getType() == SkolemFunctionGenerator.STANDARD) {
-                if (mappingTask.getConfig().useLocalSkolem()) {
-                	throw new UnsupportedOperationException();
-//                    return generateLocalSkolemFunction(generator, mappingTask);
-                } else {
-                	throw new UnsupportedOperationException();
-//                    return generateHyperGraphSkolemFunction(generator, mappingTask);
-                }
-            } else if (generator.getType() == SkolemFunctionGenerator.KEY) {
-            	throw new UnsupportedOperationException();
-//                return generateSkolemFunctionForKey(generator, mappingTask);
-            } else if (generator.getType() == SkolemFunctionGenerator.EGD_BASED) {
-            	throw new UnsupportedOperationException();
-//                return generateEGDSkolemFunction(generator, mappingTask);
-            }
-            throw new IllegalArgumentException("Incorrect type for leaf generator: " + generator + " - Type: " + generator.getType());
-        }
+		if (generator.isLeafGenerator()) {
+			if (generator.getType() == SkolemFunctionGenerator.STANDARD) {
+				if (mappingTask.getConfig().useLocalSkolem()) {
+					throw new UnsupportedOperationException();
+					// return generateLocalSkolemFunction(generator, mappingTask);
+				} else {
+					throw new UnsupportedOperationException();
+					// return generateHyperGraphSkolemFunction(generator, mappingTask);
+				}
+			} else if (generator.getType() == SkolemFunctionGenerator.KEY) {
+				throw new UnsupportedOperationException();
+				// return generateSkolemFunctionForKey(generator, mappingTask);
+			} else if (generator.getType() == SkolemFunctionGenerator.EGD_BASED) {
+				throw new UnsupportedOperationException();
+				// return generateEGDSkolemFunction(generator, mappingTask);
+			}
+			throw new IllegalArgumentException("Incorrect type for leaf generator: " + generator + " - Type: " + generator.getType());
+		}
 		return generateSkolemFunctionForIntermediateNode(generator, mappingTask);
-    }
-	
-    private static List<EvaluationExpression> generateSkolemFunctionForIntermediateNode(SkolemFunctionGenerator generator, MappingTask mappingTask) {
-        List<EvaluationExpression> expressions = new ArrayList<EvaluationExpression>();
+	}
+
+	private static List<EvaluationExpression> generateSkolemFunctionForIntermediateNode(SkolemFunctionGenerator generator,
+			MappingTask mappingTask) {
+		List<EvaluationExpression> expressions = new ArrayList<EvaluationExpression>();
 		for (GeneratorWithPath subGeneratorWithPath : generator.getSubGenerators()) {
-		    VariablePathExpression subGeneratorPath = subGeneratorWithPath.getTargetPath();
-		    expressions.add(new ObjectAccess(nameForPath(subGeneratorPath)));
+			VariablePathExpression subGeneratorPath = subGeneratorWithPath.getTargetPath();
+			expressions.add(new ObjectAccess(nameForPath(subGeneratorPath)));
 		}
 		return expressions;
-    }
-    
+	}
+
 	public static String nameForPath(VariablePathExpression attributePath) {
-		StringBuilder result = new StringBuilder();
-		result.append(attributePath.getStartingVariable().toShortString()).append("_").append(attributePath.getLastStep());
-		return result.toString();
+		return attributePath.toString();
 	}
 
 	public static EvaluationExpression createRelativePathForMetadataNode(VariablePathExpression path, INode metatadaNode,
@@ -259,38 +270,205 @@ public class SpicyUtil {
 		}
 	}
 
-	private static ThreadLocal<SopremoPathToSpicyPath> SopremoPathToSpicyPath = new ThreadLocal<SpicyUtil.SopremoPathToSpicyPath>(){
+	private static ThreadLocal<SopremoPathToSpicyPath> SopremoPathToSpicyPath = new ThreadLocal<SpicyUtil.SopremoPathToSpicyPath>() {
 		@Override
 		protected SopremoPathToSpicyPath initialValue() {
 			return new SopremoPathToSpicyPath();
 		};
 	};
-	
+
 	public static PathExpression toSpicy(EvaluationExpression targetPath) {
-		return SopremoPathToSpicyPath.get().convert(targetPath);
+		return new PathExpression(new ArrayList<String>(SopremoPathToSpicyPath.get().getSteps(targetPath)));
 	}
-	
+
+	public static PathExpression toSpicy(EvaluationExpression targetPath, PathExpression rootExpression) {
+		ArrayList<String> steps = new ArrayList<String>(rootExpression.getPathSteps());
+		steps.addAll(SopremoPathToSpicyPath.get().getSteps(targetPath));
+		return new PathExpression(steps);
+	}
+
 	private static class SopremoPathToSpicyPath extends TreeHandler<EvaluationExpression> {
 		/**
+		 * 
+		 */
+		private static final String ARRAY_ELEMENT = "element";
+
+		/**
 		 * Initializes SpicyUtil.SopremoPathToSpicyPath.
-		 *
 		 */
 		public SopremoPathToSpicyPath() {
 			put(ObjectAccess.class, new NodeHandler<ObjectAccess>() {
 				@Override
 				public void handle(ObjectAccess value, TreeHandler<Object> treeHandler) {
-					SopremoPathToSpicyPath.this.steps.add(value.getField());
 					treeHandler.handle(value.getInputExpression());
+					SopremoPathToSpicyPath.this.steps.add(value.getField());
+				}
+			});
+			put(InputSelection.class, new NodeHandler<InputSelection>() {
+				@Override
+				public void handle(InputSelection value, TreeHandler<Object> treeHandler) {
+					SopremoPathToSpicyPath.this.steps.add(String.valueOf(value.getIndex()));
+					SopremoPathToSpicyPath.this.steps.add(String.valueOf(ARRAY_ELEMENT));
 				}
 			});
 		}
-		
-		private ArrayList<String> steps = new ArrayList<String>();
+
+		private List<String> steps = new ArrayList<String>();
+
 		@SuppressWarnings("unchecked")
-		public PathExpression convert(EvaluationExpression value) {
-			this.steps.clear();			
+		public List<String> getSteps(EvaluationExpression value) {
+			this.steps.clear();
 			handle(value);
-			return new PathExpression((List<String>) this.steps.clone());
+			return this.steps;
+		}
+	}
+
+	public static INode toSpicySchema(List<EvaluationExpression> schema, String rootLabel) {
+		SequenceNode root = new SequenceNode(rootLabel);
+		root.setRoot(true);
+		for (int index = 0; index < schema.size(); index++) {
+			SetNode dataset = new SetNode(String.valueOf(index));
+			root.addChild(dataset);
+
+			dataset.addChild(SopremoSchemaToSpicySchema.get().convert(schema.get(index)));
+		}
+		return root;
+	}
+
+	private static ThreadLocal<SopremoSchemaToSpicySchema> SopremoSchemaToSpicySchema = new ThreadLocal<SopremoSchemaToSpicySchema>() {
+		@Override
+		protected SopremoSchemaToSpicySchema initialValue() {
+			return new SopremoSchemaToSpicySchema();
+		};
+	};
+
+	private static class SopremoSchemaToSpicySchema extends TreeHandler<EvaluationExpression> {
+		/**
+		 * Initializes SpicyUtil.SopremoPathToSpicyPath.
+		 */
+		public SopremoSchemaToSpicySchema() {
+			put(ObjectCreation.class, new NodeHandler<ObjectCreation>() {
+				@Override
+				public void handle(ObjectCreation value, TreeHandler<Object> treeHandler) {
+					SequenceNode sequenceNode = new SequenceNode(SopremoSchemaToSpicySchema.this.childName);
+					for (Mapping<?> mapping : value.getMappings()) {
+						SopremoSchemaToSpicySchema.this.childName = cast(mapping, FieldAssignment.class, "").getTarget();
+						treeHandler.handle(mapping.getExpression());
+						AttributeNode attributeNode = new AttributeNode(SopremoSchemaToSpicySchema.this.childName);
+						attributeNode.addChild(SopremoSchemaToSpicySchema.this.lastNode);
+						sequenceNode.addChild(attributeNode);
+					}
+					SopremoSchemaToSpicySchema.this.lastNode = sequenceNode;
+				}
+			});
+			put(ArrayCreation.class, new NodeHandler<ArrayCreation>() {
+				@Override
+				public void handle(ArrayCreation value, TreeHandler<Object> treeHandler) {
+					SetNode setNode = new SetNode(SopremoSchemaToSpicySchema.this.childName);
+					List<EvaluationExpression> elements = value.getElements();
+					for (int index = 0; index < elements.size(); index++) {
+						SopremoSchemaToSpicySchema.this.childName = String.valueOf(index);
+						treeHandler.handle(elements.get(index));
+						setNode.addChild(SopremoSchemaToSpicySchema.this.lastNode);
+					}
+					SopremoSchemaToSpicySchema.this.lastNode = setNode;
+				}
+			});
+			put(EvaluationExpression.ValueExpression.class, new NodeHandler<EvaluationExpression.ValueExpression>() {
+				@Override
+				public void handle(EvaluationExpression.ValueExpression value, TreeHandler<Object> treeHandler) {
+					SopremoSchemaToSpicySchema.this.lastNode = new LeafNode("string");
+				}
+			});
+		}
+
+		private INode lastNode;
+
+		private String childName;
+
+		public INode convert(EvaluationExpression schema) {
+			this.childName = "element";
+			this.lastNode = new LeafNode("string");
+			handle(schema);
+			return this.lastNode;
+		}
+	}
+
+	public static EvaluationExpression spicyToSopremo(INode schema, IDataSourceProxy dataSource) {
+		return SpicySchemaToSopremo.get().convert(schema, dataSource);
+	}
+
+	private static ThreadLocal<SpicySchemaToSopremo> SpicySchemaToSopremo = new ThreadLocal<SpicySchemaToSopremo>() {
+		@Override
+		protected SpicySchemaToSopremo initialValue() {
+			return new SpicySchemaToSopremo();
+		};
+	};
+
+	private static class SpicySchemaToSopremo extends TreeHandler<INode> {
+		/**
+		 * Initializes SpicyUtil.SopremoPathToSpicyPath.
+		 */
+		public SpicySchemaToSopremo() {
+			put(SequenceNode.class, new NodeHandler<SequenceNode>() {
+				@Override
+				public void handle(SequenceNode value, TreeHandler<Object> treeHandler) {
+					SpicySchemaToSopremo.this.pathSteps.add(value.getLabel());
+					ObjectCreation oc = new ObjectCreation();
+					for (INode child : value.getChildren()) {
+						treeHandler.handle(child);
+						oc.addMapping(child.getLabel(), SpicySchemaToSopremo.this.lastExpr);
+					}
+					SpicySchemaToSopremo.this.lastExpr = oc;
+					SpicySchemaToSopremo.this.pathSteps.remove(SpicySchemaToSopremo.this.pathSteps.size() - 1);
+				}
+			});
+			put(SetNode.class, new NodeHandler<SetNode>() {
+				@Override
+				public void handle(SetNode value, TreeHandler<Object> treeHandler) {
+					SpicySchemaToSopremo.this.pathSteps.add(value.getLabel());
+					ArrayCreation ac = new ArrayCreation();
+					List<INode> elements = value.getChildren();
+					for (int index = 0; index < elements.size(); index++) {
+						treeHandler.handle(elements.get(index));
+						ac.add(SpicySchemaToSopremo.this.lastExpr);
+					}
+					SpicySchemaToSopremo.this.lastExpr = ac;
+					SpicySchemaToSopremo.this.pathSteps.remove(SpicySchemaToSopremo.this.pathSteps.size() - 1);
+				}
+			});
+			put(AttributeNode.class, new NodeHandler<AttributeNode>() {
+				@Override
+				public void handle(AttributeNode value, TreeHandler<Object> treeHandler) {
+					SpicySchemaToSopremo.this.pathSteps.add(value.getLabel());
+					treeHandler.handle(value.getChild(0));
+					SpicySchemaToSopremo.this.pathSteps.remove(SpicySchemaToSopremo.this.pathSteps.size() - 1);
+				}
+			});
+			put(LeafNode.class, new NodeHandler<LeafNode>() {
+				@Override
+				public void handle(LeafNode value, TreeHandler<Object> treeHandler) {
+					SpicySchemaToSopremo.this.lastExpr = new ObjectAccess(nameForPath(SpicySchemaToSopremo.this.gpe.generateRelativePath(SpicySchemaToSopremo.this.path, SpicySchemaToSopremo.this.dataSource))).withInputExpression(new ObjectAccess("content"));
+				}
+			});
+		}
+
+		private EvaluationExpression lastExpr;
+
+		private IDataSourceProxy dataSource;
+
+		private List<String> pathSteps;
+
+		private PathExpression path;
+		
+		private GeneratePathExpression gpe = new GeneratePathExpression();
+
+		public EvaluationExpression convert(INode schema, IDataSourceProxy dataSource) {
+			this.dataSource = dataSource;
+			this.path = this.gpe.generatePathFromRoot(schema.getFather());
+			this.pathSteps = this.path.getPathSteps();
+			handle(schema);
+			return this.lastExpr;
 		}
 	}
 }
