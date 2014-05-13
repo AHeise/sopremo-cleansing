@@ -55,7 +55,6 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		return this.mappingExpression;
 	}
 
-
 	@Property
 	@Name(preposition = "where")
 	public void setSourceForeignKeyExpression(final BooleanExpression assignment) {
@@ -134,7 +133,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		mergeSourceSchema();
 
 		// add target as late as possible to avoid overwriting it in targetHandler.process
-		for (SymbolicAssignment corr : this.targetFKs) 
+		for (SymbolicAssignment corr : this.targetFKs)
 			EntityMapping.this.sourceHandler.addToSchema(corr.getExpression(), EntityMapping.this.targetSchema);
 		System.out.println(this);
 	}
@@ -145,7 +144,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 	private void mergeSourceSchema() {
 		this.sourceSchema.clear();
 		CollectionUtil.ensureSize(this.sourceSchema, getNumInputs(), EvaluationExpression.VALUE);
-		for (int index = 0; index < this.sourceSchemaFromMapping.size(); index++) 
+		for (int index = 0; index < this.sourceSchemaFromMapping.size(); index++)
 			this.sourceSchema.set(index, this.sourceSchemaFromMapping.get(index).clone());
 		for (SymbolicAssignment corr : this.sourceFKs) {
 			EntityMapping.this.sourceHandler.addToSchema(corr.getExpression(), EntityMapping.this.sourceSchema);
@@ -168,7 +167,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 						FieldAssignment assignment = cast(subExpr, ObjectCreation.FieldAssignment.class, "");
 						TargetHandler.this.targetPath =
 							new ObjectAccess(assignment.getTarget()).withInputExpression(TargetHandler.this.targetPath);
-						treeHandler.handle(TargetHandler.this.sourcePath = assignment.getExpression());
+						treeHandler.handle(assignment.getExpression());
 						expected.addMapping(assignment.getTarget(), getExpectedTargetSchema());
 						TargetHandler.this.targetPath =
 							(PathSegmentExpression) TargetHandler.this.targetPath.getInputExpression();
@@ -180,65 +179,40 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 				@Override
 				public void handle(ArrayCreation value, TreeHandler<Object> treeHandler) {
 					ArrayCreation expected = new ArrayCreation();
-					for (EvaluationExpression subExpr : value.getElements()) {
-						treeHandler.handle(TargetHandler.this.sourcePath = subExpr);
+					List<EvaluationExpression> elements = value.getElements();
+					for (int index = 0; index < elements.size(); index++) {
+						TargetHandler.this.targetPath =
+							new ArrayAccess(index).withInputExpression(TargetHandler.this.targetPath);
+						treeHandler.handle(elements.get(index));
 						expected.add(getExpectedTargetSchema());
+						TargetHandler.this.targetPath =
+							(PathSegmentExpression) TargetHandler.this.targetPath.getInputExpression();
 					}
 					TargetHandler.this.expectedTargetSchema = expected;
 				}
 			});
-			put(ObjectAccess.class, new NodeHandler<ObjectAccess>() {
-				@Override
-				public void handle(ObjectAccess value, TreeHandler<Object> treeHandler) {
-					treeHandler.handle(value.getInputExpression());
-				}
-			});
-			put(InputSelection.class, new NodeHandler<InputSelection>() {
-				@Override
-				public void handle(InputSelection value, TreeHandler<Object> treeHandler) {
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE)
-						TargetHandler.this.sourcePath = value;
-					else
-						EntityMapping.this.sourceHandler.addToSchema(TargetHandler.this.sourcePath, EntityMapping.this.sourceSchemaFromMapping);
-						
-					EntityMapping.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
-						TargetHandler.this.targetPath.clone(), TargetHandler.this.sourcePath));
-					TargetHandler.this.sourcePath = EvaluationExpression.VALUE;
-				}
-			});
-			put(JsonStreamExpression.class, new NodeHandler<JsonStreamExpression>() {
-				@Override
-				public void handle(JsonStreamExpression value, TreeHandler<Object> treeHandler) {
-					InputSelection output = new InputSelection(value.getStream().getSource().getIndex());
-					if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE)
-						EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(),
-							output));
-					else {
-						final EvaluationExpression exprWithInputSel =
-							TargetHandler.this.sourcePath.clone().replace(value, output);
-						EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(),
-							exprWithInputSel));
-					}
-					TargetHandler.this.sourcePath = EvaluationExpression.VALUE;
-				}
-			});
-			put(ArrayAccess.class, new NodeHandler<ArrayAccess>() {
-				@Override
-				public void handle(ArrayAccess value, TreeHandler<Object> treeHandler) {
-					treeHandler.handle(value.getInputExpression());
-				}
-			});
-			put(FunctionCall.class, new NodeHandler<FunctionCall>() {
-				@Override
-				public void handle(FunctionCall value, TreeHandler<Object> treeHandler) {
-					throw new UnsupportedOperationException();
-					// if (TargetHandler.this.sourcePath == EvaluationExpression.VALUE) {
-					// // TargetHandler.this.sourcePath = value;
-					// }
-					// for (EvaluationExpression param : value.getParameters())
-					// treeHandler.handle(param);
-				}
-			});
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.cleansing.mapping.TreeHandler#unknownValueType(java.lang.Object)
+		 */
+		@Override
+		protected void unknownValueType(EvaluationExpression value) {
+			// probably the source path; let the source handler try to parse it and possibly fail
+			JsonStreamExpression streamExpr = value.findFirst(JsonStreamExpression.class);
+			// target FK
+			if (streamExpr != null) {
+				InputSelection output = new InputSelection(streamExpr.getStream().getSource().getIndex());
+				final EvaluationExpression exprWithInputSel = value.clone().replace(streamExpr, output);
+				EntityMapping.this.sourceHandler.addToSchema(exprWithInputSel, EntityMapping.this.targetSchema);
+				EntityMapping.this.targetFKs.add(new SymbolicAssignment(TargetHandler.this.targetPath.clone(),
+					exprWithInputSel));
+			} else {
+				EntityMapping.this.sourceHandler.addToSchema(value, EntityMapping.this.sourceSchemaFromMapping);
+				EntityMapping.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
+					TargetHandler.this.targetPath.clone(), value));
+			}
 		}
 
 		private PathSegmentExpression targetPath;
@@ -723,7 +697,10 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 	 */
 	@Override
 	public void addImplementation(final SopremoModule module) {
-		module.embed(getSpicyMappingTransformation());
+		SpicyMappingTransformation spicyMappingTransformation = getSpicyMappingTransformation();
+		spicyMappingTransformation.setInputs(module.getInputs());
+		for (int index = 0; index < getNumOutputs(); index++) 
+			module.getOutput(index).setInput(0, spicyMappingTransformation.getOutput(index));
 		//
 		// Map<String, Integer> inputIndex = new HashMap<String, Integer>();
 		// for (int i = 0; i < this.getNumInputs(); i++) {

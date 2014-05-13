@@ -32,8 +32,13 @@ public class TreeHandler<V> {
 	@SuppressWarnings("unchecked")
 	public void handle(V value) {
 		NodeHandler<V> nodeHandler = get((Class<? extends V>) value.getClass());
-		if(nodeHandler == null)
-			throw new IllegalArgumentException("Cannot handle " + value + " (" + value.getClass() + ")");
-		nodeHandler.handle(value, (TreeHandler<Object>) this);
-	}		
+		if (nodeHandler == null)
+			unknownValueType(value);
+		else
+			nodeHandler.handle(value, (TreeHandler<Object>) this);
+	}
+
+	protected void unknownValueType(V value) {
+		throw new IllegalArgumentException("Cannot handle " + value + " (" + value.getClass() + ")");
+	}
 }

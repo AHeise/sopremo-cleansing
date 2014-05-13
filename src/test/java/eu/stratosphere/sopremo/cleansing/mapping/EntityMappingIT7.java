@@ -53,7 +53,7 @@ public class EntityMappingIT7 extends MeteorIT {
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
 			"    name: $usCongressMembers.name,\n" +
-			"    worksFor: $legalEntity.id" +
+			"    emp: $legalEntity.id" +
 			"  }," +
 			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
 			"  }" +

@@ -59,6 +59,7 @@ import org.nfunk.jep.Node;
 
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyUtil.InputManager;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
@@ -291,7 +292,7 @@ public class SpicyUtil {
 		/**
 		 * 
 		 */
-		private static final String ARRAY_ELEMENT = "element";
+		private static final String ARRAY_ELEMENT = "0";
 
 		/**
 		 * Initializes SpicyUtil.SopremoPathToSpicyPath.
@@ -302,6 +303,13 @@ public class SpicyUtil {
 				public void handle(ObjectAccess value, TreeHandler<Object> treeHandler) {
 					treeHandler.handle(value.getInputExpression());
 					SopremoPathToSpicyPath.this.steps.add(value.getField());
+				}
+			});
+			put(ArrayAccess.class, new NodeHandler<ArrayAccess>() {
+				@Override
+				public void handle(ArrayAccess value, TreeHandler<Object> treeHandler) {
+					treeHandler.handle(value.getInputExpression());
+					SopremoPathToSpicyPath.this.steps.add(String.valueOf(value.getStartIndex()));
 				}
 			});
 			put(InputSelection.class, new NodeHandler<InputSelection>() {
@@ -354,9 +362,7 @@ public class SpicyUtil {
 					for (Mapping<?> mapping : value.getMappings()) {
 						SopremoSchemaToSpicySchema.this.childName = cast(mapping, FieldAssignment.class, "").getTarget();
 						treeHandler.handle(mapping.getExpression());
-						AttributeNode attributeNode = new AttributeNode(SopremoSchemaToSpicySchema.this.childName);
-						attributeNode.addChild(SopremoSchemaToSpicySchema.this.lastNode);
-						sequenceNode.addChild(attributeNode);
+						sequenceNode.addChild(SopremoSchemaToSpicySchema.this.lastNode);
 					}
 					SopremoSchemaToSpicySchema.this.lastNode = sequenceNode;
 				}
@@ -377,7 +383,9 @@ public class SpicyUtil {
 			put(EvaluationExpression.ValueExpression.class, new NodeHandler<EvaluationExpression.ValueExpression>() {
 				@Override
 				public void handle(EvaluationExpression.ValueExpression value, TreeHandler<Object> treeHandler) {
-					SopremoSchemaToSpicySchema.this.lastNode = new LeafNode("string");
+					AttributeNode attributeNode = new AttributeNode(SopremoSchemaToSpicySchema.this.childName);
+					attributeNode.addChild(new LeafNode("string"));
+					SopremoSchemaToSpicySchema.this.lastNode = attributeNode;
 				}
 			});
 		}
@@ -387,7 +395,7 @@ public class SpicyUtil {
 		private String childName;
 
 		public INode convert(EvaluationExpression schema) {
-			this.childName = "element";
+			this.childName = "0";
 			this.lastNode = new LeafNode("string");
 			handle(schema);
 			return this.lastNode;
@@ -427,13 +435,14 @@ public class SpicyUtil {
 				@Override
 				public void handle(SetNode value, TreeHandler<Object> treeHandler) {
 					SpicySchemaToSopremo.this.pathSteps.add(value.getLabel());
-					ArrayCreation ac = new ArrayCreation();
-					List<INode> elements = value.getChildren();
-					for (int index = 0; index < elements.size(); index++) {
-						treeHandler.handle(elements.get(index));
-						ac.add(SpicySchemaToSopremo.this.lastExpr);
-					}
-					SpicySchemaToSopremo.this.lastExpr = ac;
+					SpicySchemaToSopremo.this.lastExpr = new ObjectAccess(nameForPath(SpicySchemaToSopremo.this.gpe.generateRelativePath(SpicySchemaToSopremo.this.path, SpicySchemaToSopremo.this.dataSource))).withInputExpression(new ObjectAccess("content"));
+//					ArrayCreation ac = new ArrayCreation();
+//					List<INode> elements = value.getChildren();
+//					for (int index = 0; index < elements.size(); index++) {
+//						treeHandler.handle(elements.get(index));
+//						ac.add(SpicySchemaToSopremo.this.lastExpr);
+//					}
+//					SpicySchemaToSopremo.this.lastExpr = ac;
 					SpicySchemaToSopremo.this.pathSteps.remove(SpicySchemaToSopremo.this.pathSteps.size() - 1);
 				}
 			});
