@@ -14,59 +14,60 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
+import static eu.stratosphere.sopremo.type.JsonUtil.createObjectNode;
+
+import java.io.File;
 import java.io.IOException;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
-import eu.stratosphere.sopremo.io.JsonParseException;
-import eu.stratosphere.sopremo.io.JsonParser;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 public class ScrubbingComplexTest extends MeteorIT {
+	private File usCongressMembers, person;
+
+	@Before
+	public void createInput() throws IOException {
+		this.usCongressMembers = this.testServer.createFile(
+				"usCongressMembers.json",
+				createObjectNode(
+						"id",
+						"1990-1994",
+						"name",
+						createObjectNode("firstName", "Adams", "lastName",
+								createObjectNode("value", "Adams")), "biography", 1, "party", "PBC"));
+		this.person = this.testServer.getOutputFile("person.json");
+	}
 
 	@Test
-	public void shouldScrubComplexObject() {
-		SopremoPlan plan = this.getPlan();
-		this.client.submit(plan, null, true);
-		JsonParser parser;
-		try {
-			parser = new JsonParser(new FileReader(
-					"src/test/resources/ScrubbingComplexExpected.json"));
-			parser.setWrappingArraySkipping(true);
-			this.testServer.checkContentsOf("ScrubbingComplexTest.json",
-					parser.readValueAsTree());
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-			Assert.fail();
-		} catch (IOException e) {
-			e.printStackTrace();
-			Assert.fail();
-		}
-	}
+	public void testComplexScrubbing() throws IOException {
 
-	protected SopremoPlan getPlan() {
-		return parseScript("using cleansing;"
-				+ "$data = read from 'src/test/resources/ScrubbingComplexData.json';"
-
-				+ "$data_scrubbed = scrub $data with rules {"
-
-				+ "firstName: required,"
-
-				+ "	worksFor: {"
-				+ "		name: notContainedIn([\"name_B\"]),"
-				+ "		ceos: required"
-				+ " }"
+		String query = "using cleansing;" + "$usCongressMembers = read from '"
+				+ this.usCongressMembers.toURI() + "';\n"
+				+ "$persons_scrubbed = scrub $usCongressMembers with rules{"
+				+ "id: required,"
+				+ "name: {"
+				+ "	firstName: required,"
+				+ "	lastName: {value : required, notin : required}"
+				+ "	}"
 				+ "};"
+				+ "write $persons_scrubbed to '"+ this.person.toURI() + "';\n";
 
-				+ "write $data_scrubbed to 'file:///tmp/ScrubbingComplexTest.json';");
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf(
+				"person.json",
+				createObjectNode("id", 1, "name", "Andrew Adams", "worksFor",
+						JsonUtil.createArrayNode(
+								createObjectNode("LE", "PBC", "endYear", 1994,
+										"startYear", 1990),
+								createObjectNode("LE", "CDU", "endYear", 1998,
+										"startYear", 1994))));
 	}
-
 }
