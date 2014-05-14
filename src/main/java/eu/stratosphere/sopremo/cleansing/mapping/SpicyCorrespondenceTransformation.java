@@ -14,6 +14,11 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import it.unibas.spicy.model.datasource.INode;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+import it.unibas.spicy.model.datasource.nodes.SetNode;
+import it.unibas.spicy.model.datasource.nodes.TupleNode;
+import it.unibas.spicy.model.datasource.operators.FindNode;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.FunctionGenerator;
 import it.unibas.spicy.model.generators.IValueGenerator;
@@ -24,178 +29,214 @@ import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariableCorrespondence;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.nfunk.jep.ASTConstant;
 import org.nfunk.jep.ASTFunNode;
 import org.nfunk.jep.ASTVarNode;
 import org.nfunk.jep.Node;
 
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
+import eu.stratosphere.util.CollectionUtil;
 
 /**
  * Reads Spicy Correspondence, i.e. source attribute to target attribute and creates Sopremo transformation.
  * Attributes can be nested (no arrays yet) and transformations can include functions.
  * 
  * @author Andrina Mascher, Arvid Heise
- *
  */
 public class SpicyCorrespondenceTransformation {
 
-	public ObjectCreation createNestedObjectFromSpicyPaths(TreeMap<PathExpression, IValueGenerator> st_map, SetAlias setAlias) {
-		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
-		int ignoreTargetPrefixSteps = setAlias.getBindingPathExpression().getPathSteps().size() + 1; //we always ignore 1 extra tuple access
-		for(Entry<PathExpression, IValueGenerator> e : st_map.entrySet()) {
-			//target
-			List<String> targetPathList = e.getKey().getPathSteps();
-			List<String> targetPathListTrunc = targetPathList.subList(ignoreTargetPrefixSteps, targetPathList.size()-1); //usually remove first 3 and last step
-			addTargetAttributeCreationToMap(map, targetPathListTrunc, e.getValue());
-		}
-		return createdNestedObject(map);
-	}
-	
-	public ArrayCreation createArrayFromSpicyPaths(List<VariableCorrespondence> correspondences) {
-		Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
-		for(VariableCorrespondence varCor : correspondences) {
-			List<String> targetPathList = EntityMappingUtil.getRelevantPathStepsWithoutInput(varCor.getTargetPath()); //split target and add first as key to map e.g. [v3,fullname,name]
-			Expression function = varCor.getTransformationFunction();	//includes source paths e.g. [v4.usCongressBiographies.usCongressBiography.worksFor]
-			addTargetAttributeCreationToMap(map, targetPathList, new FunctionGenerator(function));
-		}
-		ObjectCreation tempObject = createdNestedObject(map);
-		
-//		List<EvaluationExpression> currentElements = arrayCreationForTargets.getElements();
-//		while(currentElements.size()<=setAlias.getId()){
-//			currentElements.add(ConstantExpression.MISSING);
-//		}
-//		currentElements.set(setAlias.getId(), objectVi);
-		List<EvaluationExpression> tempElements = new ArrayList<EvaluationExpression>();
-		
-		for(Mapping<?> mapping : tempObject.getMappings()){
-			int index = Integer.valueOf(mapping.getTarget().toString());
-			while(tempElements.size()<=index){
-				tempElements.add(ConstantExpression.MISSING);
+	public static EvaluationExpression createNestedObjectFromSpicyPaths(final Map<PathExpression, IValueGenerator> generatorVi,
+			final SetAlias setAlias, final INode schema) {
+		FindNode findNode = new FindNode();
+		INode rootNode = schema;
+
+		Map<List<String>, EvaluationExpression> expressions = new HashMap<List<String>, EvaluationExpression>();
+		for (Entry<PathExpression, IValueGenerator> pathElement : generatorVi.entrySet()) {
+			PathExpression path = pathElement.getKey();
+			if (path.getLastStep().equals("LEAF")) {
+				List<String> steps = path.getPathSteps();
+				int incompleteIndex = 0;
+				for (; incompleteIndex < steps.size(); incompleteIndex++)
+					if (expressions.get(steps.subList(0, incompleteIndex)) == null)
+						break;
+				EvaluationExpression newChild = recursivelyCreate(steps,
+					findNode.findNodeInSchema(new PathExpression(new ArrayList<String>(steps.subList(0, incompleteIndex))), rootNode),
+					incompleteIndex, pathElement.getValue(), expressions);
+				if (incompleteIndex > 0) {
+					EvaluationExpression parentExpr = expressions.get(steps.subList(0, incompleteIndex));
+					if (parentExpr instanceof ObjectCreation)
+						((ObjectCreation) parentExpr).addMapping(steps.get(incompleteIndex), newChild);
+					else
+						((ArrayCreation) parentExpr).add(newChild);
+				}
 			}
+		}
+		return expressions.get(Collections.EMPTY_LIST);
+	}
+
+	private static EvaluationExpression recursivelyCreate(List<String> steps, INode node, int index, IValueGenerator iValueGenerator, Map<List<String>, EvaluationExpression> expressions) {
+		final EvaluationExpression result;
+		if (node instanceof SetNode) {
+			ArrayCreation arrayCreation = new ArrayCreation();
+			arrayCreation.add(recursivelyCreate(steps, node.getChild(steps.get(index + 1)), index + 1, iValueGenerator, expressions));
+			result = arrayCreation;
+		} else if (node instanceof TupleNode) {
+			ObjectCreation objectCreation = new ObjectCreation();
+			objectCreation.addMapping(steps.get(index + 1),
+				recursivelyCreate(steps, node.getChild(steps.get(index + 1)), index + 1, iValueGenerator, expressions));
+			result = objectCreation;
+		} else if (node instanceof AttributeNode) {
+			if (iValueGenerator instanceof FunctionGenerator) {
+				final Expression function = ((FunctionGenerator) iValueGenerator).getFunction();
+				final Node topNode = function.getJepExpression().getTopNode();
+				result = processJepFunctionNode(topNode, function.getAttributePaths());
+			} else if (iValueGenerator instanceof SkolemFunctionGenerator)
+				result = ConstantExpression.NULL;
+			else if (iValueGenerator instanceof NullValueGenerator)
+				result = ConstantExpression.NULL;
+			else
+				throw new IllegalStateException("Unknown generator " + iValueGenerator);
+		} else
+			throw new IllegalStateException("Unknown node type " + node);
+		expressions.put(steps.subList(0, index+1), result);
+		return result;
+	}
+
+	public ArrayCreation createArrayFromSpicyPaths(final List<VariableCorrespondence> correspondences) {
+		final Map<String, List<TargetAttributeCreation>> map = new HashMap<String, List<TargetAttributeCreation>>();
+		for (final VariableCorrespondence varCor : correspondences) {
+			final List<String> targetPathList =
+				EntityMappingUtil.getRelevantPathStepsWithoutInput(varCor.getTargetPath()); // split target and add
+																							// first as key to map e.g.
+																							// [v3,fullname,name]
+			final Expression function = varCor.getTransformationFunction(); // includes source paths e.g.
+																			// [v4.usCongressBiographies.usCongressBiography.worksFor]
+			this.addTargetAttributeCreationToMap(map, targetPathList, new FunctionGenerator(function));
+		}
+		final ObjectCreation tempObject = this.createdNestedObject(map);
+
+		final List<EvaluationExpression> tempElements = new ArrayList<EvaluationExpression>();
+
+		for (final Mapping<?> mapping : tempObject.getMappings()) {
+			final int index = Integer.valueOf(mapping.getTarget().toString());
+			CollectionUtil.ensureSize(tempElements, index + 1, ConstantExpression.MISSING);
 			tempElements.set(index, mapping.getExpression());
 		}
 		return new ArrayCreation(tempElements);
-		//return createdNestedObject(map);
 	}
-	
-	public ObjectCreation createdNestedObject(Map<String, List<TargetAttributeCreation>> map) {
-		ObjectCreation object = new ObjectCreation();
-		for(Entry<String, List<TargetAttributeCreation>> entry : map.entrySet()) {
-			List<TargetAttributeCreation> tacList = entry.getValue();
-			if(tacList.size() == 1 && tacList.get(0).getTargetPath() == null){
-				//reached leaf, calculate value
-				TargetAttributeCreation tac = tacList.get(0);
+
+	public ObjectCreation createdNestedObject(final Map<String, List<TargetAttributeCreation>> map) {
+		final ObjectCreation object = new ObjectCreation();
+		for (final Entry<String, List<TargetAttributeCreation>> entry : map.entrySet()) {
+			final List<TargetAttributeCreation> tacList = entry.getValue();
+			if (tacList.size() == 1 && tacList.get(0).getTargetPath().isEmpty()) {
+				// reached leaf, calculate value
+				final TargetAttributeCreation tac = tacList.get(0);
 				EvaluationExpression sopremoSourcePath = null;
-				if(tac.getValueGen() instanceof FunctionGenerator) {
-					Expression function = ((FunctionGenerator) tac.getValueGen()).getFunction();
-					Node topNode = function.getJepExpression().getTopNode();
-					sopremoSourcePath = processJepFunctionNode(topNode, function.getAttributePaths());					
-				} else if(tac.getValueGen() instanceof SkolemFunctionGenerator){
-					//TODO
-					//SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen();
+				if (tac.getValueGen() instanceof FunctionGenerator) {
+					final Expression function = ((FunctionGenerator) tac.getValueGen()).getFunction();
+					final Node topNode = function.getJepExpression().getTopNode();
+					sopremoSourcePath = this.processJepFunctionNode(topNode, function.getAttributePaths());
+				} else if (tac.getValueGen() instanceof SkolemFunctionGenerator)
+					// TODO
+					// SkolemFunctionGenerator sourcePathSpicy = (SkolemFunctionGenerator) tac.getValueGen();
 					sopremoSourcePath = ConstantExpression.NULL;
-				} else if(tac.getValueGen() instanceof NullValueGenerator) {
+				else if (tac.getValueGen() instanceof NullValueGenerator)
 					sopremoSourcePath = ConstantExpression.NULL;
-				}
 				object.addMapping(entry.getKey(), sopremoSourcePath);
 			} else {
-				//reached multiple inner attributes, create map for inner level
-				Map<String, List<TargetAttributeCreation>> innerMap = new HashMap<String, List<TargetAttributeCreation>>();
-				for(TargetAttributeCreation tac : tacList) {
-					//add innerTAC to inner map		
-					addTargetAttributeCreationToMap(innerMap, tac.getTargetPath(), tac.getValueGen());
-				}
-				object.addMapping(entry.getKey(), createdNestedObject(innerMap));
+				// reached multiple inner attributes, create map for inner level
+				final Map<String, List<TargetAttributeCreation>> innerMap =
+					new HashMap<String, List<TargetAttributeCreation>>();
+				for (final TargetAttributeCreation tac : tacList)
+					// add innerTAC to inner map
+					this.addTargetAttributeCreationToMap(innerMap, tac.getTargetPath(), tac.getValueGen());
+				object.addMapping(entry.getKey(), this.createdNestedObject(innerMap));
 			}
 		}
 		return object;
 	}
 
-	private void addTargetAttributeCreationToMap(Map<String, List<TargetAttributeCreation>> innerMap, List<String> pathList, IValueGenerator valueGen) {
-		//create TAC
-		TargetAttributeCreation innerTAC = new TargetAttributeCreation();
+	private void addTargetAttributeCreationToMap(final Map<String, List<TargetAttributeCreation>> innerMap,
+			final List<String> pathList, final IValueGenerator valueGen) {
+		// create TAC
+		final TargetAttributeCreation innerTAC = new TargetAttributeCreation();
 		innerTAC.setValue(valueGen);
-		String innerKey = pathList.remove(0);
-		if(pathList.size() > 0) {
-			innerTAC.setTargetPath( pathList );						
-		}
-		//add to map
-		if(innerMap.containsKey(innerKey)) {
-			List<TargetAttributeCreation> list = innerMap.get(innerKey);
+		final String innerKey = pathList.get(0);
+		innerTAC.setTargetPath(pathList.subList(1, pathList.size()));
+		// add to map
+		if (innerMap.containsKey(innerKey)) {
+			final List<TargetAttributeCreation> list = innerMap.get(innerKey);
 			list.add(innerTAC);
 		} else {
-			List<TargetAttributeCreation> list = new ArrayList<TargetAttributeCreation>();
+			final List<TargetAttributeCreation> list = new ArrayList<TargetAttributeCreation>();
 			list.add(innerTAC);
 			innerMap.put(innerKey, list);
 		}
 	}
-	
-	private EvaluationExpression processJepFunctionNode(Node topNode, List<VariablePathExpression> sourcePaths) {
-		if (topNode instanceof ASTVarNode) { // usual 1:1-mapping without a
-												// function
+
+	private static EvaluationExpression processJepFunctionNode(final Node topNode,
+			final List<VariablePathExpression> sourcePaths) {
+		if (topNode instanceof ASTVarNode)
+			// function
 			return createFunctionSourcePath(((ASTVarNode) topNode).getVarName(), sourcePaths);
-			// TODO remove JepFunctionFactory?!
-		} else if (topNode instanceof FunctionNode) {
-			FunctionNode fnNode = (FunctionNode) topNode;
+		// TODO remove JepFunctionFactory?!
+		else if (topNode instanceof FunctionNode) {
+			final FunctionNode fnNode = (FunctionNode) topNode;
 			return fnNode.getExpression();
-		} else if (topNode instanceof ASTConstant) {
+		} else if (topNode instanceof ASTConstant)
 			return new ConstantExpression(((ASTConstant) topNode).getValue());
-		} else if (topNode instanceof ASTFunNode) { // uses a function
+		else if (topNode instanceof ASTFunNode)
 			return JepFunctionFactory.create((ASTFunNode) topNode, sourcePaths);
-		}
-		return null;
+		throw new IllegalStateException("Unknown node type");
 	}
 
-	private PathSegmentExpression createFunctionSourcePath(String pathFromFunction, List<VariablePathExpression> sourcePaths) {
-			//e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;
-			String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
-	
-			//chose suitable sourcePath that matches pathFromFunction
-			//e.g. sourcePath[0] = v1.usCongressBiography.worksFor;
-			for(VariablePathExpression exp : sourcePaths) {
-				if(exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length-1])) 
-					return EntityMappingUtil.convertSpicyPath("0", exp);
-			}
-			return null;
-		}
+	private static PathSegmentExpression createFunctionSourcePath(final String pathFromFunction,
+			final List<VariablePathExpression> sourcePaths) {
+		// e.g. pathFromFunction = usCongress.usCongressBiographies.usCongressBiography.worksFor;
+		final String[] pathFromFunctionSteps = pathFromFunction.split("\\.");
+
+		// chose suitable sourcePath that matches pathFromFunction
+		// e.g. sourcePath[0] = v1.usCongressBiography.worksFor;
+		for (final VariablePathExpression exp : sourcePaths)
+			if (exp.getLastStep().equals(pathFromFunctionSteps[pathFromFunctionSteps.length - 1]))
+				return EntityMappingUtil.convertSpicyPath("0", exp);
+		return null;
+	}
 }
 
 /**
  * used in nested attributes: path to target and how target is calculated
  * 
  * @author Andrina
- *
  */
 class TargetAttributeCreation {
 	List<String> targetPath;
-	IValueGenerator value; //includes function (e.g. + or split) and source paths
-	
+
+	IValueGenerator value; // includes function (e.g. + or split) and source paths
+
 	public List<String> getTargetPath() {
-		return targetPath;
+		return this.targetPath;
 	}
-	public void setTargetPath(List<String> targetPath) {
+
+	public void setTargetPath(final List<String> targetPath) {
 		this.targetPath = targetPath;
 	}
+
 	public IValueGenerator getValueGen() {
-		return value;
+		return this.value;
 	}
-	public void setValue(IValueGenerator value) {
+
+	public void setValue(final IValueGenerator value) {
 		this.value = value;
 	}
+
+	@Override
 	public String toString() {
-		return "TargetAttributeCreation: " + targetPath + " = " + value.toString(); 
+		return "TargetAttributeCreation: " + this.targetPath + " = " + this.value.toString();
 	}
 }

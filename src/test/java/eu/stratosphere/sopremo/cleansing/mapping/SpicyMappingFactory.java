@@ -2,11 +2,7 @@ package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.algebra.IAlgebraOperator;
 import it.unibas.spicy.model.correspondence.ValueCorrespondence;
-import it.unibas.spicy.model.datasource.DataSource;
-import it.unibas.spicy.model.datasource.ForeignKeyConstraint;
-import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.JoinCondition;
-import it.unibas.spicy.model.datasource.KeyConstraint;
+import it.unibas.spicy.model.datasource.*;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
 import it.unibas.spicy.model.datasource.nodes.LeafNode;
 import it.unibas.spicy.model.datasource.nodes.SetNode;

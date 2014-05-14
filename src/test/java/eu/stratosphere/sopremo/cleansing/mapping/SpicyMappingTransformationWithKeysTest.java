@@ -10,12 +10,7 @@ import org.junit.Test;
 
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
-import eu.stratosphere.sopremo.type.ArrayNode;
-import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.IntNode;
-import eu.stratosphere.sopremo.type.NullNode;
-import eu.stratosphere.sopremo.type.ObjectNode;
-import eu.stratosphere.sopremo.type.TextNode;
+import eu.stratosphere.sopremo.type.*;
 
 public class SpicyMappingTransformationWithKeysTest extends
 		SopremoOperatorTestBase<SpicyMappingTransformation> {
