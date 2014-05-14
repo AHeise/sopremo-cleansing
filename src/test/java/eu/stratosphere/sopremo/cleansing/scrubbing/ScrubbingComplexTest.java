@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 public class ScrubbingComplexTest extends MeteorIT {
@@ -39,13 +40,19 @@ public class ScrubbingComplexTest extends MeteorIT {
 						"1990-1994",
 						"name",
 						createObjectNode("firstName", "Adams", "lastName",
-								createObjectNode("value", "Adams")), "biography", 1, "party", "PBC"));
+								createObjectNode("value", "Adams")), "biography", 1, "party", "PBC"),
+				createObjectNode(
+										"id",
+										"1990-1994",
+										"name",
+										createObjectNode("firstName", "Adams", "lastName",
+												createObjectNode("value", "Adams", "notin" , 1)), "biography", 1, "party", "PBC"));
 		this.person = this.testServer.getOutputFile("person.json");
 	}
 
 	@Test
 	public void testComplexScrubbing() throws IOException {
-
+		SopremoUtil.trace();
 		String query = "using cleansing;" + "$usCongressMembers = read from '"
 				+ this.usCongressMembers.toURI() + "';\n"
 				+ "$persons_scrubbed = scrub $usCongressMembers with rules{"
@@ -63,11 +70,11 @@ public class ScrubbingComplexTest extends MeteorIT {
 
 		this.testServer.checkContentsOf(
 				"person.json",
-				createObjectNode("id", 1, "name", "Andrew Adams", "worksFor",
-						JsonUtil.createArrayNode(
-								createObjectNode("LE", "PBC", "endYear", 1994,
-										"startYear", 1990),
-								createObjectNode("LE", "CDU", "endYear", 1998,
-										"startYear", 1994))));
+				createObjectNode(
+						"id",
+						"1990-1994",
+						"name",
+						createObjectNode("firstName", "Adams", "lastName",
+								createObjectNode("value", "Adams", "notin" , 1)), "biography", 1, "party", "PBC"));
 	}
 }

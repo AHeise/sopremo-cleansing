@@ -2,112 +2,47 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
-
-import com.esotericsoftware.kryo.DefaultSerializer;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.Serializer;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.serializers.FieldSerializer;
-import com.esotericsoftware.kryo.serializers.MapSerializer;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import java.util.List;
 
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Selection;
 import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.cleansing.fusion.ValueTreeContains;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression.ValueExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
-import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Internal;
+import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
+import eu.stratosphere.sopremo.tree.NodeHandler;
+import eu.stratosphere.sopremo.tree.TreeHandler;
 
 @InputCardinality(1)
 @OutputCardinality(1)
-@DefaultSerializer(value = RuleBasedScrubbing.RuleBasedScrubbingSerializer.class)
+
 @Internal
 public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
-	public static class RuleBasedScrubbingSerializer extends
-			Serializer<RuleBasedScrubbing> {
-		FieldSerializer<RuleBasedScrubbing> fieldSerializer;
 
-		public RuleBasedScrubbingSerializer(Kryo kryo,
-				Class<RuleBasedScrubbing> type) {
-			fieldSerializer = new FieldSerializer<RuleBasedScrubbing>(kryo,
-					type);
-		}
-
-		@Override
-		public void write(Kryo kryo,
-				com.esotericsoftware.kryo.io.Output output,
-				RuleBasedScrubbing object) {
-			fieldSerializer.write(kryo, output, object);
-			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = new HashMap<PathSegmentExpression, Collection<EvaluationExpression>>();
-			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : object.rules
-					.asMap().entrySet()) {
-				Collection<EvaluationExpression> tempList = new ArrayList<EvaluationExpression>();
-				tempList.addAll(entry.getValue());
-				backingMapCopy.put(entry.getKey(), tempList);
-			}
-
-			kryo.writeObject(output, backingMapCopy, new MapSerializer());
-		}
-
-		@Override
-		public RuleBasedScrubbing read(Kryo kryo, Input input,
-				Class<RuleBasedScrubbing> type) {
-			RuleBasedScrubbing object = fieldSerializer.read(kryo, input, type);
-			MapSerializer mapSerializer = new MapSerializer();
-			mapSerializer.setKeyClass(PathSegmentExpression.class, null);
-			mapSerializer.setValueClass(Collection.class, null);
-			@SuppressWarnings("unchecked")
-			Map<PathSegmentExpression, Collection<EvaluationExpression>> backingMapCopy = kryo
-					.readObject(input, HashMap.class, mapSerializer);
-			for (Entry<PathSegmentExpression, Collection<EvaluationExpression>> entry : backingMapCopy
-					.entrySet()) {
-				object.rules.putAll(entry.getKey(), entry.getValue());
-			}
-
-			return object;
-		}
-
-		@Override
-		public RuleBasedScrubbing copy(Kryo kryo, RuleBasedScrubbing original) {
-			RuleBasedScrubbing copy = this.fieldSerializer.copy(kryo, original);
-			for (Entry<PathSegmentExpression, EvaluationExpression> rule : original.rules
-					.entries()) {
-				copy.addRule((EvaluationExpression) rule.getValue().copy(),
-						(PathSegmentExpression) rule.getKey().copy());
-			}
-			return copy;
-		}
-	}
-
-	public RuleBasedScrubbing() {
-		@SuppressWarnings("unused")
-		int i = 0;
-	}
-
-	private Multimap<PathSegmentExpression, EvaluationExpression> rules = ArrayListMultimap
-			.create();
+	private List<SymbolicAssignment> rules = new ArrayList<SymbolicAssignment>();
 
 	public void addRule(EvaluationExpression ruleExpression,
 			PathSegmentExpression target) {
-		this.rules.put(target, ruleExpression);
+		this.rules.add(new SymbolicAssignment(target, ruleExpression));
 	}
 
 	public void removeRule(EvaluationExpression ruleExpression,
 			PathSegmentExpression target) {
-		this.rules.remove(target, ruleExpression);
+		this.rules.remove(new SymbolicAssignment(ruleExpression, target));
 	}
 
 	@Override
@@ -131,8 +66,15 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 			return;
 		}
 
+		for (SymbolicAssignment corr : this.rules) {
+			ArrayList<EvaluationExpression> ruleList = new ArrayList<EvaluationExpression>();
+			ruleList.add(corr.getExpression());
+			PathSegmentExpression cse = new ScrubbingSpecificChainedSegmentExpression(ruleList).withTail(corr.getTarget());
+			RuleBasedScrubbing.this.targetSchemaHandler.addToSchema(corr.getTarget(), cse);
+		}
+		
 		Projection normalization = new Projection().withResultProjection(
-				this.createResultProjection()).withInputs(module.getInput(0));
+				this.targetSchemaHandler.targetSchema).withInputs(module.getInput(0));
 		Selection filterInvalid = new Selection().withCondition(
 				new UnaryExpression(
 						new ValueTreeContains(FilterRecord.Instance), true))
@@ -144,7 +86,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 	 * @return
 	 */
 	private EvaluationExpression createResultProjection() {
-		// no nested rule
+		/*// no nested rule
 		if (this.rules.size() == 1
 				&& this.rules.containsKey(EvaluationExpression.VALUE))
 			return new ScrubbingSpecificChainedSegmentExpression(
@@ -165,7 +107,8 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 					new ScrubbingSpecificChainedSegmentExpression(this.rules
 							.get(path)).withTail(path));
 		}
-		return objectCreation;
+		return objectCreation;*/
+		return null;
 	}
 
 	/**
@@ -218,12 +161,67 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 		}
 
 	}
+	
+	private transient SchemaHandler targetSchemaHandler = new SchemaHandler();
+
+	private class SchemaHandler extends TreeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression> {
+		/**
+		 * Initializes EntityMapping.SourceHandler.
+		 */
+		public SchemaHandler() {
+			put(ObjectAccess.class, new NodeHandler<ObjectAccess, EvaluationExpression, EvaluationExpression>() {
+				@Override
+				public EvaluationExpression handle(ObjectAccess value, EvaluationExpression expected,
+						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+					ObjectCreation oc = new ObjectCreation();
+					oc.addMapping(new ObjectCreation.CopyFields(value.getInputExpression()));
+					
+					oc = (ObjectCreation)
+						treeHandler.handle(value.getInputExpression(), oc);
+					
+					EvaluationExpression actualSourceSchema = oc.getExpression(value.getField());
+					if (!conforms(actualSourceSchema, expected))
+						oc.addMapping(value.getField(), actualSourceSchema = expected);
+					return actualSourceSchema;
+				}
+			});
+			put(ValueExpression.class, new NodeHandler<ValueExpression, EvaluationExpression, EvaluationExpression>() {
+				@Override
+				public EvaluationExpression handle(ValueExpression value, EvaluationExpression expected,
+						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+					EvaluationExpression actualSourceSchema = RuleBasedScrubbing.this.targetSchemaHandler.targetSchema;
+					if (!conforms(actualSourceSchema, expected)){
+						actualSourceSchema = expected;
+						RuleBasedScrubbing.this.targetSchemaHandler.targetSchema = actualSourceSchema;
+					}
+						
+					return actualSourceSchema;
+				}
+			});
+		}
+
+		protected boolean conforms(EvaluationExpression actualSourceSchema, EvaluationExpression expectedType) {
+			if (expectedType == null)
+				return true;
+			if (actualSourceSchema == null || actualSourceSchema == EvaluationExpression.VALUE)
+				return false;
+			if (actualSourceSchema.getClass() == expectedType.getClass())
+				return true;
+			throw new IllegalArgumentException("Incompatible source paths found");
+		}
+
+		private EvaluationExpression targetSchema;
+
+		public void addToSchema(EvaluationExpression sourcePath, EvaluationExpression ruleExpression) {
+			handle(sourcePath, ruleExpression);
+		}
+	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + this.rules.hashCode();
+		result = prime * result + ((rules == null) ? 0 : rules.hashCode());
 		return result;
 	}
 
@@ -233,24 +231,15 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 			return true;
 		if (!super.equals(obj))
 			return false;
+		if (getClass() != obj.getClass())
+			return false;
 		RuleBasedScrubbing other = (RuleBasedScrubbing) obj;
-
-		// for (Entry<PathSegmentExpression, EvaluationExpression> entry :
-		// this.rules
-		// .entries()) {
-		// if (!other.rules.containsEntry(entry.getKey(), entry.getValue())) {
-		// return false;
-		// }
-		// }
-		// for (Entry<PathSegmentExpression, EvaluationExpression> entry :
-		// other.rules
-		// .entries()) {
-		// if (!this.rules.containsEntry(entry.getKey(), entry.getValue())) {
-		// return false;
-		// }
-		// }
-		// return true;
-		return this.rules.equals(other.rules);
+		if (rules == null) {
+			if (other.rules != null)
+				return false;
+		} else if (!rules.equals(other.rules))
+			return false;
+		return true;
 	}
 
 	/*
