@@ -23,7 +23,6 @@ import java.util.Set;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.OutputCardinality;

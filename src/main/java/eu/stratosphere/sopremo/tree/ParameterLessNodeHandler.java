@@ -12,8 +12,21 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.mapping;
+package eu.stratosphere.sopremo.tree;
 
-public interface NodeHandler<V> {
-	public void handle(V value, TreeHandler<Object> treeHandler);
+/**
+ * 
+ */
+public abstract class ParameterLessNodeHandler<V, R> extends NodeHandler<V, R, Object> {
+	/*
+	 * (non-Javadoc)
+	 * @see eu.stratosphere.sopremo.tree.NodeHandler#handle(java.lang.Object, java.lang.Object,
+	 * eu.stratosphere.sopremo.tree.TreeHandler)
+	 */
+	@Override
+	public R handle(V value, Object param, TreeHandler<Object, R, Object> treeHandler) {
+		return handle(value, treeHandler);
+	}
+
+	protected abstract R handle(V value, TreeHandler<Object, R, Object> treeHandler);
 }

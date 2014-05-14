@@ -12,33 +12,32 @@
  * specific language governing permissions and limitations under the License.
  *
  **********************************************************************************************************************/
-package eu.stratosphere.sopremo.cleansing.mapping;
+package eu.stratosphere.sopremo.tree;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class TreeHandler<V> {
-	private Map<Class<V>, NodeHandler<V>> handlers = new HashMap<Class<V>, NodeHandler<V>>();
+public class TreeHandler<V, R, P> {
+	private Map<Class<V>, NodeHandler<V, R, P>> handlers = new HashMap<Class<V>, NodeHandler<V, R, P>>();
 
-	public NodeHandler<V> get(Class<? extends V> key) {
+	public NodeHandler<V, R, P> get(Class<? extends V> key) {
 		return this.handlers.get(key);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <N extends V> void put(Class<N> key, NodeHandler<N> handler) {
-		this.handlers.put((Class<V>) key, (NodeHandler<V>) handler);
+	public <N extends V> void put(Class<N> key, NodeHandler<N, ? extends R, P> handler) {
+		this.handlers.put((Class<V>) key, (NodeHandler<V, R, P>) handler);
 	}
 
 	@SuppressWarnings("unchecked")
-	public void handle(V value) {
-		NodeHandler<V> nodeHandler = get((Class<? extends V>) value.getClass());
+	public R handle(V value, P param) {
+		NodeHandler<V, R, P> nodeHandler = get((Class<? extends V>) value.getClass());
 		if (nodeHandler == null)
-			unknownValueType(value);
-		else
-			nodeHandler.handle(value, (TreeHandler<Object>) this);
+			return unknownValueType(value, param);
+		return nodeHandler.handle(value, param, (TreeHandler<Object, R, P>) this);
 	}
 
-	protected void unknownValueType(V value) {
+	protected R unknownValueType(V value, P param) {
 		throw new IllegalArgumentException("Cannot handle " + value + " (" + value.getClass() + ")");
 	}
 }

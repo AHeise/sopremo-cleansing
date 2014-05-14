@@ -22,29 +22,14 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import it.unibas.spicy.model.datasource.INode;
-import it.unibas.spicy.model.datasource.nodes.AttributeNode;
-import it.unibas.spicy.model.datasource.nodes.LeafNode;
-import it.unibas.spicy.model.datasource.nodes.MetadataNode;
-import it.unibas.spicy.model.datasource.nodes.SequenceNode;
-import it.unibas.spicy.model.datasource.nodes.SetNode;
-import it.unibas.spicy.model.datasource.nodes.TupleNode;
-import it.unibas.spicy.model.datasource.nodes.UnionNode;
+import it.unibas.spicy.model.datasource.nodes.*;
 import it.unibas.spicy.model.datasource.operators.INodeVisitor;
-import it.unibas.spicy.model.generators.FunctionGenerator;
-import it.unibas.spicy.model.generators.GeneratorWithPath;
-import it.unibas.spicy.model.generators.IValueGenerator;
-import it.unibas.spicy.model.generators.NullValueGenerator;
-import it.unibas.spicy.model.generators.SkolemFunctionGenerator;
-import it.unibas.spicy.model.generators.TGDGeneratorsMap;
+import it.unibas.spicy.model.generators.*;
 import it.unibas.spicy.model.generators.operators.GenerateSkolemGenerators;
 import it.unibas.spicy.model.mapping.FORule;
 import it.unibas.spicy.model.mapping.IDataSourceProxy;
 import it.unibas.spicy.model.mapping.MappingTask;
-import it.unibas.spicy.model.paths.PathExpression;
-import it.unibas.spicy.model.paths.SetAlias;
-import it.unibas.spicy.model.paths.VariableCorrespondence;
-import it.unibas.spicy.model.paths.VariableJoinCondition;
-import it.unibas.spicy.model.paths.VariablePathExpression;
+import it.unibas.spicy.model.paths.*;
 import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
 
 import java.util.ArrayList;
