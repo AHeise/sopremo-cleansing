@@ -121,9 +121,12 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
 			EntityMapping.this.sourceHandler.addToSchema(nestedOperator.getKeyExpression(),
 				EntityMapping.this.sourceSchemaFromMapping);
-			this.sourceToValueCorrespondences.add(new SymbolicAssignment(
-				new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex)),
-				nestedOperator.getKeyExpression()));
+			if (this.targetSchema.get(targetIndex) instanceof ObjectCreation) {
+				final PathSegmentExpression idAttr =
+					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
+				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
+				this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr, nestedOperator.getKeyExpression()));
+			}
 		}
 
 		mergeSourceSchema();
@@ -246,6 +249,25 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 					return actualSourceSchema;
 				}
 			});
+			put(FunctionCall.class, new NodeHandler<FunctionCall, EvaluationExpression, EvaluationExpression>() {
+				@Override
+				public EvaluationExpression handle(FunctionCall value, EvaluationExpression expected,
+						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+					if (expected != EvaluationExpression.VALUE)
+						throw new IllegalArgumentException("Functions can only be used in the beginning");
+					for (EvaluationExpression param : value.getParameters())
+						treeHandler.handle(param, EvaluationExpression.VALUE);
+					return EvaluationExpression.VALUE;
+				}
+			});
+			put(ConstantExpression.class,
+				new NodeHandler<ConstantExpression, EvaluationExpression, EvaluationExpression>() {
+					@Override
+					public EvaluationExpression handle(ConstantExpression value, EvaluationExpression param,
+							TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+						return EvaluationExpression.VALUE;
+					}
+				});
 			put(InputSelection.class, new NodeHandler<InputSelection, EvaluationExpression, EvaluationExpression>() {
 				@Override
 				public EvaluationExpression handle(InputSelection value, EvaluationExpression expected,
@@ -259,7 +281,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		}
 
 		protected boolean conforms(EvaluationExpression actualSourceSchema, EvaluationExpression expectedType) {
-			if (expectedType == null)
+			if (expectedType == null || actualSourceSchema == expectedType)
 				return true;
 			if (actualSourceSchema == null || actualSourceSchema == EvaluationExpression.VALUE)
 				return false;

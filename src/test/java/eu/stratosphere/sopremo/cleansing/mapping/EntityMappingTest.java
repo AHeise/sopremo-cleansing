@@ -12,7 +12,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
 public class EntityMappingTest extends SopremoOperatorTestBase<EntityMapping> {
 
 	@Override
-	protected DataTransformationBase createDefaultInstance(int index) {
+	protected EntityMapping createDefaultInstance(int index) {
 		EntityMapping entityMapping = new EntityMapping();
 
 		entityMapping.setInput(0, new Source("file:///0"));
