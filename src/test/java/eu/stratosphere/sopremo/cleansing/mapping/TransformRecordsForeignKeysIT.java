@@ -183,7 +183,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers with {" +
+			"  entity $person with {" +
 			"    employers: [{legalEntity: $legalEntity.id}]" +
 			"  }," +
 			"  entity $legalEntity with {" +
