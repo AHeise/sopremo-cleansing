@@ -103,7 +103,6 @@ public class GenerateValueGenerators {
 	}
 
 	private List<GeneratorWithPath> findGeneratorsForVariable(FORule tgd, Map<String, IValueGenerator> generators, SetAlias variable) {
-		// TODO:********* variable or generators ?
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		for (VariableCorrespondence correspondence : tgd.getCoveredCorrespondences()) {
 			if (correspondence.getTargetPath().getStartingVariable().getId() == variable.getId()) {

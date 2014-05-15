@@ -7,6 +7,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
 import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
@@ -116,23 +119,28 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
-			NestedOperatorExpression noe =
-				cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " +
-					IdentifyOperator.class);
-			final IdentifyOperator nestedOperator =
-				cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " +
-					IdentifyOperator.class);
+			NestedOperatorExpression noe = cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " +
+				IdentifyOperator.class);
+			final IdentifyOperator nestedOperator = cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " +
+				IdentifyOperator.class);
 			JsonStream outVar = nestedOperator.getInput(0);
+			if (outVar.getSource().getOperator() != this)
+				throw new IllegalArgumentException("Input variable to nested operator must be an output variable");
 			int targetIndex = outVar.getSource().getIndex();
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
-			DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getGroupingKey(),
-				DataTransformation.this.sourceSchemaFromMapping);
+			if (nestedOperator.getGroupingKey() != EvaluationExpression.VALUE)
+				this.targetPKs.add((PathSegmentExpression) nestedOperator.getGroupingKey().replace(
+					Predicates.instanceOf(InputSelection.class), new InputSelection(targetIndex)));
+			// DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getGroupingKey(),
+			// DataTransformation.this.sourceSchemaFromMapping);
 			if (this.targetSchema.get(targetIndex) instanceof ObjectCreation) {
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
 				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
 				this.targetPKs.add(idAttr);
-				this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr, nestedOperator.getGroupingKey()));
+				// if (nestedOperator.getGroupingKey() != EvaluationExpression.VALUE)
+				// this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr,
+				// nestedOperator.getGroupingKey()));
 			}
 		}
 
@@ -345,6 +353,8 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		spicyMappingTransformation.setTargetSchema(getTargetSchema());
 		spicyMappingTransformation.setSourceFKs(getSourceFKs());
 		spicyMappingTransformation.setTargetFKs(getTargetFKs());
+		spicyMappingTransformation.setSourcePKs(getSourcePKs());
+		spicyMappingTransformation.setTargetPKs(getTargetPKs());
 		spicyMappingTransformation.setSourceToValueCorrespondences(getSourceToValueCorrespondences());
 
 		return spicyMappingTransformation;

@@ -25,6 +25,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 public class SimpleTransformRecordsIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
@@ -32,13 +33,15 @@ public class SimpleTransformRecordsIT extends MeteorIT {
 	@Before
 	public void createFiles() throws IOException {
 		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json", 
-				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"),
-				createObjectNode("id", "usCongress2", "name", "John Adams", "biography", "A000039"), 
-				createObjectNode("id", "usCongress3", "name", "John Doe", "biography", "A000059"));
+				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029")
+//				createObjectNode("id", "usCongress2", "name", "John Adams", "biography", "A000039"), 
+//				createObjectNode("id", "usCongress3", "name", "John Doe", "biography", "A000059")
+				);
 		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json", 
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"),
-				createObjectNode("biographyId", "A000059", "worksFor", "CompanyUVW"),
-				createObjectNode("biographyId", "A000049", "worksFor", "CompanyABC"));
+				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ")
+//				createObjectNode("biographyId", "A000059", "worksFor", "CompanyUVW"),
+//				createObjectNode("biographyId", "A000049", "worksFor", "CompanyABC")
+				);
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
@@ -52,12 +55,12 @@ public class SimpleTransformRecordsIT extends MeteorIT {
 				"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
 				"into [\n" +  
-				"  entity $usCongressMembers identified by $usCongressMembers.id with {" + 
-				"    name: $usCongressMembers.name,\n" +
-				"    worksFor: $legalEntity.id" + 
+				"  entity $person with {" + // identified by $person.pname
+				"    pname: $usCongressMembers.name,\n" +
+				"    pworksFor: $legalEntity.id" + 
 				"  }," + 
-				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
-				"    name: $usCongressBiographies.worksFor" + 
+				"  entity $legalEntity identified by $legalEntity.lname with {" + 
+				"    lname: $usCongressBiographies.worksFor" + 
 				"  }" + 
 				"];\n" + 
 				"write $person to '" + this.person.toURI() + "';\n" +
@@ -65,16 +68,17 @@ public class SimpleTransformRecordsIT extends MeteorIT {
 		
 		final SopremoPlan plan = parseScript(query);
 		
+		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 		
 		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "worksFor", "CompanyXYZ"),
-				createObjectNode("id", null, "name", null, "worksFor", "CompanyABC"),
-				createObjectNode("id", "usCongress3", "name", "John Doe", "worksFor", "CompanyUVW"));
+				createObjectNode("id", "usCongress1", "pname", "Andrew Adams", "pworksFor", "CompanyXYZ"),
+				createObjectNode("id", null, "pname", null, "pworksFor", "CompanyABC"),
+				createObjectNode("id", "usCongress3", "pname", "John Doe", "pworksFor", "CompanyUVW"));
 		
 		this.testServer.checkContentsOf("legalEntity.json",
-				createObjectNode("id", "CompanyXYZ", "name", "CompanyXYZ"),
-				createObjectNode("id", "CompanyUVW", "name", "CompanyUVW"),
-				createObjectNode("id", "CompanyABC", "name", "CompanyABC"));
+				createObjectNode("id", "CompanyXYZ", "lname", "CompanyXYZ"),
+				createObjectNode("id", "CompanyUVW", "lname", "CompanyUVW"),
+				createObjectNode("id", "CompanyABC", "lname", "CompanyABC"));
 	}
 }

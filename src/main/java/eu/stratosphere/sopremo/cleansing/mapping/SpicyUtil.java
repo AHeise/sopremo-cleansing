@@ -15,6 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import static eu.stratosphere.sopremo.pact.SopremoUtil.cast;
+import it.unibas.spicy.model.algebra.query.operators.xquery.XQNames;
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQUtility;
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
@@ -29,8 +30,10 @@ import it.unibas.spicy.model.mapping.MappingTask;
 import it.unibas.spicy.model.paths.PathExpression;
 import it.unibas.spicy.model.paths.SetAlias;
 import it.unibas.spicy.model.paths.VariableCorrespondence;
+import it.unibas.spicy.model.paths.VariableJoinCondition;
 import it.unibas.spicy.model.paths.VariablePathExpression;
 import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
+import it.unibas.spicy.utility.SpicyEngineUtility;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -123,10 +126,18 @@ public class SpicyUtil {
 				if (mappingTask.getConfig().useLocalSkolem()) {
 					throw new UnsupportedOperationException();
 					// return generateLocalSkolemFunction(generator, mappingTask);
-				} else {
-					throw new UnsupportedOperationException();
-					// return generateHyperGraphSkolemFunction(generator, mappingTask);
 				}
+				Map<SetAlias, List<GeneratorWithPath>> generatorsByAlias = groupGeneratorsByAlias(generator);
+				for (SetAlias variable : generatorsByAlias.keySet()) {
+				    List<GeneratorWithPath> generatorGroup = generatorsByAlias.get(variable);
+				    ISkolemPart generatePartForAlias = generatePartForAlias(variable, generatorGroup, generator.getTgd(), mappingTask);
+				    System.out.println(generatePartForAlias);
+				}
+				List<GeneratorWithPath> subGenerators = generator.getSubGenerators();
+//					List<VariableJoinCondition> joinConditions = generator.getJoinConditions();
+				
+				throw new UnsupportedOperationException();
+				// return generateHyperGraphSkolemFunction(generator, mappingTask);
 			} else if (generator.getType() == SkolemFunctionGenerator.KEY) {
 				throw new UnsupportedOperationException();
 				// return generateSkolemFunctionForKey(generator, mappingTask);
@@ -140,9 +151,49 @@ public class SpicyUtil {
 		return generateSkolemFunctionForIntermediateNode(generator, mappingTask);
 	}
 
+    private static Map<SetAlias, List<GeneratorWithPath>> groupGeneratorsByAlias(SkolemFunctionGenerator skolemFunction) {
+        Map<SetAlias, List<GeneratorWithPath>> groups = new HashMap<SetAlias, List<GeneratorWithPath>>();
+        for (GeneratorWithPath subGenerator : skolemFunction.getSubGenerators()) {
+            SetAlias generatorVariable = subGenerator.getTargetPath().getStartingVariable();
+            List<GeneratorWithPath> variableGroup = groups.get(generatorVariable);
+            if (variableGroup == null) {
+                variableGroup = new ArrayList<GeneratorWithPath>();
+                groups.put(generatorVariable, variableGroup);
+            }
+            variableGroup.add(subGenerator);
+        }
+        return groups;
+    }
+    
+    private static ISkolemPart generatePartForAlias(SetAlias variable, List<GeneratorWithPath> subGenerators, FORule rule, MappingTask mappingTask) {
+        ISkolemPart generatorsAppend = new AppendSkolemPart(false, true, "[", "]\"", "-");
+        for (GeneratorWithPath subGeneratorWithPath : subGenerators) {
+            PathExpression absolutePath = subGeneratorWithPath.getTargetPath().getAbsolutePath();
+            ISkolemPart appendForSubGenerator = new AppendSkolemPart(false, true, "", ",\"", ":\",");
+
+            String attributeValue = generateAttributeValue(subGeneratorWithPath, rule, mappingTask);
+            appendForSubGenerator.addChild(new StringSkolemPart(attributeValue));
+            generatorsAppend.addChild(appendForSubGenerator);
+        }
+        return generatorsAppend;
+    }
+
+    private static String generateAttributeValue(GeneratorWithPath subGeneratorWithPath, FORule rule, MappingTask mappingTask) {
+        VariablePathExpression targetPath = subGeneratorWithPath.getTargetPath();
+        String attributeNameInVariable = "";
+//        if (GenerateSQL.hasDifferences(rule)) {
+        VariablePathExpression sourcePath = XQUtility.findSourcePath(rule.getCoveredCorrespondences(), targetPath);
+        attributeNameInVariable = XQNames.attributeNameInVariable(sourcePath);
+//        } else {
+//            VariablePathExpression sourcePath = GenerateSQL.findSourcePath(rule.getCoveredCorrespondences(), targetPath);
+//            attributeNameInVariable = GenerateSQL.attributeNameWithVariable(sourcePath);
+//        }
+        return mappingTask.getDBMSHandler().coalesceFunctionWithNull(attributeNameInVariable);
+    }
+
+    
 	private static List<EvaluationExpression> generateSkolemFunctionForIntermediateNode(
-			SkolemFunctionGenerator generator,
-			MappingTask mappingTask) {
+			SkolemFunctionGenerator generator, MappingTask mappingTask) {
 		List<EvaluationExpression> expressions = new ArrayList<EvaluationExpression>();
 		for (GeneratorWithPath subGeneratorWithPath : generator.getSubGenerators()) {
 			VariablePathExpression subGeneratorPath = subGeneratorWithPath.getTargetPath();

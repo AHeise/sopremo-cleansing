@@ -26,6 +26,14 @@ public class SopremoFunctionExpression extends Expression {
 	public EvaluationExpression getExpr() {
 		return this.expr;
 	}
+	
+	/* (non-Javadoc)
+	 * @see it.unibas.spicy.model.expressions.Expression#toString()
+	 */
+	@Override
+	public String toString() {
+		return expr.toString();
+	}
 
 	public SopremoFunctionExpression(final EvaluationExpression expr) {
 		super("sum(1,1)");

@@ -15,6 +15,7 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,7 @@ import eu.stratosphere.sopremo.cleansing.DataTransformation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
@@ -74,7 +76,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getSourceFKs());
 
 		List<ObjectCreation> targetSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
@@ -83,7 +85,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
@@ -101,7 +103,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	}
 
 	@Test
-	public void testFinalSchemaMapping() {
+	public void testForeignKey() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
@@ -126,7 +128,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography_o"),
 			JsonUtil.createPath("1", "biographyId_o")));
@@ -138,7 +140,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -179,7 +181,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getSourceFKs());
 
 		List<ObjectCreation> targetSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
@@ -188,7 +190,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
@@ -231,7 +233,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("biography", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography"),
 			JsonUtil.createPath("1", "biographyId")));
@@ -243,7 +245,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
@@ -285,7 +287,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getSourceFKs());
 
 		List<ObjectCreation> targetSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
@@ -295,7 +297,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -336,7 +338,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<ObjectCreation> sourceSchema = Lists.<ObjectCreation> newArrayList(new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getSourceFKs());
 
 		List<ObjectCreation> targetSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
@@ -345,7 +347,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -390,7 +392,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography_o"),
 			JsonUtil.createPath("1", "biographyId_o")));
@@ -402,7 +404,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -448,7 +450,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("1", "biographyId_o"), JsonUtil.createPath("0",
 			"biography_o")));
@@ -460,7 +462,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -476,6 +478,26 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
+	}
+
+	private static void assertSchemaEquals(List<? extends EvaluationExpression> expected, List<EvaluationExpression> actual) {
+		sortMappings(expected);
+		sortMappings(actual);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * @param expected
+	 */
+	private static void sortMappings(List<? extends EvaluationExpression> expressions) {
+		for (EvaluationExpression expression : expressions)
+			for (ObjectCreation oc : expression.findAll(ObjectCreation.class))
+				Collections.sort(oc.getMappings(), new Comparator<Mapping<?>>() {
+					@Override
+					public int compare(Mapping<?> o1, Mapping<?> o2) {
+						return ((String) o1.getTarget()).compareTo((String) o2.getTarget());
+					}
+				});
 	}
 
 	@Test
@@ -512,7 +534,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
 		sourceSchema.get(2).addMapping("name", EvaluationExpression.VALUE);
 		sourceSchema.get(2).addMapping("letterCode", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography_o"),
 			JsonUtil.createPath("1", "biographyId_o")));
@@ -527,7 +549,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -577,7 +599,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Set<SymbolicAssignment> sourceFKs = new HashSet<SymbolicAssignment>();
 		sourceFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography_o"),
 			JsonUtil.createPath("1", "biographyId_o")));
@@ -591,7 +613,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(2).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Set<SymbolicAssignment> targetFKs = new HashSet<SymbolicAssignment>();
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
@@ -634,7 +656,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
-		Assert.assertEquals(sourceSchema, em.getSourceSchema());
+		assertSchemaEquals(sourceSchema, em.getSourceSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getSourceFKs());
 
 		List<ObjectCreation> targetSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
@@ -643,7 +665,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name_l", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
-		Assert.assertEquals(targetSchema, em.getTargetSchema());
+		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
