@@ -28,7 +28,7 @@ import com.google.common.collect.Lists;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.cleansing.EntityMapping;
+import eu.stratosphere.sopremo.cleansing.DataTransformation;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -44,11 +44,11 @@ import eu.stratosphere.util.SopremoKryo;
  */
 public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
-	private EntityMapping parseAndGetOperator(String query) {
+	private DataTransformation parseAndGetOperator(String query) {
 		SopremoPlan actualPlan = parseScript(query);
 		actualPlan = SopremoTestUtil.transferToClassManager(actualPlan, new SopremoKryo());
-		return (EntityMapping) Iterables.find(actualPlan.getContainedOperators(),
-			Predicates.instanceOf(EntityMapping.class));
+		return (DataTransformation) Iterables.find(actualPlan.getContainedOperators(),
+			Predicates.instanceOf(DataTransformation.class));
 	}
 
 	@Test
@@ -68,7 +68,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -118,7 +118,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -173,7 +173,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -223,7 +223,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -278,7 +278,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -331,7 +331,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.<ObjectCreation> newArrayList(new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -382,7 +382,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -440,7 +440,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -500,7 +500,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema =
 			Lists.newArrayList(new ObjectCreation(), new ObjectCreation(), new ObjectCreation());
@@ -569,7 +569,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $legalEntity to 'file://legalEntity.json';\n"
 			+ "write $personNames to 'file://personNames.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -628,7 +628,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
+		DataTransformation em = parseAndGetOperator(query);
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
@@ -678,8 +678,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "write $person to 'file://person.json';\n"
 			+ "write $legalEntity to 'file://legalEntity.json';";
 
-		EntityMapping em = parseAndGetOperator(query);
-		EntityMapping em2 = em.copy();
+		DataTransformation em = parseAndGetOperator(query);
+		DataTransformation em2 = em.copy();
 		Assert.assertEquals(em, em2);
 	}
 }

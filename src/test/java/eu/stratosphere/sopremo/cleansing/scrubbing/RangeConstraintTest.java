@@ -1,7 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.EqualCloneTest;
@@ -13,7 +12,7 @@ public class RangeConstraintTest extends EqualCloneTest<RangeConstraint> {
 
 	private RangeConstraint createRule(int min, int max, ValueCorrection correction) {
 		RangeConstraint rule = new RangeConstraint(IntNode.valueOf(min),
-				IntNode.valueOf(max));
+			IntNode.valueOf(max));
 		rule.setValueCorrection(correction);
 		return rule;
 	}
@@ -25,7 +24,7 @@ public class RangeConstraintTest extends EqualCloneTest<RangeConstraint> {
 	@Override
 	protected RangeConstraint createDefaultInstance(int index) {
 		RangeConstraint rule = this.createRule(index, index + 100,
-				new DefaultValueCorrection(IntNode.valueOf(index)));
+			new DefaultValueCorrection(IntNode.valueOf(index)));
 		return rule;
 	}
 
@@ -45,21 +44,21 @@ public class RangeConstraintTest extends EqualCloneTest<RangeConstraint> {
 	public void shouldRemoveWrongValue() {
 		RangeConstraint rule = this.createRule(100, 200);
 		Assert.assertEquals(FilterRecord.Instance,
-				rule.fix(IntNode.valueOf(250)));
+			rule.fix(IntNode.valueOf(250)));
 	}
 
 	@Test
 	public void shouldCorrectWrongValueGreaterMax() {
 		RangeConstraint rule = this.createRule(100, 200,
-				CleansFunctions.CHOOSE_NEAREST_BOUND);
+			CleansFunctions.CHOOSE_NEAREST_BOUND);
 		Assert.assertEquals(IntNode.valueOf(200),
-				rule.fix(IntNode.valueOf(250)));
+			rule.fix(IntNode.valueOf(250)));
 	}
 
 	@Test
 	public void shouldCorrectWrongValueSmallerMin() {
 		RangeConstraint rule = this.createRule(100, 200,
-				CleansFunctions.CHOOSE_NEAREST_BOUND);
+			CleansFunctions.CHOOSE_NEAREST_BOUND);
 		Assert.assertEquals(IntNode.valueOf(100), rule.fix(IntNode.valueOf(50)));
 	}
 }

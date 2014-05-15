@@ -15,8 +15,11 @@ import eu.stratosphere.sopremo.type.IntNode;
 public class WhiteListConstraintTest extends EqualCloneTest<WhiteListConstraint> {
 
 	private final IJsonNode V1 = IntNode.valueOf(100);
+
 	private final IJsonNode V2 = IntNode.valueOf(200);
+
 	private final IJsonNode V3 = IntNode.valueOf(300);
+
 	private final IJsonNode V_WRONG = IntNode.valueOf(400);
 
 	private final List<IJsonNode> whitelist = new ArrayList<IJsonNode>() {
@@ -26,9 +29,9 @@ public class WhiteListConstraintTest extends EqualCloneTest<WhiteListConstraint>
 		private static final long serialVersionUID = 2531859104149221143L;
 
 		{
-			this.add(V1);
-			this.add(V2);
-			this.add(V3);
+			this.add(WhiteListConstraintTest.this.V1);
+			this.add(WhiteListConstraintTest.this.V2);
+			this.add(WhiteListConstraintTest.this.V3);
 		}
 	};
 
@@ -54,25 +57,25 @@ public class WhiteListConstraintTest extends EqualCloneTest<WhiteListConstraint>
 	@Test
 	public void shouldValidateCorrectValue() {
 		WhiteListConstraint rule = this.createRule(this.whitelist);
-		Assert.assertTrue(rule.validate(V2));
+		Assert.assertTrue(rule.validate(this.V2));
 	}
 
 	@Test
 	public void shouldNotValidateWrongValue() {
 		WhiteListConstraint rule = this.createRule(this.whitelist);
-		Assert.assertFalse(rule.validate(V_WRONG));
+		Assert.assertFalse(rule.validate(this.V_WRONG));
 	}
 
 	@Test
 	public void shouldRemoveWrongValue() {
 		WhiteListConstraint rule = this.createRule(this.whitelist);
-		Assert.assertEquals(FilterRecord.Instance, rule.fix(V_WRONG));
+		Assert.assertEquals(FilterRecord.Instance, rule.fix(this.V_WRONG));
 	}
 
 	@Test
 	public void shouldCorrectWrongValue() {
 		WhiteListConstraint rule = this.createRule(this.whitelist,
-				CleansFunctions.CHOOSE_FIRST_FROM_LIST);
-		Assert.assertEquals(V1, rule.fix(V_WRONG));
+			CleansFunctions.CHOOSE_FIRST_FROM_LIST);
+		Assert.assertEquals(this.V1, rule.fix(this.V_WRONG));
 	}
 }

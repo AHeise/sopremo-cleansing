@@ -14,6 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
+import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.expressions.ArithmeticExpression.ArithmeticOperator;
 import eu.stratosphere.sopremo.function.SopremoFunction;
 import eu.stratosphere.sopremo.function.SopremoFunction1;
 import eu.stratosphere.sopremo.function.SopremoFunction2;
@@ -30,38 +32,32 @@ import eu.stratosphere.sopremo.type.IntNode;
 public class NumericUDFs implements BuiltinProvider {
 
 	@Name(noun = "absDiff")
-	public static SopremoFunction ABS_DIFF = new SopremoFunction2<IJsonNode, IJsonNode>() {
+	public static SopremoFunction ABS_DIFF = new SopremoFunction2<IntNode, IntNode>() {
 		@Override
-		protected IntNode call(IJsonNode element1, IJsonNode element2) {
-			if (element1 instanceof IntNode
-					&& element2 instanceof IntNode) {
-				final int element1IntValue = ((IntNode) element1).getBigIntegerValue().intValue();
-				final int element2IntValue = ((IntNode) element2).getBigIntegerValue().intValue();
-				final int diff = element1IntValue-element2IntValue;
-				final int absDiff = Math.abs(diff);
-				return IntNode.valueOf(absDiff);
-			}
-			return IntNode.ZERO;
+		protected IntNode call(IntNode element1, IntNode element2) {
+			final int element1IntValue = element1.getIntValue();
+			final int element2IntValue = element2.getIntValue();
+			final int diff = element1IntValue - element2IntValue;
+			final int absDiff = Math.abs(diff);
+			return IntNode.valueOf(absDiff);
 		}
 	};
-	
+
 	@Name(noun = "diff")
-	public static SopremoFunction DIFF = new SopremoFunction2<IJsonNode, IJsonNode>() {
+	public static SopremoFunction DIFF = new SopremoFunction2<IntNode, IntNode>() {
 		@Override
-		protected IntNode call(IJsonNode element1, IJsonNode element2) {
-			if (element1 instanceof IntNode
-					&& element2 instanceof IntNode) {
-				final int element1IntValue = ((IntNode) element1).getBigIntegerValue().intValue();
-				final int element2IntValue = ((IntNode) element2).getBigIntegerValue().intValue();
-				final int diff = element1IntValue-element2IntValue;
-				return IntNode.valueOf(diff);
-			}
-			return IntNode.ZERO;
+		protected IntNode call(IntNode element1, IntNode element2) {
+			final int element1IntValue = element1.getIntValue();
+			final int element2IntValue = element2.getIntValue();
+			final int diff = element1IntValue - element2IntValue;
+			return IntNode.valueOf(diff);
 		}
 	};
-	
+
 	@Name(verb = "abs")
 	public static final SopremoFunction ABS = new SopremoFunction1<INumericNode>() {
+		private transient NodeCache nodeCache = new NodeCache();
+
 		/**
 		 * returns the absolute value of a number
 		 * 
@@ -71,7 +67,9 @@ public class NumericUDFs implements BuiltinProvider {
 		 */
 		@Override
 		protected IJsonNode call(final INumericNode number) {
-			return new DoubleNode(Math.abs(number.getDoubleValue()));
+			if (number.getDoubleValue() < 0)
+				return ArithmeticOperator.SUBTRACTION.evaluate(IntNode.ZERO, number, nodeCache);
+			return number;
 		}
 	};
 }

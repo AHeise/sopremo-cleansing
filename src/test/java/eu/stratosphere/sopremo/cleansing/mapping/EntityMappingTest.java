@@ -1,6 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import eu.stratosphere.sopremo.cleansing.EntityMapping;
+import eu.stratosphere.sopremo.cleansing.DataTransformation;
 import eu.stratosphere.sopremo.expressions.ArrayCreation;
 import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
@@ -9,11 +9,11 @@ import eu.stratosphere.sopremo.io.Source;
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
-public class EntityMappingTest extends SopremoOperatorTestBase<EntityMapping> {
+public class EntityMappingTest extends SopremoOperatorTestBase<DataTransformation> {
 
 	@Override
-	protected EntityMapping createDefaultInstance(int index) {
-		EntityMapping entityMapping = new EntityMapping();
+	protected DataTransformation createDefaultInstance(int index) {
+		DataTransformation entityMapping = new DataTransformation();
 
 		entityMapping.setInput(0, new Source("file:///0"));
 		ObjectCreation mapping1 = new ObjectCreation();

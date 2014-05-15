@@ -2,18 +2,32 @@ package eu.stratosphere.sopremo.cleansing;
 
 import static eu.stratosphere.sopremo.pact.SopremoUtil.cast;
 
-import java.util.*;
-
-import org.apache.tools.ant.helper.ProjectHelper2.TargetHandler;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
 import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
-import eu.stratosphere.sopremo.expressions.*;
+import eu.stratosphere.sopremo.expressions.AndExpression;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.FunctionCall;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.JsonStreamExpression;
+import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Property;
@@ -24,8 +38,8 @@ import eu.stratosphere.sopremo.tree.ReturnlessTreeHandler;
 import eu.stratosphere.sopremo.tree.TreeHandler;
 import eu.stratosphere.util.CollectionUtil;
 
-@Name(noun = "map entities of")
-public class EntityMapping extends DataTransformationBase<EntityMapping> {
+@Name(noun = "transform records")
+public class DataTransformation extends DataTransformationBase<DataTransformation> {
 	private transient ArrayCreation mappingExpression = new ArrayCreation();
 
 	private transient BooleanExpression sourceForeignKeyExpression = new AndExpression();
@@ -123,8 +137,8 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 			JsonStream outVar = nestedOperator.getInput(0);
 			int targetIndex = outVar.getSource().getIndex();
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
-			EntityMapping.this.sourceHandler.addToSchema(nestedOperator.getKeyExpression(),
-				EntityMapping.this.sourceSchemaFromMapping);
+			DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getKeyExpression(),
+				DataTransformation.this.sourceSchemaFromMapping);
 			if (this.targetSchema.get(targetIndex) instanceof ObjectCreation) {
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
@@ -138,7 +152,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 
 		// add target as late as possible to avoid overwriting it in targetHandler.process
 		for (SymbolicAssignment corr : this.targetFKs)
-			EntityMapping.this.sourceHandler.addToSchema(corr.getExpression(), EntityMapping.this.targetSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(), DataTransformation.this.targetSchema);
 		System.out.println(this);
 	}
 
@@ -151,8 +165,8 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		for (int index = 0; index < this.sourceSchemaFromMapping.size(); index++)
 			this.sourceSchema.set(index, this.sourceSchemaFromMapping.get(index).clone());
 		for (SymbolicAssignment corr : this.sourceFKs) {
-			EntityMapping.this.sourceHandler.addToSchema(corr.getExpression(), EntityMapping.this.sourceSchema);
-			EntityMapping.this.sourceHandler.addToSchema(corr.getTargetTagExpression(), EntityMapping.this.sourceSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(), DataTransformation.this.sourceSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getTargetTagExpression(), DataTransformation.this.sourceSchema);
 		}
 	}
 
@@ -203,19 +217,19 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 			if (streamExpr != null) {
 				InputSelection output = new InputSelection(streamExpr.getStream().getSource().getIndex());
 				final EvaluationExpression exprWithInputSel = value.clone().replace(streamExpr, output);
-				EntityMapping.this.sourceHandler.addToSchema(exprWithInputSel, EntityMapping.this.targetSchema);
-				EntityMapping.this.targetFKs.add(new SymbolicAssignment(targetPath.clone(),
+				DataTransformation.this.sourceHandler.addToSchema(exprWithInputSel, DataTransformation.this.targetSchema);
+				DataTransformation.this.targetFKs.add(new SymbolicAssignment(targetPath.clone(),
 					exprWithInputSel));
 			} else {
-				EntityMapping.this.sourceHandler.addToSchema(value, EntityMapping.this.sourceSchemaFromMapping);
-				EntityMapping.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
+				DataTransformation.this.sourceHandler.addToSchema(value, DataTransformation.this.sourceSchemaFromMapping);
+				DataTransformation.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
 					targetPath.clone(), value));
 			}
 			return EvaluationExpression.VALUE;
 		}
 
 		public void process(EvaluationExpression expression, int targetIndex) {
-			EntityMapping.this.targetSchema.set(targetIndex, handle(expression, new InputSelection(targetIndex)));
+			DataTransformation.this.targetSchema.set(targetIndex, handle(expression, new InputSelection(targetIndex)));
 		}
 	}
 
@@ -312,12 +326,12 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		return this.sourceForeignKeyExpression;
 	}
 
-	public EntityMapping withForeignKeys(final BooleanExpression assignment) {
+	public DataTransformation withForeignKeys(final BooleanExpression assignment) {
 		setSourceForeignKeyExpression(assignment);
 		return this;
 	}
 
-	public EntityMapping withMappingExpression(final ArrayCreation assignment) {
+	public DataTransformation withMappingExpression(final ArrayCreation assignment) {
 		setMappingExpression(assignment);
 		return this;
 	}

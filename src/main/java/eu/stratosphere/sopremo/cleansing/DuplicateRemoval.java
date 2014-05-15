@@ -17,7 +17,11 @@ package eu.stratosphere.sopremo.cleansing;
 import eu.stratosphere.sopremo.base.ArraySplit;
 import eu.stratosphere.sopremo.base.Difference;
 import eu.stratosphere.sopremo.base.UnionAll;
-import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.SopremoModule;
 
 /**
  * Detects duplicates, fuses them, and combines the non-duplicates the the fused records.

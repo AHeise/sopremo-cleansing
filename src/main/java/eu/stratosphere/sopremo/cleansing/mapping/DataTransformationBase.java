@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import eu.stratosphere.sopremo.cleansing.EntityMapping;
+import eu.stratosphere.sopremo.cleansing.DataTransformation;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
@@ -270,7 +270,7 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		EntityMapping other = (EntityMapping) obj;
+		DataTransformation other = (DataTransformation) obj;
 		return this.sourcePKs.equals(other.sourcePKs) &&
 			this.targetPKs.equals(other.targetPKs) &&
 			this.sourceFKs.equals(other.sourceFKs) &&

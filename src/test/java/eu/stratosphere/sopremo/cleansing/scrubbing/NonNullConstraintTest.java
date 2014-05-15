@@ -13,7 +13,9 @@ import eu.stratosphere.sopremo.type.NullNode;
 public class NonNullConstraintTest extends EqualCloneTest<NonNullConstraint> {
 
 	private final IJsonNode NON_NULL = IntNode.ONE;
+
 	private final IJsonNode NULL = NullNode.getInstance();
+
 	private final IJsonNode MISSING = MissingNode.getInstance();
 
 	@Override
@@ -23,27 +25,27 @@ public class NonNullConstraintTest extends EqualCloneTest<NonNullConstraint> {
 
 	@Test
 	public void shouldValidateNonNullValues() {
-		Assert.assertTrue(new NonNullConstraint().validate(NON_NULL));
+		Assert.assertTrue(new NonNullConstraint().validate(this.NON_NULL));
 	}
 
 	@Test
 	public void shouldNotValidateNullValues() {
-		Assert.assertFalse(new NonNullConstraint().validate(NULL));
+		Assert.assertFalse(new NonNullConstraint().validate(this.NULL));
 	}
 
 	@Test
 	public void shouldNotValidateMissingValues() {
-		Assert.assertFalse(new NonNullConstraint().validate(MISSING));
+		Assert.assertFalse(new NonNullConstraint().validate(this.MISSING));
 	}
 
 	@Test
 	public void shouldRemoveNullValues() {
-		Assert.assertEquals(FilterRecord.Instance, new NonNullConstraint().fix(NULL));
+		Assert.assertEquals(FilterRecord.Instance, new NonNullConstraint().fix(this.NULL));
 	}
 
 	@Test
 	public void shouldReplaceNullValuesWithDefault() {
-		Assert.assertEquals(NON_NULL, new NonNullConstraint(NON_NULL).fix(NULL));
+		Assert.assertEquals(this.NON_NULL, new NonNullConstraint(this.NON_NULL).fix(this.NULL));
 	}
 
 }

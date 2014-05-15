@@ -18,8 +18,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -36,10 +35,10 @@ public class ScrubbingComplexTest extends MeteorIT {
 		JsonParser parser;
 		try {
 			parser = new JsonParser(new FileReader(
-					"src/test/resources/ScrubbingComplexExpected.json"));
+				"src/test/resources/ScrubbingComplexExpected.json"));
 			parser.setWrappingArraySkipping(true);
 			this.testServer.checkContentsOf("ScrubbingComplexTest.json",
-					parser.readValueAsTree());
+				parser.readValueAsTree());
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			Assert.fail();
@@ -53,20 +52,20 @@ public class ScrubbingComplexTest extends MeteorIT {
 	}
 
 	protected SopremoPlan getPlan() {
-		return parseScript("using cleansing;"
-				+ "$data = read from 'src/test/resources/ScrubbingComplexData.json';"
+		return this.parseScript("using cleansing;"
+			+ "$data = read from 'src/test/resources/ScrubbingComplexData.json';"
 
-				+ "$data_scrubbed = scrub $data with rules {"
+			+ "$data_scrubbed = scrub $data with rules {"
 
-				+ "firstName: required,"
+			+ "firstName: required,"
 
-				+ "	worksFor: {"
-				+ "		name: notContainedIn([\"name_B\"]),"
-				+ "		ceos: required"
-				+ " }"
-				+ "};"
+			+ "	worksFor: {"
+			+ "		name: notContainedIn([\"name_B\"]),"
+			+ "		ceos: required"
+			+ " }"
+			+ "};"
 
-				+ "write $data_scrubbed to 'file:///tmp/ScrubbingComplexTest.json';");
+			+ "write $data_scrubbed to 'file:///tmp/ScrubbingComplexTest.json';");
 	}
 
 }

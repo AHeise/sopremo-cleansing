@@ -13,7 +13,7 @@ public class RangeConstraintIT extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {
-		final SopremoPlan plan = getPlan();
+		final SopremoPlan plan = this.getPlan();
 
 		this.client.submit(plan, null, true);
 		final JsonParser parser = new JsonParser(new FileReader("src/test/resources/TestOutputRange.json"));
@@ -23,7 +23,7 @@ public class RangeConstraintIT extends MeteorIT {
 	}
 
 	protected SopremoPlan getPlan() {
-		return parseScript("using cleansing;" +
+		return this.parseScript("using cleansing;" +
 			"$data = read from 'src/test/resources/TestDataRange.json';" +
 			"$data_scrubbed = scrub $data with rules {" +
 			"number: range(500, 1500)," + "};" +

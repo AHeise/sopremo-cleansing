@@ -1,7 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.similarity;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.EqualCloneTest;
@@ -11,7 +10,6 @@ import eu.stratosphere.sopremo.type.INumericNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
 import eu.stratosphere.sopremo.type.ObjectNode;
 
-@Ignore
 public class MongeElkanSimilarityTest extends EqualCloneTest<MongeElkanSimilarity> {
 	@Override
 	protected MongeElkanSimilarity createDefaultInstance(int index) {
@@ -24,8 +22,8 @@ public class MongeElkanSimilarityTest extends EqualCloneTest<MongeElkanSimilarit
 		ObjectNode right = JsonUtil.createObjectNode("names2", new String[] { "Joseph" });
 		MongeElkanSimilarity mongeElkanSimilarity = new MongeElkanSimilarity(new JaroWinklerSimilarity());
 
-		SimilarityExpression expression = new SimilarityExpression(JsonUtil.createPath("names"),
-				mongeElkanSimilarity, JsonUtil.createPath("names2"));
+		SimilarityExpression expression = new SimilarityExpression(JsonUtil.createPath("0", "names"),
+				mongeElkanSimilarity, JsonUtil.createPath("1", "names2"));
 
 		final double actualSim = ((INumericNode) expression.evaluate(JsonUtil.asArray(left, right))).getDoubleValue();
 		Assert.assertEquals(0.8, actualSim, 0.1);
