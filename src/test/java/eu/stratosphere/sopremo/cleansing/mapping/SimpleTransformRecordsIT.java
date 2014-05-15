@@ -33,14 +33,14 @@ public class SimpleTransformRecordsIT extends MeteorIT {
 	@Before
 	public void createFiles() throws IOException {
 		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json", 
-				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029")
-//				createObjectNode("id", "usCongress2", "name", "John Adams", "biography", "A000039"), 
-//				createObjectNode("id", "usCongress3", "name", "John Doe", "biography", "A000059")
+				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"),
+				createObjectNode("id", "usCongress2", "name", "John Adams", "biography", "A000039"), 
+				createObjectNode("id", "usCongress3", "name", "John Doe", "biography", "A000059")
 				);
 		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json", 
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ")
-//				createObjectNode("biographyId", "A000059", "worksFor", "CompanyUVW"),
-//				createObjectNode("biographyId", "A000049", "worksFor", "CompanyABC")
+				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"),
+				createObjectNode("biographyId", "A000059", "worksFor", "CompanyUVW"),
+				createObjectNode("biographyId", "A000049", "worksFor", "CompanyABC")
 				);
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
@@ -72,9 +72,9 @@ public class SimpleTransformRecordsIT extends MeteorIT {
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 		
 		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "usCongress1", "pname", "Andrew Adams", "pworksFor", "CompanyXYZ"),
-				createObjectNode("id", null, "pname", null, "pworksFor", "CompanyABC"),
-				createObjectNode("id", "usCongress3", "pname", "John Doe", "pworksFor", "CompanyUVW"));
+				createObjectNode("id", "Andrew Adams", "pname", "Andrew Adams", "pworksFor", "CompanyXYZ"),
+				createObjectNode("id", "John Adams", "pname", "John Adams", "pworksFor", null),
+				createObjectNode("id", "John Doe", "pname", "John Doe", "pworksFor", "CompanyUVW"));
 		
 		this.testServer.checkContentsOf("legalEntity.json",
 				createObjectNode("id", "CompanyXYZ", "lname", "CompanyXYZ"),

@@ -52,11 +52,11 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $person identified by $person.name with {" +
 			"    name: $usCongressMembers.name,\n" +
 			"    emp: $legalEntity.id" +
 			"  }," +
-			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  entity $legalEntity with {" +
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
@@ -84,7 +84,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $person identified by $person.name with {" +
 			"    name: $usCongressMembers.name,\n" +
 			"    worksFor: [$legalEntity.id]" +
 			"  }," +
@@ -116,11 +116,12 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $person identified by $person.name with {" +
 			"    name: {fullName: $usCongressMembers.name},\n" +
 			"    worksFor: $legalEntity.id" +
 			"  }," +
-			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  entity $legalEntity with {\n" +
+			"    id: $usCongressBiographies.worksFor" +			
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
@@ -128,12 +129,13 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
+		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
-		this.testServer.checkContentsOf(
-			"person.json",
-			createObjectNode("id", "Andrew Adams", "name", createObjectNode("fullName", "Andrew Adams"), "worksFor",
-				"CompanyXYZ"));
+		// Although unintuitive, this is actually the result of spicy.
+		this.testServer.checkContentsOf("person.json",
+			createObjectNode("id", "Andrew Adams", "name", createObjectNode("fullName", "Andrew Adams"),
+				"worksFor", null));
 
 		this.testServer.checkContentsOf("legalEntity.json",
 			createObjectNode("id", "CompanyXYZ"),
@@ -150,10 +152,10 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $person with {" +
 			"    employers: {legalEntity: $legalEntity.id}" +
 			"  }," +
-			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  entity $legalEntity with {" +
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
@@ -181,10 +183,10 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $usCongressMembers with {" +
 			"    employers: [{legalEntity: $legalEntity.id}]" +
 			"  }," +
-			"  entity $legalEntity identified by $usCongressBiographies.worksFor with {" +
+			"  entity $legalEntity with {" +
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
@@ -211,7 +213,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
 			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
-			"  entity $person identified by $usCongressMembers.name with {" +
+			"  entity $person with {" +
 			"    employers: [{legalEntity: $usCongressMembers.biography}]" +
 			"  }" +
 			"];\n" +
@@ -224,7 +226,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 		this.testServer.checkContentsOf("person.json",
 			createObjectNode("id", "Andrew Adams", "employers", createArrayNode(createObjectNode("legalEntity", "A000029"))));
 	}
-	
+
 	@Test
 	public void testEmbeddedObject() throws IOException {
 
@@ -233,7 +235,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
 			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
-			"  entity $person identified by $usCongressMembers.name with {" +
+			"  entity $person with {" +
 			"    employers: {legalEntity: $usCongressMembers.biography}" +
 			"  }" +
 			"];\n" +
@@ -244,9 +246,9 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		this.testServer.checkContentsOf("person.json",
-			createObjectNode("id", "Andrew Adams", "employers", createObjectNode("legalEntity", "A000029")));
+			createObjectNode("id", "A000029", "employers", createObjectNode("legalEntity", "A000029")));
 	}
-	
+
 	@Test
 	public void testEmbeddedArray() throws IOException {
 

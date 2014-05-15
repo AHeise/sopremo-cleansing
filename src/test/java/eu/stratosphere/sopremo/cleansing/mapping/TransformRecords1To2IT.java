@@ -38,11 +38,11 @@ public class TransformRecords1To2IT extends MeteorIT {
 			"\n" +
 			"$persons, $companies  = transform records $originalPersons\n" +
 			"	into [\n" +
-			"	    entity $persons identified by $originalPersons.id with {\n" +
+			"	    entity $persons with {\n" +
 			"	    	name: $originalPersons.name,\n" +
 			"	    	worksFor: $companies.id\n" +
 			"	    },\n" +
-			"	    entity $companies identified by $originalPersons.worksFor with {\n" +
+			"	    entity $companies identified by $companies.name with {\n" +
 			"	       name: $originalPersons.worksFor\n" +
 			"	    }\n" +
 			"	];\n" +
@@ -55,9 +55,9 @@ public class TransformRecords1To2IT extends MeteorIT {
 		this.client.submit(plan, null, true);
 
 		this.testServer.checkContentsOf("person.json",
-			createObjectNode("id", 1, "name", "Arvid", "worksFor", "HPI"),
-			createObjectNode("id", 2, "name", "Tommy", "worksFor", "Arvid Inc."),
-			createObjectNode("id", 3, "name", "Fabian", "worksFor", "SAP"));
+			createObjectNode("id", "Arvid", "name", "Arvid", "worksFor", "HPI"),
+			createObjectNode("id", "Tommy", "name", "Tommy", "worksFor", "Arvid Inc."),
+			createObjectNode("id", "Fabian", "name", "Fabian", "worksFor", "SAP"));
 		this.testServer.checkContentsOf("companies.json",
 			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc."),
 			createObjectNode("id", "HPI", "name", "HPI"),
@@ -72,12 +72,12 @@ public class TransformRecords1To2IT extends MeteorIT {
 			"\n" +
 			"$persons, $companies  = transform records $originalPersons\n" +
 			"	into [\n" +
-			"	    entity $companies identified by $originalPersons.id with {\n" +
+			"	    entity $companies identified by $companies.name with {\n" +
+			"	       name: $originalPersons.worksFor\n" +
+			"	    },\n" +
+			"	    entity $persons with {\n" +
 			"	    	name: $originalPersons.name,\n" +
 			"	    	worksFor: $companies.id\n" +
-			"	    },\n" +
-			"	    entity $persons identified by $originalPersons.worksFor with {\n" +
-			"	       name: $originalPersons.worksFor\n" +
 			"	    }\n" +
 			"	];\n" +
 			"\n" +
@@ -89,9 +89,9 @@ public class TransformRecords1To2IT extends MeteorIT {
 		this.client.submit(plan, null, true);
 
 		this.testServer.checkContentsOf("person.json",
-			createObjectNode("id", 1, "name", "Arvid", "worksFor", "HPI"),
-			createObjectNode("id", 2, "name", "Tommy", "worksFor", "Arvid Inc."),
-			createObjectNode("id", 3, "name", "Fabian", "worksFor", "SAP"));
+			createObjectNode("id", "Arvid", "name", "Arvid", "worksFor", "HPI"),
+			createObjectNode("id", "Tommy", "name", "Tommy", "worksFor", "Arvid Inc."),
+			createObjectNode("id", "Fabian", "name", "Fabian", "worksFor", "SAP"));
 		this.testServer.checkContentsOf("companies.json",
 			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc."),
 			createObjectNode("id", "HPI", "name", "HPI"),
