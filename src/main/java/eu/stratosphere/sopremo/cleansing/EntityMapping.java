@@ -108,6 +108,10 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 		this.targetSchema.clear();
 		CollectionUtil.ensureSize(this.targetSchema, getNumOutputs(), EvaluationExpression.VALUE);
 		this.sourceToValueCorrespondences.clear();
+		this.targetPKs.clear();
+		this.targetFKs.clear();
+		this.sourcePKs.clear();
+		
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
 			NestedOperatorExpression noe =
@@ -125,6 +129,7 @@ public class EntityMapping extends DataTransformationBase<EntityMapping> {
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
 				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
+				this.targetPKs.add(idAttr);
 				this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr, nestedOperator.getKeyExpression()));
 			}
 		}

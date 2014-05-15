@@ -1,12 +1,11 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.mapping.MappingTask;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.testing.SopremoOperatorTestBase;
 import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.*;
@@ -17,68 +16,51 @@ public class SpicyMappingTransformationTest extends
 	@Override
 	protected SpicyMappingTransformation createDefaultInstance(final int index) {
 		SpicyMappingTransformation foo = new SpicyMappingTransformation();
-		Map<String, Integer> inputIndices = new HashMap<String, Integer>();
-		inputIndices.put("key", index);
-		foo.setInputIndex(inputIndices);
+		ObjectCreation sourceSchema = new ObjectCreation();
+		sourceSchema.addMapping("key", new ConstantExpression(index));
+		foo.setSourceSchema(Lists.newArrayList(sourceSchema));
 		return foo;
 	}
 
 	private void addDefaultPersonsToPlan(SopremoTestPlan plan) {
-
-		plan.getInput(0)
-				.addObject("id", "usCongress1", "name", "Andrew Adams",
-						"biography", "A000029", "incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", "usCongress2", "name", "John Adams",
-						"biography", "A000039", "incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", "usCongress3", "name", "John Doe",
-						"biography", "A000059", "incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
+		plan.getInput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"biography", "A000029", "incomes", JsonUtil.createArrayNode(1)).
+			addObject("id", "usCongress2", "name", "John Adams",
+				"biography", "A000039", "incomes", JsonUtil.createArrayNode(1)).
+			addObject("id", "usCongress3", "name", "John Doe",
+				"biography", "A000059", "incomes", JsonUtil.createArrayNode(1));
 	}
 
 	private void addDefaultBiographiesToPlan(SopremoTestPlan plan) {
-		plan.getInput(1)
-				.addObject("biographyId", "A000029", "worksFor", "CompanyXYZ")
-				.addObject("biographyId", "A000059", "worksFor", "CompanyUVW")
-				.addObject("biographyId", "A000049", "worksFor", "CompanyABC");
+		plan.getInput(1).
+			addObject("biographyId", "A000029", "worksFor", "CompanyXYZ").
+			addObject("biographyId", "A000059", "worksFor", "CompanyUVW").
+			addObject("biographyId", "A000049", "worksFor", "CompanyABC");
 	}
 
 	@Test
 	public void shouldPerformMapping() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
+		SpicyMappingTransformation mapping = taskFactory.create();
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 
 		this.addDefaultPersonsToPlan(sopremoPlan);
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.addObject("id", "usCongress1", "name", "Andrew Adams",
-						"worksFor", "CompanyXYZ", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", NullNode.getInstance(), "name",
-						NullNode.getInstance(), "worksFor", "CompanyABC",
-						"income", NullNode.getInstance())
-				.addObject("id", "usCongress3", "name", "John Doe", "worksFor",
-						"CompanyUVW", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress1"))
-		// .put("name", TextNode.valueOf("Andrew Adams"))
-		// .put("worksFor", TextNode.valueOf("CompanyXYZ")))
-		// .add(new ObjectNode()
-		// .put("id", TextNode.valueOf("usCongress3"))
-		// .put("name", TextNode.valueOf("John Doe"))
-		// .put("worksFor", TextNode.valueOf("CompanyUVW")));
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
-				.addObject("id", "CompanyABC", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe", "worksFor",
+				"CompanyUVW", "income", JsonUtil.createArrayNode(1));
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
@@ -87,10 +69,9 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMappingNested() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
 		taskFactory.setCreateNesting(true);
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformation mapping = taskFactory.create();
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
@@ -98,40 +79,18 @@ public class SpicyMappingTransformationTest extends
 		this.addDefaultPersonsToPlan(sopremoPlan);
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.addObject(
-						"id",
-						"usCongress1",
-						"worksFor",
-						"CompanyXYZ",
-						"fullName",
-						new ObjectNode().put("nestedName",
-								TextNode.valueOf("Andrew Adams")), "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject(
-						"id",
-						NullNode.getInstance(),
-						"worksFor",
-						"CompanyABC",
-						"fullName",
-						new ObjectNode().put("nestedName",
-								NullNode.getInstance()), "income",
-						NullNode.getInstance())
-				.addObject(
-						"id",
-						"usCongress3",
-						"worksFor",
-						"CompanyUVW",
-						"fullName",
-						new ObjectNode().put("nestedName",
-								TextNode.valueOf("John Doe")), "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "worksFor", "CompanyXYZ",
+				"fullName", "nestedName", "Andrew Adams", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "worksFor", "CompanyABC",
+				"fullName", "nestedName", null, "income", null).
+			addObject("id", "usCongress3", "worksFor", "CompanyUVW",
+				"fullName", "nestedName", "John Doe", "income", JsonUtil.createArrayNode(1));
 
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
-				.addObject("id", "CompanyABC", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
@@ -140,10 +99,9 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMappingWithConcat() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
 		taskFactory.setCreateConcat(true);
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformation mapping = taskFactory.create();
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
@@ -151,22 +109,18 @@ public class SpicyMappingTransformationTest extends
 		this.addDefaultPersonsToPlan(sopremoPlan);
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.addObject("id", "usCongress1Andrew Adams", "worksFor",
-						"CompanyXYZ", "name", "Andrew Adams", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", NullNode.getInstance(), "worksFor",
-						"CompanyABC", "name", NullNode.getInstance(), "income",
-						NullNode.getInstance())
-				.addObject("id", "usCongress3John Doe", "worksFor",
-						"CompanyUVW", "name", "John Doe", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1Andrew Adams", "worksFor", "CompanyXYZ",
+				"name", "Andrew Adams", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "worksFor", "CompanyABC",
+				"name", null, "income", null).
+			addObject("id", "usCongress3John Doe", "worksFor", "CompanyUVW",
+				"name", "John Doe", "income", JsonUtil.createArrayNode(1));
 
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
-				.addObject("id", "CompanyABC", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
@@ -175,10 +129,9 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMappingWithSubstring() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
 		taskFactory.setCreateSubstring(true);
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformation mapping = taskFactory.create();
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
@@ -186,22 +139,18 @@ public class SpicyMappingTransformationTest extends
 		this.addDefaultPersonsToPlan(sopremoPlan);
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.addObject("id", "usCongress1", "worksFor", "CompanyXYZ",
-						"name", "An", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", NullNode.getInstance(), "worksFor",
-						"CompanyABC", "name", NullNode.getInstance(), "income",
-						NullNode.getInstance())
-				.addObject("id", "usCongress3", "worksFor", "CompanyUVW",
-						"name", "Jo", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "worksFor", "CompanyXYZ",
+				"name", "An", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "worksFor", "CompanyABC",
+				"name", null, "income", null).
+			addObject("id", "usCongress3", "worksFor", "CompanyUVW",
+				"name", "Jo", "income", JsonUtil.createArrayNode(1));
 
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
-				.addObject("id", "CompanyABC", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
@@ -210,10 +159,9 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMappingWithJoinConcat() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
 		taskFactory.setCreateJoinWithConcat(true);
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformation mapping = taskFactory.create();
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
@@ -221,23 +169,19 @@ public class SpicyMappingTransformationTest extends
 		this.addDefaultPersonsToPlan(sopremoPlan);
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.addObject("id", "usCongress1", "name", "Andrew Adams",
-						"worksFor", "CompanyXYZ---", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE))
-				.addObject("id", NullNode.getInstance(), "name",
-						NullNode.getInstance(), "worksFor", "CompanyABC---",
-						"income", NullNode.getInstance())
-				.addObject("id", "usCongress3", "name", "John Doe", "worksFor",
-						"CompanyUVW---", "income",
-						new ArrayNode<IJsonNode>().add(IntNode.ONE));
-		
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ---", "name", "CompanyXYZ")
-				. // don't always use concat
-				addObject("id", "CompanyABC---", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW---", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ---", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC---", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe",
+				"worksFor", "CompanyUVW---", "income", JsonUtil.createArrayNode(1));
+
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ---", "name", "CompanyXYZ").
+			// don't always use concat
+			addObject("id", "CompanyABC---", "name", "CompanyABC").
+			addObject("id", "CompanyUVW---", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
@@ -246,88 +190,126 @@ public class SpicyMappingTransformationTest extends
 	@Test
 	public void shouldPerformMappingWithSum() {
 
-		SpicyMappingFactory taskFactory = new SpicyMappingFactory();
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
 		taskFactory.setCreateSum(true);
-		SpicyMappingTransformation mapping = generateSopremoPlan(taskFactory
-				.create());
+		SpicyMappingTransformation mapping = taskFactory.create();
 
 		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
 		sopremoPlan.getOutputOperator(0).setInputs(mapping);
-		sopremoPlan
-				.getInput(0)
-				.addObject(
-						"id",
-						"usCongress1",
-						"name",
-						"Andrew Adams",
-
-						"incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.valueOf(3000))
-								.add(IntNode.valueOf(3500))
-								.add(IntNode.valueOf(4000)), "biography",
-						"A000029")
-				.addObject(
-						"id",
-						"usCongress2",
-						"name",
-						"John Adams",
-						"incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.valueOf(4500))
-								.add(IntNode.valueOf(3500))
-								.add(IntNode.valueOf(4000)), "biography",
-						"A000039")
-				.addObject(
-						"id",
-						"usCongress3",
-						"name",
-						"John Doe",
-						"incomes",
-						new ArrayNode<IJsonNode>().add(IntNode.valueOf(3000))
-								.add(IntNode.valueOf(5000))
-								.add(IntNode.valueOf(7000)), "biography",
-						"A000059");
+		sopremoPlan.getInput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"incomes", JsonUtil.createArrayNode(3000, 3500, 4000), "biography", "A000029").
+			addObject("id", "usCongress2", "name", "John Adams",
+				"incomes", JsonUtil.createArrayNode(4500, 3500, 4000), "biography", "A000039").
+			addObject("id", "usCongress3", "name", "John Doe",
+				"incomes", JsonUtil.createArrayNode(3000, 5000, 7000), "biography", "A000059");
 
 		this.addDefaultBiographiesToPlan(sopremoPlan);
 
-		sopremoPlan
-				.getExpectedOutput(0)
-				.add(new ObjectNode()
-						.put("id", TextNode.valueOf("usCongress1"))
-						.put("name", TextNode.valueOf("Andrew Adams"))
-						.put("worksFor", TextNode.valueOf("CompanyXYZ"))
-						.put("income", IntNode.valueOf(10500)))
-				.add(new ObjectNode().put("id", NullNode.getInstance())
-						.put("name", NullNode.getInstance())
-						.put("worksFor", TextNode.valueOf("CompanyABC"))
-						.put("income", NullNode.getInstance()))
-				.add(new ObjectNode()
-						.put("id", TextNode.valueOf("usCongress3"))
-						.put("name", TextNode.valueOf("John Doe"))
-						.put("worksFor", TextNode.valueOf("CompanyUVW"))
-						.put("income", IntNode.valueOf(15000)));
-		sopremoPlan.getExpectedOutput(1)
-				.addObject("id", "CompanyXYZ", "name", "CompanyXYZ")
-				.addObject("id", "CompanyABC", "name", "CompanyABC")
-				.addObject("id", "CompanyUVW", "name", "CompanyUVW");
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ", "income", 10500).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe",
+				"worksFor", "CompanyUVW", "income", 15000);
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
 		sopremoPlan.trace();
 		sopremoPlan.run();
 	}
+	
 
-	private SpicyMappingTransformation generateSopremoPlan(MappingTask task) {
-		SpicyMappingTransformation operator = new SpicyMappingTransformation();
-		operator.setMappingTask(task);
+	@Test
+	public void shouldPerformMappingWithSwitchedTarget() {
 
-		HashMap<String, Integer> inputIndex = new HashMap<String, Integer>(2);
-		inputIndex.put("usCongressMembers", 0);
-		inputIndex.put("usCongressBiographies", 1);
-		operator.setInputIndex(inputIndex);
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
+		taskFactory.setCreateTargetJoinSwitch(true);
+		SpicyMappingTransformation mapping = taskFactory.create();
 
-		HashMap<String, Integer> outputIndex = new HashMap<String, Integer>(2);
-		outputIndex.put("persons", 0);
-		outputIndex.put("legalEntities", 1);
-		operator.setOutputIndex(outputIndex);
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
 
-		return operator;
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe", "worksFor",
+				"CompanyUVW", "income", JsonUtil.createArrayNode(1));
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		// sopremoPlan.trace();
+		sopremoPlan.run();
 	}
+
+
+	@Test
+	public void shouldPerformMappingWithSwitchedTargetAndSource() {
+
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
+		taskFactory.setCreateTargetJoinSwitch(true);
+		taskFactory.setCreateSourceJoinSwitch(true);
+		SpicyMappingTransformation mapping = taskFactory.create();
+
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe", "worksFor",
+				"CompanyUVW", "income", JsonUtil.createArrayNode(1));
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		// sopremoPlan.trace();
+		sopremoPlan.run();
+	}
+	
+	@Test
+	public void shouldPerformMappingWithSwitchedSource() {
+
+		SpicyMappingTransformationFactory taskFactory = new SpicyMappingTransformationFactory();
+		taskFactory.setCreateSourceJoinSwitch(true);
+		SpicyMappingTransformation mapping = taskFactory.create();
+
+		final SopremoTestPlan sopremoPlan = new SopremoTestPlan(mapping);
+		sopremoPlan.getOutputOperator(0).setInputs(mapping);
+
+		this.addDefaultPersonsToPlan(sopremoPlan);
+		this.addDefaultBiographiesToPlan(sopremoPlan);
+
+		sopremoPlan.getExpectedOutput(0).
+			addObject("id", "usCongress1", "name", "Andrew Adams",
+				"worksFor", "CompanyXYZ", "income", JsonUtil.createArrayNode(1)).
+			addObject("id", null, "name", null,
+				"worksFor", "CompanyABC", "income", null).
+			addObject("id", "usCongress3", "name", "John Doe", "worksFor",
+				"CompanyUVW", "income", JsonUtil.createArrayNode(1));
+		sopremoPlan.getExpectedOutput(1).
+			addObject("id", "CompanyXYZ", "name", "CompanyXYZ").
+			addObject("id", "CompanyABC", "name", "CompanyABC").
+			addObject("id", "CompanyUVW", "name", "CompanyUVW");
+
+		sopremoPlan.trace();
+		sopremoPlan.run();
+	}	
+
 }

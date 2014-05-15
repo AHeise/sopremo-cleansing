@@ -23,6 +23,7 @@ import java.util.Set;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.operator.CompositeOperator;
 import eu.stratosphere.sopremo.operator.InputCardinality;
 import eu.stratosphere.sopremo.operator.OutputCardinality;
@@ -39,7 +40,12 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 
 	protected Set<ObjectCreation.SymbolicAssignment> targetFKs = new HashSet<ObjectCreation.SymbolicAssignment>();
 
-	protected Set<ObjectCreation.SymbolicAssignment> sourceToValueCorrespondences = new HashSet<ObjectCreation.SymbolicAssignment>();
+	protected Set<PathSegmentExpression> sourcePKs = new HashSet<PathSegmentExpression>();
+
+	protected Set<PathSegmentExpression> targetPKs = new HashSet<PathSegmentExpression>();
+
+	protected Set<ObjectCreation.SymbolicAssignment> sourceToValueCorrespondences =
+		new HashSet<ObjectCreation.SymbolicAssignment>();
 
 	protected List<EvaluationExpression> sourceSchema = new ArrayList<EvaluationExpression>();
 
@@ -155,11 +161,12 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * @param sourceSchema
 	 *        the sourceSchema to set
 	 */
-	public void setSourceSchema(List<EvaluationExpression> sourceSchema) {
+	@SuppressWarnings("unchecked")
+	public void setSourceSchema(List<? extends EvaluationExpression> sourceSchema) {
 		if (sourceSchema == null)
 			throw new NullPointerException("sourceSchema must not be null");
 
-		this.sourceSchema = sourceSchema;
+		this.sourceSchema = (List<EvaluationExpression>) sourceSchema;
 	}
 
 	/**
@@ -177,17 +184,64 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * @param targetSchema
 	 *        the targetSchema to set
 	 */
-	public void setTargetSchema(List<EvaluationExpression> targetSchema) {
+	@SuppressWarnings("unchecked")
+	public void setTargetSchema(List<? extends EvaluationExpression> targetSchema) {
 		if (targetSchema == null)
 			throw new NullPointerException("targetSchema must not be null");
 
-		this.targetSchema = targetSchema;
+		this.targetSchema = (List<EvaluationExpression>) targetSchema;
+	}
+
+	/**
+	 * Sets the sourcePKs to the specified value.
+	 * 
+	 * @param sourcePKs
+	 *        the sourcePKs to set
+	 */
+	public void setSourcePKs(Set<PathSegmentExpression> sourcePKs) {
+		if (sourcePKs == null)
+			throw new NullPointerException("sourcePKs must not be null");
+
+		this.sourcePKs = sourcePKs;
+	}
+
+	/**
+	 * Sets the targetPKs to the specified value.
+	 * 
+	 * @param targetPKs
+	 *        the targetPKs to set
+	 */
+	public void setTargetPKs(Set<PathSegmentExpression> targetPKs) {
+		if (targetPKs == null)
+			throw new NullPointerException("targetPKs must not be null");
+
+		this.targetPKs = targetPKs;
+	}
+
+	/**
+	 * Returns the targetPKs.
+	 * 
+	 * @return the targetPKs
+	 */
+	public Set<PathSegmentExpression> getTargetPKs() {
+		return this.targetPKs;
+	}
+
+	/**
+	 * Returns the sourcePKs.
+	 * 
+	 * @return the sourcePKs
+	 */
+	public Set<PathSegmentExpression> getSourcePKs() {
+		return this.sourcePKs;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
+		result = prime * result + this.sourcePKs.hashCode();
+		result = prime * result + this.targetPKs.hashCode();
 		result = prime * result + this.sourceFKs.hashCode();
 		result = prime * result + this.targetFKs.hashCode();
 		result = prime * result + this.sourceToValueCorrespondences.hashCode();
@@ -202,7 +256,8 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 */
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
-		SopremoUtil.append(appendable, getClass().getSimpleName(), " [sourceFKs=", this.sourceFKs, ", targetFKs=", this.targetFKs,
+		SopremoUtil.append(appendable, getClass().getSimpleName(), " [sourcePKs=", this.sourcePKs, ", targetPKs=",
+			this.targetPKs, ", sourceFKs=", this.sourceFKs, ", targetFKs=", this.targetFKs,
 			", sourceToValueCorrespondences=", this.sourceToValueCorrespondences, ", sourceSchema=", this.sourceSchema,
 			", targetSchema=", this.targetSchema, "]");
 	}
@@ -216,7 +271,9 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 		if (getClass() != obj.getClass())
 			return false;
 		EntityMapping other = (EntityMapping) obj;
-		return this.sourceFKs.equals(other.sourceFKs) &&
+		return this.sourcePKs.equals(other.sourcePKs) &&
+			this.targetPKs.equals(other.targetPKs) &&
+			this.sourceFKs.equals(other.sourceFKs) &&
 			this.targetFKs.equals(other.targetFKs) &&
 			this.sourceToValueCorrespondences.equals(other.sourceToValueCorrespondences) &&
 			this.sourceSchema.equals(other.sourceSchema) &&

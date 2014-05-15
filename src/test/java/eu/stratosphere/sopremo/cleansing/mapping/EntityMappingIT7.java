@@ -14,7 +14,8 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.*;
+import static eu.stratosphere.sopremo.type.JsonUtil.createArrayNode;
+import static eu.stratosphere.sopremo.type.JsonUtil.createObjectNode;
 
 import java.io.File;
 import java.io.IOException;

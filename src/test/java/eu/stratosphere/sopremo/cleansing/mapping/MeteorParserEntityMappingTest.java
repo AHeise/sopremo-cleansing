@@ -28,11 +28,9 @@ import com.google.common.collect.Lists;
 
 import eu.stratosphere.meteor.MeteorParseTest;
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.SopremoEnvironment;
 import eu.stratosphere.sopremo.cleansing.EntityMapping;
 import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.function.FunctionUtil;
