@@ -74,6 +74,9 @@ class SpicyMappingTransformationFactory {
 
 	public SpicyMappingTransformation create() {
 		SpicyMappingTransformation transformation = new SpicyMappingTransformation();
+		// force two inputs and two outputs
+		transformation.setInputs(null, null);
+		transformation.getOutput(1);
 
 		// ### soure and target
 		transformation.setSourceSchema(createSourceSchema());
@@ -129,7 +132,7 @@ class SpicyMappingTransformationFactory {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(0).addMapping("name", EvaluationExpression.VALUE);
 		targetSchema.get(0).addMapping("worksFor", EvaluationExpression.VALUE);
-		targetSchema.get(0).addMapping("incomes", EvaluationExpression.VALUE);
+		targetSchema.get(0).addMapping("income", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name", EvaluationExpression.VALUE);
 		return targetSchema;
@@ -143,7 +146,7 @@ class SpicyMappingTransformationFactory {
 		targetSchema.get(0).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(0).addMapping("nestedName", nestedName);
 		targetSchema.get(0).addMapping("worksFor", EvaluationExpression.VALUE);
-		targetSchema.get(0).addMapping("incomes", EvaluationExpression.VALUE);
+		targetSchema.get(0).addMapping("income", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
 		targetSchema.get(1).addMapping("name", EvaluationExpression.VALUE);
 		return targetSchema;
@@ -156,14 +159,14 @@ class SpicyMappingTransformationFactory {
 		if (!this.createJoinWithConcat) {
 			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
 				JsonUtil.createPath("1", "worksFor")));
-			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "worksFor"),
+			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor"),
 				JsonUtil.createPath("1", "worksFor")));
 			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name"),
 				JsonUtil.createPath("1", "worksFor")));
 		} else {
 			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
 				createConcat(JsonUtil.createPath("1", "worksFor"))));
-			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "worksFor"),
+			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor"),
 				createConcat(JsonUtil.createPath("1", "worksFor"))));
 			valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name"),
 				JsonUtil.createPath("1", "worksFor")));

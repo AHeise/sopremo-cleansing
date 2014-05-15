@@ -611,17 +611,18 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				throw new IllegalStateException("Invalid task description", e);
 			}
 
-		final DataSource source = new DataSource("XML", SpicyUtil.toSpicySchema(getSourceSchema(), "Source"));
-		for (PathSegmentExpression pk : getSourcePKs()) 
-			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk), true));	
 		INode targetSchema = SpicyUtil.toSpicySchema(getTargetSchema(), "Target");
 		final DataSource target = new DataSource("XML", targetSchema);
-		for (PathSegmentExpression pk : getTargetPKs()) 
-			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk), true));	
 
-		List<ValueCorrespondence> corrs = new ArrayList<ValueCorrespondence>();
 		PathExpression sourceRoot = new PathExpression(Lists.newArrayList("Source")), targetRoot =
 			new PathExpression(Lists.newArrayList("Target"));
+		final DataSource source = new DataSource("XML", SpicyUtil.toSpicySchema(getSourceSchema(), "Source"));
+		for (PathSegmentExpression pk : getSourcePKs())
+			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk, targetRoot), true));
+		for (PathSegmentExpression pk : getTargetPKs())
+			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk, targetRoot), true));
+
+		List<ValueCorrespondence> corrs = new ArrayList<ValueCorrespondence>();
 		for (SymbolicAssignment valueCorrespondence : getSourceToValueCorrespondences()) {
 			corrs.add(new ValueCorrespondence(SpicyUtil.toSpicy(valueCorrespondence.getExpression(), sourceRoot),
 				SpicyUtil.toSpicy(valueCorrespondence.getTargetTagExpression(), targetRoot)));

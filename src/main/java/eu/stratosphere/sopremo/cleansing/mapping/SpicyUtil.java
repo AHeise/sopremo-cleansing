@@ -228,14 +228,29 @@ public class SpicyUtil {
 		public void put(String name, JsonStream stream) {
 			this.streams.put(name, stream);
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return this.streams.toString();
+		}
 	}
 
 	public static class InputManager {
 		private Object2IntMap<String> aliasesIndex = new Object2IntOpenHashMap<String>();
 
 		public InputManager(List<SetAlias> alias) {
-			for (int index = 0; index < alias.size(); index++)
-				this.aliasesIndex.put(alias.get(index).toShortString(), index);
+			for (int index = 0; index < alias.size(); index++) {
+				final SetAlias var = alias.get(index);
+				final VariablePathExpression bindingPathExpression = var.getBindingPathExpression();
+				if (bindingPathExpression == null)
+					this.aliasesIndex.put(var.toShortString(), index);
+				else
+					this.aliasesIndex.put(bindingPathExpression.getStartingVariable().toShortString(), index);
+			}
 		}
 
 		public InputManager(String... alias) {
@@ -254,12 +269,21 @@ public class SpicyUtil {
 		private int getPos(String id) {
 			int pos = this.aliasesIndex.getInt(id);
 			if (pos == -1)
-				throw new IllegalArgumentException("Unknown variable");
+				throw new IllegalArgumentException("Unknown variable " + id);
 			return pos;
 		}
 
 		public EvaluationExpression getInput(SetAlias startingVariable) {
 			return getInput(startingVariable.toShortString());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return this.aliasesIndex.toString();
 		}
 	}
 
@@ -270,10 +294,6 @@ public class SpicyUtil {
 				return new SopremoPathToSpicyPath();
 			};
 		};
-
-	public static PathExpression toSpicy(EvaluationExpression targetPath) {
-		return new PathExpression(new ArrayList<String>(SopremoPathToSpicyPath.get().getSteps(targetPath)));
-	}
 
 	public static PathExpression toSpicy(EvaluationExpression targetPath, PathExpression rootExpression) {
 		ArrayList<String> steps = new ArrayList<String>(rootExpression.getPathSteps());
