@@ -143,6 +143,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				agg.addMapping(XQUtility.SET_ID, bae.add(CoreFunctions.FIRST, new ObjectAccess(XQUtility.SET_ID)));
 
 				Grouping grouping = new Grouping().
+					withName("Final nest " + setNodeVariableName).
 					withInputs(input).
 					withGroupingKey(new ObjectAccess(XQUtility.SET_ID)).
 					withResultProjection(agg);
@@ -161,6 +162,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				String streamName = XQNames.finalXQueryNameSTExchange(fatherVariable);
 				Join join =
 					new Join().
+						withName("Final nest " + setNodeVariableName).
 						withInputs(variableToSourceMapper.getStream(streamName), grouping).
 						withJoinCondition(
 							new ComparativeExpression(JsonUtil.createPath("0",
@@ -171,6 +173,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			} else {
 				INode firstChild = children.get(0);
 				Projection projection = new Projection().
+					withName("Final nest " + setNodeVariableName).
 					withInputs(input).
 					withResultProjection(getFinalProjectionForSet(mappingTask, firstChild));
 				variableToSourceMapper.put(setNodeVariableName, projection);
@@ -203,17 +206,17 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 
 	private JsonStream generate(ComplexQueryWithNegations query, MappingTask mappingTask,
 			StreamManager streamManager) {
-		JsonStream cached = streamManager.getStream(query.getId());
+		String posView = XQNames.xQueryNameForPositiveView(query);
+		JsonStream cached = streamManager.getStream(posView);
 		if (cached == null)
-			streamManager.put(XQNames.xQueryNameForPositiveView(query),
-				cached = generatePositiveQuery(query, mappingTask, streamManager));
+			streamManager.put(posView,
+				cached = generatePositiveQuery(query, mappingTask, streamManager).withName(posView));
 		if (!query.getNegatedComplexQueries().isEmpty()) {
 			for (NegatedComplexQuery negatedComplexQuery : query.getNegatedComplexQueries()) {
 				generate(negatedComplexQuery.getComplexQuery(), mappingTask, streamManager);
 			}
 			String viewName = XQNames.xQueryNameForViewWithIntersection(query);
-			String positiveViewName = XQNames.xQueryNameForPositiveView(query);
-			generateDifferenceForNegation(query, viewName, positiveViewName, streamManager);
+			generateDifferenceForNegation(query, viewName, posView, streamManager);
 		}
 		return cached;
 	}
@@ -227,7 +230,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			inputs.add(findInputForNegativeQuery(negatedComplexQuery, streamManager));
 			joinConditions.addAll(generateAttributesForDifference(negatedComplexQuery, i + 1));
 		}
-		streamManager.put(viewName, new Join().withInputs(inputs).
+		streamManager.put(viewName, new Join().withInputs(inputs).withName(viewName).
 			withJoinCondition(new AndExpression(joinConditions)).
 			withResultProjection(new InputSelection(0)));
 	}
@@ -448,12 +451,12 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 
 	private void generateTargetValueViewWithDifference(FORule rule, MappingTask mappingTask, StreamManager streamManager) {
 		String fromViewName = XQNames.xQueryNameForTgd(rule);
+		String viewName = XQNames.xQueryFinalTgdName(rule);
 		JsonStream input = streamManager.getStream(fromViewName);
-		Projection projection = new Projection().
+		Projection projection = new Projection().withName(viewName).
 			withInputs(input).
 			withResultProjection(projectionOnValues(mappingTask, rule, new InputManager("$variable")));
 
-		String viewName = XQNames.xQueryFinalTgdName(rule);
 		streamManager.put(viewName, projection);
 
 	}
@@ -473,11 +476,11 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			fromViewName = XQNames.xQueryNameForPositiveView(rule.getComplexSourceQuery());
 		}
 		JsonStream input = streamManager.getStream(fromViewName);
-		Projection projection = new Projection().
+		String viewName = XQNames.xQueryFinalTgdName(rule);
+		Projection projection = new Projection().withName(viewName).
 			withInputs(input).
 			withResultProjection(projectionOnValues(mappingTask, rule, new InputManager("$variable")));
 
-		String viewName = XQNames.xQueryFinalTgdName(rule);
 		streamManager.put(viewName, projection);
 	}
 
@@ -508,9 +511,9 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 	}
 
 	private TGDGeneratorsMap getGeneratorsMap(FORule tgd, MappingTask mappingTask) {
-		TGDGeneratorsMap map = this.generatorsMaps.get(tgd);
-		if (map != null)
-			return map;
+//		TGDGeneratorsMap map = this.generatorsMaps.get(tgd);
+//		if (map != null)
+//			return map;
 		TGDGeneratorsMap original =
 			new it.unibas.spicy.model.generators.operators.GenerateValueGenerators().generateValueGenerators(tgd,
 				mappingTask);
@@ -531,9 +534,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			return NullValueGenerator.getInstance();
 		}
 		for (PathExpression pathExpression : generatorsForVariable.keySet()) {
-			IValueGenerator generator = generatorsForVariable.get(pathExpression);
 			if (pathExpression.equalsUpToClones(leafPath)) {
-				return generator;
+				return generatorsForVariable.get(pathExpression);
 			}
 		}
 		throw new IllegalStateException();
@@ -562,7 +564,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			// String fromViewName = XQUtility.findViewName(tgd, mappingTask);
 			String fromViewName = XQNames.xQueryFinalTgdName(rule);
 			Projection projection =
-				new Projection().
+				new Projection().withName(XQNames.finalXQueryNameSTExchange(targetVariable)).
 					withInputs(streamManager.getStream(fromViewName)).
 					withResultProjection(
 						generateReturnClauseForSTResult(targetVariable, mappingTask, rule,
@@ -580,21 +582,38 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		SetNode setNode = targetVariable.getBindingNode(mappingTask.getTargetProxy().getIntermediateSchema());
 		INode tupleNode = setNode.getChild(0);
 		oc.addMapping(XQUtility.SET_ID, createIdFromGenerators(setNode, mappingTask, tgdGeneratorsMap, targetVariable, inputManager));
-		List<VariablePathExpression> targetPaths =
-			targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
 		List<INode> setNodeChildren = findSetChildren(tupleNode);
 		// generate copy values from tgd view
 		ObjectCreation content = new ObjectCreation();
-		for (SetAlias sourceVariable : rule.getTargetView().getVariables()) {
-			for (int i = 0; i < targetPaths.size(); i++) {
-				VariablePathExpression targetPath = targetPaths.get(i);
-                if (sourceVariable.getAbsoluteBindingPathExpression().equals(targetVariable.getAbsoluteBindingPathExpression())) {
-					VariablePathExpression sourcePath = new VariablePathExpression(sourceVariable, targetPath.getPathSteps());
-					String targetPathName = SpicyUtil.nameForPath(targetPath);
-					content.addMapping(targetPathName,
-						new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(0)));
+		// if (targetVariable.getBindingPathExpression().getStartingVariable() == null) {
+		// List<VariablePathExpression> targetPaths =
+		// targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+		// for (int i = 0; i < targetPaths.size(); i++) {
+		// VariablePathExpression targetPath = targetPaths.get(i);
+		// if (targetPath.getStartingVariable().equals(targetVariable)) {
+		// String targetPathName = SpicyUtil.nameForPath(targetPath);
+		// content.addMapping(targetPathName,
+		// new ObjectAccess(SpicyUtil.nameForPath(targetPath)).withInputExpression(new InputSelection(0)));
+		// }
+		// }
+		// }
+		// else
+		for (SetAlias ruleVariable : rule.getTargetView().getVariables()) {
+			for (SetAlias sourceVariable = ruleVariable; sourceVariable != null; sourceVariable =
+				sourceVariable.getBindingPathExpression().getStartingVariable())
+				if (sourceVariable.getAbsoluteBindingPathExpression().equals(targetVariable.getAbsoluteBindingPathExpression())) {
+					List<VariablePathExpression> targetPaths =
+						sourceVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+					for (VariablePathExpression targetPath : targetPaths) {
+						if (targetPath.getStartingVariable().equals(sourceVariable)) {
+							VariablePathExpression sourcePath = targetPath;
+							String targetPathName =
+								SpicyUtil.nameForPath(new VariablePathExpression(targetVariable, targetPath.getPathSteps()));
+							content.addMapping(targetPathName,
+								new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(0)));
+						}
+					}
 				}
-			}
 		}
 		oc.addMapping("content", content);
 		// add the set id of all children sets
@@ -633,7 +652,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		// return FunctionUtil.createFunctionCall(CoreFunctions.CONCAT, new ArrayCreation(ids));
 		PathExpression pathExpression = this.gpe.generatePathFromRoot(node);
 		IValueGenerator valueGenerator = tgdGeneratorsMap.getGeneratorsForFatherVariable(variable).get(pathExpression);
-		return SpicyUtil.xqueryValueForIntermediateNode(valueGenerator, mappingTask, inputManager);
+		return SpicyUtil.valueForIntermediateNode(valueGenerator, mappingTask, inputManager);
 	}
 
 	private static List<INode> findSetChildren(INode tupleNode) {
@@ -698,10 +717,17 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		PathExpression sourceRoot = new PathExpression(Lists.newArrayList("Source")), targetRoot =
 			new PathExpression(Lists.newArrayList("Target"));
 		final DataSource source = new DataSource("XML", SpicyUtil.toSpicySchema(getSourceSchema(), "Source"));
-		for (PathSegmentExpression pk : getSourcePKs())
-			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(pk, targetRoot), true));
-		for (PathSegmentExpression pk : getTargetPKs())
-			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(pk, targetRoot), true));
+		BitSet sourcePkSet = new BitSet(), targetPkSet = new BitSet();
+		for (EvaluationExpression key : getSourceKeys()) {
+			int sourceIndex = key.findFirst(InputSelection.class).getIndex();
+			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, sourceRoot), !sourcePkSet.get(sourceIndex)));
+			sourcePkSet.set(sourceIndex, true);
+		}
+		for (EvaluationExpression key : getTargetKeys()) {
+			int targetIndex = key.findFirst(InputSelection.class).getIndex();
+			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, targetRoot), !targetPkSet.get(targetIndex)));
+			targetPkSet.set(targetIndex, true);
+		}
 
 		List<ValueCorrespondence> corrs = new ArrayList<ValueCorrespondence>();
 		for (SymbolicAssignment valueCorrespondence : getSourceToValueCorrespondences()) {

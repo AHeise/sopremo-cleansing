@@ -7,17 +7,31 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
 import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
-import eu.stratosphere.sopremo.expressions.*;
+import eu.stratosphere.sopremo.expressions.AndExpression;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.BooleanExpression;
+import eu.stratosphere.sopremo.expressions.CoerceExpression;
+import eu.stratosphere.sopremo.expressions.ComparativeExpression;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.FunctionCall;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.JsonStreamExpression;
+import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
+import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
@@ -113,9 +127,9 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		this.targetSchema.clear();
 		CollectionUtil.ensureSize(this.targetSchema, getNumOutputs(), EvaluationExpression.VALUE);
 		this.sourceToValueCorrespondences.clear();
-		this.targetPKs.clear();
+		this.targetKeys.clear();
 		this.targetFKs.clear();
-		this.sourcePKs.clear();
+		this.sourceKeys.clear();
 
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
@@ -129,7 +143,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			int targetIndex = outVar.getSource().getIndex();
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
 			if (nestedOperator.getGroupingKey() != EvaluationExpression.VALUE)
-				this.targetPKs.add((PathSegmentExpression) nestedOperator.getGroupingKey().replace(
+				this.targetKeys.add((PathSegmentExpression) nestedOperator.getGroupingKey().replace(
 					Predicates.instanceOf(InputSelection.class), new InputSelection(targetIndex)));
 			// DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getGroupingKey(),
 			// DataTransformation.this.sourceSchemaFromMapping);
@@ -137,7 +151,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
 				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
-				this.targetPKs.add(idAttr);
+				this.targetKeys.add(0, idAttr);
 				// if (nestedOperator.getGroupingKey() != EvaluationExpression.VALUE)
 				// this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr,
 				// nestedOperator.getGroupingKey()));
@@ -353,8 +367,8 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		spicyMappingTransformation.setTargetSchema(getTargetSchema());
 		spicyMappingTransformation.setSourceFKs(getSourceFKs());
 		spicyMappingTransformation.setTargetFKs(getTargetFKs());
-		spicyMappingTransformation.setSourcePKs(getSourcePKs());
-		spicyMappingTransformation.setTargetPKs(getTargetPKs());
+		spicyMappingTransformation.setSourceKeys(getSourceKeys());
+		spicyMappingTransformation.setTargetKeys(getTargetKeys());
 		spicyMappingTransformation.setSourceToValueCorrespondences(getSourceToValueCorrespondences());
 
 		return spicyMappingTransformation;

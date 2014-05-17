@@ -51,7 +51,7 @@ public class TransformRecordsNestedArrayIT extends MeteorIT {
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.biography with {" +
+			"  entity $person with {" +
 			"    name: $usCongressMembers.name,\n" +
 			"    worksFor: [{" +
 			"	   LE: $usCongressMembers.party, startYear : split($usCongressMembers.id, '-')[0] as int," +

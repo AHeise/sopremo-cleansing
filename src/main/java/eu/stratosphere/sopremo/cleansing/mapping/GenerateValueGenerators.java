@@ -25,7 +25,6 @@ import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.nodes.*;
 import it.unibas.spicy.model.datasource.operators.INodeVisitor;
 import it.unibas.spicy.model.generators.*;
-import it.unibas.spicy.model.generators.operators.GenerateSkolemGenerators;
 import it.unibas.spicy.model.mapping.FORule;
 import it.unibas.spicy.model.mapping.IDataSourceProxy;
 import it.unibas.spicy.model.mapping.MappingTask;
@@ -41,7 +40,7 @@ public class GenerateValueGenerators {
 	private GenerateSkolemGenerators skolemGeneratorFinder = new GenerateSkolemGenerators();
 
 	public TGDGeneratorsMap generateValueGenerators(FORule tgd, MappingTask mappingTask) {
-		Map<String, IValueGenerator> attributeGenerators = findAttributeGenerators(tgd, mappingTask);
+		Map<VariablePathExpression, IValueGenerator> attributeGenerators = findAttributeGenerators(tgd, mappingTask);
 		TGDGeneratorsMap generatorsMap = new TGDGeneratorsMap();
 		for (SetAlias targetVariable : tgd.getTargetView().getVariables()) {
 			PropagateGeneratorsNodeVisitor visitor =
@@ -54,20 +53,20 @@ public class GenerateValueGenerators {
 		return generatorsMap;
 	}
 
-	private Map<String, IValueGenerator> findAttributeGenerators(FORule tgd, MappingTask mappingTask) {
-		Map<String, IValueGenerator> attributeGenerators = new HashMap<String, IValueGenerator>();
+	private Map<VariablePathExpression, IValueGenerator> findAttributeGenerators(FORule tgd, MappingTask mappingTask) {
+		Map<VariablePathExpression, IValueGenerator> attributeGenerators = new HashMap<VariablePathExpression, IValueGenerator>();
 		for (VariableCorrespondence correspondence : tgd.getCoveredCorrespondences()) {
 			VariablePathExpression targetPath = correspondence.getTargetPath();
 			FunctionGenerator generator = new FunctionGenerator(correspondence.getTransformationFunction());
-			attributeGenerators.put(targetPath.toString(), generator);
+			attributeGenerators.put(targetPath, generator);
 		}
 		List<GeneratorWithPath> functionGeneratorsForSkolemFunctions = findGeneratorsForVariablesInJoin(tgd, attributeGenerators);
-		this.skolemGeneratorFinder.findGeneratorsForSkolems(tgd, mappingTask, attributeGenerators, functionGeneratorsForSkolemFunctions);
+		new GenerateSkolemGenerators().findGeneratorsForSkolems(tgd, mappingTask, attributeGenerators, functionGeneratorsForSkolemFunctions);
 		return attributeGenerators;
 	}
 
 	// NOTE: this method is useless if TGDs are normalized
-	private List<GeneratorWithPath> findGeneratorsForVariablesInJoin(FORule tgd, Map<String, IValueGenerator> generators) {
+	private List<GeneratorWithPath> findGeneratorsForVariablesInJoin(FORule tgd, Map<VariablePathExpression, IValueGenerator> generators) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		List<SetAlias> joinVariables = findJoinVariables(tgd);
 		for (SetAlias variable : joinVariables) {
@@ -102,16 +101,19 @@ public class GenerateValueGenerators {
 		return false;
 	}
 
-	private List<GeneratorWithPath> findGeneratorsForVariable(FORule tgd, Map<String, IValueGenerator> generators, SetAlias variable) {
+	private List<GeneratorWithPath> findGeneratorsForVariable(FORule tgd, Map<VariablePathExpression, IValueGenerator> generators, SetAlias variable) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
-		for (VariableCorrespondence correspondence : tgd.getCoveredCorrespondences()) {
-			if (correspondence.getTargetPath().getStartingVariable().getId() == variable.getId()) {
-				VariablePathExpression targetPath = correspondence.getTargetPath();
-				IValueGenerator generator = generators.get(targetPath.toString());
-				GeneratorWithPath generatorWithPath = new GeneratorWithPath(targetPath, generator);
-				result.add(generatorWithPath);
+
+		for (SetAlias targetVar = variable; targetVar != null; targetVar =
+			targetVar.getBindingPathExpression().getStartingVariable())
+			for (VariableCorrespondence correspondence : tgd.getCoveredCorrespondences()) {
+				if (correspondence.getTargetPath().getStartingVariable().getId() == targetVar.getId()) {
+					VariablePathExpression targetPath = correspondence.getTargetPath();
+					IValueGenerator generator = generators.get(targetPath);
+					GeneratorWithPath generatorWithPath = new GeneratorWithPath(targetPath, generator);
+					result.add(generatorWithPath);
+				}
 			}
-		}
 		return result;
 	}
 
@@ -132,7 +134,7 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 
 	private SetAlias generatingVariable;
 
-	private Map<String, IValueGenerator> attributeGenerators;
+	private Map<VariablePathExpression, IValueGenerator> attributeGenerators;
 
 	private IDataSourceProxy target;
 
@@ -142,7 +144,7 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 
 	private List<GeneratorWithPath> leafGenerators;
 
-	public PropagateGeneratorsNodeVisitor(FORule tgd, SetAlias generatingVariable, Map<String, IValueGenerator> attributeGenerators,
+	public PropagateGeneratorsNodeVisitor(FORule tgd, SetAlias generatingVariable, Map<VariablePathExpression, IValueGenerator> attributeGenerators,
 			IDataSourceProxy target) {
 		this.tgd = tgd;
 		this.generatingVariable = generatingVariable;
@@ -193,7 +195,7 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 		for (INode child : node.getChildren()) {
 			if (child instanceof AttributeNode) {
 				GeneratorWithPath leafGeneratorWithPath = getLeafGenerator(child);
-				if (leafGeneratorWithPath.getGenerator() instanceof NullValueGenerator) {
+				if (leafGeneratorWithPath == null || leafGeneratorWithPath.getGenerator() instanceof NullValueGenerator) {
 					continue;
 				}
 				leafGenerators.add(leafGeneratorWithPath);
@@ -206,7 +208,10 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 		PathExpression nodeAbsolutePath = this.pathGenerator.generatePathFromRoot(attributeNode);
 		VariablePathExpression nodePath =
 			this.pathGenerator.generateContextualPathForNode(this.generatingVariable, nodeAbsolutePath, this.target.getIntermediateSchema());
-		IValueGenerator leafGenerator = this.attributeGenerators.get(nodePath.toString());
+		if (nodePath == null)
+			return null;
+
+		IValueGenerator leafGenerator = this.attributeGenerators.get(nodePath);
 		if (leafGenerator == null) {
 			leafGenerator = NullValueGenerator.getInstance();
 		}
