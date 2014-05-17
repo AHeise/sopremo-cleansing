@@ -1,5 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -83,15 +84,15 @@ class SpicyMappingTransformationFactory {
 		transformation.setTargetSchema(this.createNesting ? createNestedTargetSchema() : createTargetSchema());
 
 		// ### key contraints
-		Set<PathSegmentExpression> sourcePKs = new HashSet<PathSegmentExpression>();
+		List<PathSegmentExpression> sourcePKs = new ArrayList<PathSegmentExpression>();
 		sourcePKs.add(JsonUtil.createPath("0", "id"));
 		sourcePKs.add(JsonUtil.createPath("1", "biographyId"));
-		transformation.setSourcePKs(sourcePKs);
+		transformation.setSourceKeys(sourcePKs);
 
-		Set<PathSegmentExpression> targetPKs = new HashSet<PathSegmentExpression>();
+		List<PathSegmentExpression> targetPKs = new ArrayList<PathSegmentExpression>();
 		targetPKs.add(JsonUtil.createPath("0", "id"));
 		targetPKs.add(JsonUtil.createPath("1", "id"));
-		transformation.setTargetPKs(targetPKs);
+		transformation.setTargetKeys(targetPKs);
 
 		// ### foreign key contraints
 		Set<SymbolicAssignment> sourceFKs = new HashSet<ObjectCreation.SymbolicAssignment>();

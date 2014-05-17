@@ -40,9 +40,9 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 
 	protected Set<ObjectCreation.SymbolicAssignment> targetFKs = new HashSet<ObjectCreation.SymbolicAssignment>();
 
-	protected Set<PathSegmentExpression> sourcePKs = new HashSet<PathSegmentExpression>();
+	protected List<PathSegmentExpression> sourceKeys = new ArrayList<PathSegmentExpression>();
 
-	protected Set<PathSegmentExpression> targetPKs = new HashSet<PathSegmentExpression>();
+	protected List<PathSegmentExpression> targetKeys = new ArrayList<PathSegmentExpression>();
 
 	protected Set<ObjectCreation.SymbolicAssignment> sourceToValueCorrespondences =
 		new HashSet<ObjectCreation.SymbolicAssignment>();
@@ -198,11 +198,11 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * @param sourcePKs
 	 *        the sourcePKs to set
 	 */
-	public void setSourcePKs(Set<PathSegmentExpression> sourcePKs) {
+	public void setSourceKeys(List<PathSegmentExpression> sourcePKs) {
 		if (sourcePKs == null)
 			throw new NullPointerException("sourcePKs must not be null");
 
-		this.sourcePKs = sourcePKs;
+		this.sourceKeys = sourcePKs;
 	}
 
 	/**
@@ -211,11 +211,11 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * @param targetPKs
 	 *        the targetPKs to set
 	 */
-	public void setTargetPKs(Set<PathSegmentExpression> targetPKs) {
+	public void setTargetKeys(List<PathSegmentExpression> targetPKs) {
 		if (targetPKs == null)
 			throw new NullPointerException("targetPKs must not be null");
 
-		this.targetPKs = targetPKs;
+		this.targetKeys = targetPKs;
 	}
 
 	/**
@@ -223,8 +223,8 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * 
 	 * @return the targetPKs
 	 */
-	public Set<PathSegmentExpression> getTargetPKs() {
-		return this.targetPKs;
+	public List<PathSegmentExpression> getTargetKeys() {
+		return this.targetKeys;
 	}
 
 	/**
@@ -232,16 +232,16 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 * 
 	 * @return the sourcePKs
 	 */
-	public Set<PathSegmentExpression> getSourcePKs() {
-		return this.sourcePKs;
+	public List<PathSegmentExpression> getSourceKeys() {
+		return this.sourceKeys;
 	}
 
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = super.hashCode();
-		result = prime * result + this.sourcePKs.hashCode();
-		result = prime * result + this.targetPKs.hashCode();
+		result = prime * result + this.sourceKeys.hashCode();
+		result = prime * result + this.targetKeys.hashCode();
 		result = prime * result + this.sourceFKs.hashCode();
 		result = prime * result + this.targetFKs.hashCode();
 		result = prime * result + this.sourceToValueCorrespondences.hashCode();
@@ -256,8 +256,8 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 	 */
 	@Override
 	public void appendAsString(Appendable appendable) throws IOException {
-		SopremoUtil.append(appendable, getClass().getSimpleName(), " [sourcePKs=", this.sourcePKs, ", targetPKs=",
-			this.targetPKs, ", sourceFKs=", this.sourceFKs, ", targetFKs=", this.targetFKs,
+		SopremoUtil.append(appendable, getClass().getSimpleName(), " [sourcePKs=", this.sourceKeys, ", targetPKs=",
+			this.targetKeys, ", sourceFKs=", this.sourceFKs, ", targetFKs=", this.targetFKs,
 			", sourceToValueCorrespondences=", this.sourceToValueCorrespondences, ", sourceSchema=", this.sourceSchema,
 			", targetSchema=", this.targetSchema, "]");
 	}
@@ -271,8 +271,8 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 		if (getClass() != obj.getClass())
 			return false;
 		DataTransformation other = (DataTransformation) obj;
-		return this.sourcePKs.equals(other.sourcePKs) &&
-			this.targetPKs.equals(other.targetPKs) &&
+		return this.sourceKeys.equals(other.sourceKeys) &&
+			this.targetKeys.equals(other.targetKeys) &&
 			this.sourceFKs.equals(other.sourceFKs) &&
 			this.targetFKs.equals(other.targetFKs) &&
 			this.sourceToValueCorrespondences.equals(other.sourceToValueCorrespondences) &&
