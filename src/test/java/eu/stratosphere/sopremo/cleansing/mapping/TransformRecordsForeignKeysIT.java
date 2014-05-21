@@ -28,7 +28,7 @@ import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
-public class EntityMappingIT7 extends MeteorIT {
+public class TransformRecordsForeignKeysIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
 
 	@Before
@@ -49,7 +49,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
@@ -81,7 +81,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
@@ -113,7 +113,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
@@ -147,7 +147,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
@@ -178,7 +178,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
 			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
@@ -209,7 +209,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person = map entities of $usCongressMembers\n" +
+			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
 			"  entity $person identified by $usCongressMembers.name with {" +
 			"    employers: [{legalEntity: $usCongressMembers.biography}]" +
@@ -231,7 +231,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person = map entities of $usCongressMembers\n" +
+			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
 			"  entity $person identified by $usCongressMembers.name with {" +
 			"    employers: {legalEntity: $usCongressMembers.biography}" +
@@ -253,7 +253,7 @@ public class EntityMappingIT7 extends MeteorIT {
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
 			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-			"$person = map entities of $usCongressMembers\n" +
+			"$person = transform records $usCongressMembers\n" +
 			"into [\n" +
 			"  entity $person identified by $usCongressMembers.name with {" +
 			"    employers: [$usCongressMembers.biography]" +

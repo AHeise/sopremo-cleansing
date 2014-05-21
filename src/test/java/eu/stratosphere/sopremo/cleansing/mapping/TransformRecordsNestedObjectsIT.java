@@ -27,47 +27,49 @@ import org.junit.Test;
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 
-public class EntityMappingIT8 extends MeteorIT {
+public class TransformRecordsNestedObjectsIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
 
 	@Before
 	public void createInput() throws IOException {
-		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json", 
-				createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"));
-		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json", 
-				createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"));
+		this.usCongressMembers = this.testServer.createFile("usCongressMembers.json",
+			createObjectNode("id", "usCongress1", "name", "Andrew Adams", "biography", "A000029"));
+		this.usCongressBiographies = this.testServer.createFile("usCongressBiographies.json",
+			createObjectNode("biographyId", "A000029", "worksFor", "CompanyXYZ"));
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
-	
+
 	@Ignore
 	@Test
 	public void testMultipleObjectCreationsInMapping() throws IOException {
 
-		String query = "using cleansing;"+
-				"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
-				"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
-				"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n" +
-				"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" + 
-				"into [\n" +  
-				"  entity $usCongressMembers identified by $usCongressMembers.name with {" + 
-				"    name: $usCongressMembers.name,\n" +
-				"    worksFor: {foo: {bar: $legalEntity.id}, bar: $legalEntity.id}" + 
-				"  }," + 
-				"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" + 
-				"  }" + 
-				"];\n" + 
-				"write $person to '" + this.person.toURI() + "';\n" +
-				"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		
+		String query = "using cleansing;" +
+			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
+			"$usCongressBiographies = read from '" + this.usCongressBiographies.toURI() + "';\n" +
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
+			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
+			"into [\n" +
+			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"    name: $usCongressMembers.name,\n" +
+			"    worksFor: {foo: {bar: $legalEntity.id}, bar: $legalEntity.id}" +
+			"  }," +
+			"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" +
+			"  }" +
+			"];\n" +
+			"write $person to '" + this.person.toURI() + "';\n" +
+			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
+
 		final SopremoPlan plan = parseScript(query);
-		
+
 		Assert.assertNotNull(this.client.submit(plan, null, true));
-		
-		this.testServer.checkContentsOf("person.json",
-				createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor", createObjectNode("foo", createObjectNode("bar", "CompanyXYZ"), "bar", "CompanyXYZ")));
-		
+
+		this.testServer.checkContentsOf(
+			"person.json",
+			createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor",
+				createObjectNode("foo", createObjectNode("bar", "CompanyXYZ"), "bar", "CompanyXYZ")));
+
 		this.testServer.checkContentsOf("legalEntity.json",
-				createObjectNode("id", "CompanyXYZ"));
+			createObjectNode("id", "CompanyXYZ"));
 	}
 }
