@@ -16,11 +16,15 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import static eu.stratosphere.sopremo.type.JsonUtil.createObjectNode;
 
+<<<<<<< HEAD
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
+=======
+import org.junit.Assert;
+>>>>>>> 2417fa5727725cafe098ef18181948c2b7a82c34
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -31,6 +35,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
 public class ScrubbingComplexTest extends MeteorIT {
 	private File usCongressMembers, person;
 
+<<<<<<< HEAD
 	@Before
 	public void createInput() throws IOException {
 		this.usCongressMembers = this.testServer.createFile(
@@ -76,5 +81,45 @@ public class ScrubbingComplexTest extends MeteorIT {
 						"name",
 						createObjectNode("firstName", "Adams", "lastName",
 								createObjectNode("value", "Adams", "notin" , 1)), "biography", 1, "party", "PBC"));
+=======
+	@Test
+	public void shouldScrubComplexObject() {
+		SopremoPlan plan = this.getPlan();
+		this.client.submit(plan, null, true);
+		JsonParser parser;
+		try {
+			parser = new JsonParser(new FileReader(
+				"src/test/resources/ScrubbingComplexExpected.json"));
+			parser.setWrappingArraySkipping(true);
+			this.testServer.checkContentsOf("ScrubbingComplexTest.json",
+				parser.readValueAsTree());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			Assert.fail();
+		} catch (JsonParseException e) {
+			e.printStackTrace();
+			Assert.fail();
+		} catch (IOException e) {
+			e.printStackTrace();
+			Assert.fail();
+		}
+	}
+
+	protected SopremoPlan getPlan() {
+		return this.parseScript("using cleansing;"
+			+ "$data = read from 'src/test/resources/ScrubbingComplexData.json';"
+
+			+ "$data_scrubbed = scrub $data with rules {"
+
+			+ "firstName: required,"
+
+			+ "	worksFor: {"
+			+ "		name: notContainedIn([\"name_B\"]),"
+			+ "		ceos: required"
+			+ " }"
+			+ "};"
+
+			+ "write $data_scrubbed to 'file:///tmp/ScrubbingComplexTest.json';");
+>>>>>>> 2417fa5727725cafe098ef18181948c2b7a82c34
 	}
 }

@@ -95,6 +95,7 @@ public abstract class DuplicateDetectionTestBase<P extends CompositeDuplicateDet
 			dd.getPairFilter(), dd.getComparison());
 
 		try {
+			this.sopremoTestPlan.trace();
 			this.sopremoTestPlan.run();
 		} catch (final AssertionError error) {
 			throw new AssertionError(String.format("For test %s: %s", this, error.getMessage()));

@@ -26,7 +26,9 @@ import eu.stratosphere.sopremo.type.IJsonNode;
 public class SimilarityExpression extends EvaluationExpression {
 
 	private final Similarity<IJsonNode> similarity;
+
 	private final EvaluationExpression leftPath;
+
 	private final EvaluationExpression rightPath;
 
 	SimilarityExpression() {
@@ -39,18 +41,18 @@ public class SimilarityExpression extends EvaluationExpression {
 	 * @param similarity
 	 */
 	@SuppressWarnings("unchecked")
-	public SimilarityExpression(EvaluationExpression leftPath, Similarity<? extends IJsonNode> similarity,EvaluationExpression rightPath) {
+	public SimilarityExpression(EvaluationExpression leftPath, Similarity<? extends IJsonNode> similarity, EvaluationExpression rightPath) {
 		this.leftPath = leftPath;
 		this.similarity = (Similarity<IJsonNode>) similarity;
 		this.rightPath = rightPath;
 	}
 
 	public EvaluationExpression getLeftPath() {
-		return leftPath;
+		return this.leftPath;
 	}
 
 	public EvaluationExpression getRightPath() {
-		return rightPath;
+		return this.rightPath;
 	}
 
 	/**
@@ -61,8 +63,9 @@ public class SimilarityExpression extends EvaluationExpression {
 	public Similarity<IJsonNode> getSimilarity() {
 		return this.similarity;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see eu.stratosphere.sopremo.expressions.EvaluationExpression#appendAsString(java.lang.Appendable)
 	 */
 	@Override
@@ -72,8 +75,6 @@ public class SimilarityExpression extends EvaluationExpression {
 
 	private transient DoubleNode result = new DoubleNode();
 
-	
-	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -88,7 +89,7 @@ public class SimilarityExpression extends EvaluationExpression {
 			return true;
 		if (!super.equals(obj))
 			return false;
-		if (getClass() != obj.getClass())
+		if (this.getClass() != obj.getClass())
 			return false;
 		SimilarityExpression other = (SimilarityExpression) obj;
 		return this.similarity.equals(other.similarity);
@@ -96,7 +97,6 @@ public class SimilarityExpression extends EvaluationExpression {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see
 	 * eu.stratosphere.sopremo.expressions.EvaluationExpression#evaluate(eu.
 	 * stratosphere.sopremo.type.IJsonNode,
@@ -105,7 +105,7 @@ public class SimilarityExpression extends EvaluationExpression {
 	 */
 	@Override
 	public IJsonNode evaluate(IJsonNode node) {
-		this.result.setValue(this.similarity.getSimilarity(leftPath.evaluate(node), rightPath.evaluate(node)));
+		this.result.setValue(this.similarity.getSimilarity(this.leftPath.evaluate(node), this.rightPath.evaluate(node)));
 		return this.result;
 	}
 }

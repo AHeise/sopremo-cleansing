@@ -34,27 +34,28 @@ import eu.stratosphere.sopremo.type.TextNode;
 public class MeteorScrubTest extends MeteorParseTest {
 	@Test
 	public void testFullScrub() {
-		final SopremoPlan actualPlan = parseScript(
-			"normalizeNameInternal = javaudf('" + MeteorScrubTest.class.getName() +  ".normalizeNameInternal');\n" +
-			"$dirty = read from 'file://person.json';\n" +
-			"$clean = scrub $dirty with rules {\n" +
-			"	firstName: [required, normalizeNameInternal()],\n" +
-			"	lastName: required\n" +
-			"};\n" +
-			"write $clean to 'file://output.json';");
+		final SopremoPlan actualPlan = this.parseScript(
+			"normalizeNameInternal = javaudf('" + MeteorScrubTest.class.getName() + ".normalizeNameInternal');\n" +
+				"$dirty = read from 'file://person.json';\n" +
+				"$clean = scrub $dirty with rules {\n" +
+				"	firstName: [required, normalizeNameInternal()],\n" +
+				"	lastName: required\n" +
+				"};\n" +
+				"write $clean to 'file://output.json';");
 
 		final SopremoPlan expectedPlan = new SopremoPlan();
 		final Source input = new Source("file://person.json");
 		final Scrubbing scrubbing = new Scrubbing().withInputs(input);
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("firstName"));
-		scrubbing.addRule(createFunctionCall(MeteorScrubTest.class, "normalizeNameInternal", EvaluationExpression.VALUE), new ObjectAccess("firstName"));
+		scrubbing.addRule(createFunctionCall(MeteorScrubTest.class, "normalizeNameInternal", EvaluationExpression.VALUE), new ObjectAccess(
+			"firstName"));
 		scrubbing.addRule(new NonNullConstraint(), new ObjectAccess("lastName"));
 		final Sink output = new Sink("file://output.json").withInputs(scrubbing);
 		expectedPlan.setSinks(output);
 
 		assertPlanEquals(expectedPlan, actualPlan);
 	}
-	
+
 	@Name(verb = "normalizeNameInternal")
 	public static TextNode normalizeNameInternal(TextNode name) {
 		return name;

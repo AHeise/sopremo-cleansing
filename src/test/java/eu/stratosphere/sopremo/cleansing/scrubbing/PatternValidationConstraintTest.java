@@ -2,8 +2,7 @@ package eu.stratosphere.sopremo.cleansing.scrubbing;
 
 import java.util.regex.Pattern;
 
-import junit.framework.Assert;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 import eu.stratosphere.sopremo.EqualCloneTest;
@@ -29,7 +28,7 @@ public class PatternValidationConstraintTest extends
 	@Override
 	protected PatternValidationConstraint createDefaultInstance(int index) {
 		PatternValidationConstraint rule = this.createRule(String.valueOf(index),
-				new DefaultValueCorrection(IntNode.valueOf(index)));
+			new DefaultValueCorrection(IntNode.valueOf(index)));
 		return rule;
 	}
 
@@ -48,8 +47,8 @@ public class PatternValidationConstraintTest extends
 	@Test
 	public void shouldRemoveWrongValues() {
 		PatternValidationConstraint rule = this.createRule("\\d{4}-\\d{4}",
-				ValidationRule.DEFAULT_CORRECTION);
+			ValidationRule.DEFAULT_CORRECTION);
 		Assert.assertEquals(FilterRecord.Instance,
-				rule.fix(TextNode.valueOf("1000_2000")));
+			rule.fix(TextNode.valueOf("1000_2000")));
 	}
 }

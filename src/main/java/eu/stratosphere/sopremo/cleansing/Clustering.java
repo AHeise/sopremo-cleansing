@@ -14,7 +14,13 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing;
 
-import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.operator.CompositeOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
+import eu.stratosphere.sopremo.operator.SopremoModule;
 import eu.stratosphere.util.reflect.ReflectUtil;
 
 /**

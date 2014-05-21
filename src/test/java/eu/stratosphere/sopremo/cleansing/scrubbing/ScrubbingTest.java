@@ -65,7 +65,8 @@ public class ScrubbingTest {
 		this.expectedObject = expectedObject;
 	}
 
-	@Test @org.junit.Ignore
+	@Test
+	@org.junit.Ignore
 	public void testMapping() {
 		final RuleBasedScrubbing scrubbing = new RuleBasedScrubbing();
 		final SopremoTestPlan EqualCloneTestPlan = new SopremoTestPlan(scrubbing);
