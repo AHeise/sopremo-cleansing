@@ -10,10 +10,8 @@ import eu.stratosphere.sopremo.cleansing.FilterRecord;
 import eu.stratosphere.sopremo.cleansing.fusion.ValueTreeContains;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression.ValueExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
 import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
-import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.expressions.UnaryExpression;
@@ -82,85 +80,82 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 		module.getOutput(0).setInput(0, filterInvalid);
 	}
 
-	/**
-	 * @return
-	 */
-	private EvaluationExpression createResultProjection() {
-		/*// no nested rule
-		if (this.rules.size() == 1
-				&& this.rules.containsKey(EvaluationExpression.VALUE))
-			return new ScrubbingSpecificChainedSegmentExpression(
-					this.rules.values());
-
-		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(
-				this.rules.keySet());
-
-		final ObjectCreation objectCreation = new ObjectCreation();
-		objectCreation.addMapping(new ObjectCreation.CopyFields(
-				EvaluationExpression.VALUE));
-		while (!uncoveredPaths.isEmpty()) {
-			final PathSegmentExpression path = uncoveredPaths.remove();
-			this.addToObjectCreation(
-					objectCreation,
-					path,
-					path,
-					new ScrubbingSpecificChainedSegmentExpression(this.rules
-							.get(path)).withTail(path));
-		}
-		return objectCreation;*/
-		return null;
-	}
-
-	/**
-	 * @param objectCreation
-	 * @param path
-	 * @param chainedSegmentExpression
-	 */
-	private void addToObjectCreation(ObjectCreation objectCreation,
-			PathSegmentExpression remainingPath,
-			PathSegmentExpression completePath,
-			PathSegmentExpression chainedSegmentExpression) {
-
-		final String field = ((ObjectAccess) remainingPath).getField();
-
-		for (int index = 0, size = objectCreation.getMappingSize(); index < size; index++) {
-			final Mapping<?> mapping = objectCreation.getMapping(index);
-			final PathSegmentExpression targetExpression = mapping
-					.getTargetExpression();
-			// if (targetExpression.equalsThisSeqment(targetExpression)) {
-			
-			// TODO add case for ObjectAccess to allow complex objects
-			// Testcase: ScrubbingComplexTest.java
-			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE){
-				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
-						field, chainedSegmentExpression));
-			}
-			else{
-				this.addToObjectCreation(objectCreation,
-						(PathSegmentExpression) remainingPath
-								.getInputExpression(), completePath,
-						chainedSegmentExpression);
-			}
-		}
-
-		if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
-			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
-					chainedSegmentExpression));
-		else {
-			final ObjectCreation subObject = new ObjectCreation();
-			PathSegmentExpression processedPath = EvaluationExpression.VALUE;
-			for (PathSegmentExpression segment = completePath; remainingPath != segment; segment = (PathSegmentExpression) segment
-					.getInputExpression())
-				processedPath = segment.cloneSegment().withTail(processedPath);
-			subObject.addMapping(new ObjectCreation.CopyFields(processedPath));
-			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
-					subObject));
-			this.addToObjectCreation(subObject,
-					(PathSegmentExpression) remainingPath.getInputExpression(),
-					completePath, chainedSegmentExpression);
-		}
-
-	}
+//	private EvaluationExpression createResultProjection() {
+//		// no nested rule
+//		if (this.rules.size() == 1
+//				&& this.rules.containsKey(EvaluationExpression.VALUE))
+//			return new ScrubbingSpecificChainedSegmentExpression(
+//					this.rules.values());
+//
+//		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(
+//				this.rules.keySet());
+//
+//		final ObjectCreation objectCreation = new ObjectCreation();
+//		objectCreation.addMapping(new ObjectCreation.CopyFields(
+//				EvaluationExpression.VALUE));
+//		while (!uncoveredPaths.isEmpty()) {
+//			final PathSegmentExpression path = uncoveredPaths.remove();
+//			this.addToObjectCreation(
+//					objectCreation,
+//					path,
+//					path,
+//					new ScrubbingSpecificChainedSegmentExpression(this.rules
+//							.get(path)).withTail(path));
+//		}
+//		return objectCreation;*/
+//		return null;
+//	}
+//
+//	/**
+//	 * @param objectCreation
+//	 * @param path
+//	 * @param chainedSegmentExpression
+//	 */
+//	private void addToObjectCreation(ObjectCreation objectCreation,
+//			PathSegmentExpression remainingPath,
+//			PathSegmentExpression completePath,
+//			PathSegmentExpression chainedSegmentExpression) {
+//
+//		final String field = ((ObjectAccess) remainingPath).getField();
+//
+//		for (int index = 0, size = objectCreation.getMappingSize(); index < size; index++) {
+//			final Mapping<?> mapping = objectCreation.getMapping(index);
+//			final PathSegmentExpression targetExpression = mapping
+//					.getTargetExpression();
+//			// if (targetExpression.equalsThisSeqment(targetExpression)) {
+//			
+//			// TODO add case for ObjectAccess to allow complex objects
+//			// Testcase: ScrubbingComplexTest.java
+//			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE){
+//				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
+//						field, chainedSegmentExpression));
+//			}
+//			else{
+//				this.addToObjectCreation(objectCreation,
+//						(PathSegmentExpression) remainingPath
+//								.getInputExpression(), completePath,
+//						chainedSegmentExpression);
+//			}
+//		}
+//
+//		if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
+//			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
+//					chainedSegmentExpression));
+//		else {
+//			final ObjectCreation subObject = new ObjectCreation();
+//			PathSegmentExpression processedPath = EvaluationExpression.VALUE;
+//			for (PathSegmentExpression segment = completePath; remainingPath != segment; segment = (PathSegmentExpression) segment
+//					.getInputExpression())
+//				processedPath = segment.cloneSegment().withTail(processedPath);
+//			subObject.addMapping(new ObjectCreation.CopyFields(processedPath));
+//			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
+//					subObject));
+//			this.addToObjectCreation(subObject,
+//					(PathSegmentExpression) remainingPath.getInputExpression(),
+//					completePath, chainedSegmentExpression);
+//		}
+//
+//	}
 	
 	private transient SchemaHandler targetSchemaHandler = new SchemaHandler();
 
@@ -180,8 +175,17 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 						treeHandler.handle(value.getInputExpression(), oc);
 					
 					EvaluationExpression actualSourceSchema = oc.getExpression(value.getField());
-					if (!conforms(actualSourceSchema, expected))
+					if (!conforms(actualSourceSchema, expected)){
 						oc.addMapping(value.getField(), actualSourceSchema = expected);
+					}else{
+						if(oc.getExpression(value.getField()) instanceof ScrubbingSpecificChainedSegmentExpression){
+							ScrubbingSpecificChainedSegmentExpression cse = (ScrubbingSpecificChainedSegmentExpression) oc.getExpression(value.getField());
+							
+							for(EvaluationExpression ee :((ScrubbingSpecificChainedSegmentExpression)expected).getExpressions()){
+								cse.addExpression(ee);
+							}
+						}
+					}
 					return actualSourceSchema;
 				}
 			});

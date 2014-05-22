@@ -24,8 +24,7 @@ import eu.stratosphere.sopremo.type.NullNode;
  */
 
 @Name(adjective = "required")
-public class NonNullConstraint extends ValidationRule implements
-		StatefulConstant {
+public class NonNullConstraint extends ValidationRule{
 
 	public NonNullConstraint() {
 	}

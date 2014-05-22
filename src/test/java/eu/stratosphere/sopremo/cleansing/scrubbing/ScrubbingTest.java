@@ -17,6 +17,7 @@ import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.IntNode;
 import eu.stratosphere.sopremo.type.JsonUtil;
+import eu.stratosphere.sopremo.type.TypeNode;
 
 @RunWith(Parameterized.class)
 public class ScrubbingTest {
@@ -31,7 +32,7 @@ public class ScrubbingTest {
 
 			new Object[] {
 				new ObjectAccess("stringInsteadOfInteger"),
-				new TypeConstraint(IntNode.class),
+				new TypeConstraint(new TypeNode(IntNode.class)),
 				JsonUtil.createObjectNode("stringInsteadOfInteger", 12, "outsideMonthRange", 14,
 					"shouldBeNonNull", null) },
 
