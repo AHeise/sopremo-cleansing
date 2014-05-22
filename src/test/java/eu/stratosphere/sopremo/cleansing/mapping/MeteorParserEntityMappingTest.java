@@ -55,7 +55,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testMinimalSchemaMapping() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
@@ -104,7 +104,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testFinalSchemaMapping() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
@@ -157,10 +157,10 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	}
 
 	@Test
-	public void testRenamedOperator() { // map entities of ... as ...
+	public void testRenamedOperator() { // transform records ... as ...
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
@@ -209,7 +209,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testWhereClause() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
@@ -264,7 +264,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testMultipleSourcesPeridentifiedBy() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
@@ -318,7 +318,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	@Test
 	public void testOneInputMultipleOutput() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
@@ -367,7 +367,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testSwitchedOutputs() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
 			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
@@ -424,7 +424,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testSwitchedJoinOrder() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressBiographies.biographyId_o == $usCongressMembers.biography_o)\n"
 			+ // if switched, spicy creates foreign keys on source in
 				// reversed order
@@ -484,7 +484,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$states = read from 'file://states.json';\n" +
 
-			"$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies, $states\n"
+			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies, $states\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o) "
 			+ "		and ($usCongressMembers.state == $states.letterCode)\n"
 			+ "into [\n"
@@ -506,8 +506,8 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			Lists.newArrayList(new ObjectCreation(), new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("state", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
+		sourceSchema.get(0).addMapping("state", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
 		sourceSchema.get(2).addMapping("name", EvaluationExpression.VALUE);
@@ -551,7 +551,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testThreeOutputs() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity, $personNames = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity, $personNames = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
@@ -615,7 +615,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testMinimalSchemaMappingWithFunction() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
 			+ "  entity $person identified by $usCongressMembers.id_o with {"
 			+ "    name_p: concat($usCongressMembers.name_o, '---', $usCongressBiographies.worksFor_o),\n"
@@ -665,7 +665,7 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 	public void testMappingTaskEquals() {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
-			+ "$person, $legalEntity = map entities of $usCongressMembers, $usCongressBiographies\n"
+			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
 			+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"

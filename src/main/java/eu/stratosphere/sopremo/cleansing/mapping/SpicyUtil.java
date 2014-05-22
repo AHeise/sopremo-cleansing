@@ -34,10 +34,8 @@ import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.Map.Entry;
 
 import org.nfunk.jep.ASTConstant;
 import org.nfunk.jep.ASTFunNode;
@@ -82,18 +80,19 @@ public class SpicyUtil {
 	}
 
 	public static EvaluationExpression xqueryValueForLeaf(IValueGenerator generator, VariablePathExpression targetPath,
-			FORule tgd,
-			MappingTask mappingTask, InputManager inputManager) {
+			FORule tgd, MappingTask mappingTask, InputManager inputManager) {
 		if (generator instanceof NullValueGenerator)
 			return ConstantExpression.NULL;
 		if (generator instanceof FunctionGenerator) {
 			VariableCorrespondence correspondence =
 				XQUtility.findCorrespondenceFromTargetPathWithSameId(targetPath, tgd.getCoveredCorrespondences());
-			if (correspondence.getSourcePaths() != null) {
-				VariablePathExpression firstSourcePath = correspondence.getFirstSourcePath();
-				return new ObjectAccess(nameForPath(firstSourcePath)).withInputExpression(new InputSelection(0));
-			}
-			return new ConstantExpression(correspondence.getSourceValue().toString());
+			EvaluationExpression expr =
+				((SopremoFunctionExpression) ((FunctionGenerator) generator).getFunction()).getExpr().clone();
+			List<VariablePathExpression> sourcePaths = correspondence.getSourcePaths();
+			for (int index = 0; index < sourcePaths.size(); index++)
+				expr = expr.replace(new InputSelection(index),
+					new ObjectAccess(nameForPath(sourcePaths.get(index))).withInputExpression(new InputSelection(0)));
+			return expr;
 		}
 		if (generator instanceof SkolemFunctionGenerator) {
 			SkolemFunctionGenerator skolemGenerator = (SkolemFunctionGenerator) generator;
@@ -246,7 +245,7 @@ public class SpicyUtil {
 			for (int index = 0; index < alias.size(); index++) {
 				final SetAlias var = alias.get(index);
 				final VariablePathExpression bindingPathExpression = var.getBindingPathExpression();
-				if (bindingPathExpression == null)
+				if (bindingPathExpression == null || bindingPathExpression.getStartingVariable() == null)
 					this.aliasesIndex.put(var.toShortString(), index);
 				else
 					this.aliasesIndex.put(bindingPathExpression.getStartingVariable().toShortString(), index);
@@ -295,10 +294,21 @@ public class SpicyUtil {
 			};
 		};
 
-	public static PathExpression toSpicy(EvaluationExpression targetPath, PathExpression rootExpression) {
+	public static PathExpression toSpicyPath(EvaluationExpression targetPath, PathExpression rootExpression) {
 		ArrayList<String> steps = new ArrayList<String>(rootExpression.getPathSteps());
 		steps.addAll(SopremoPathToSpicyPath.get().getSteps(targetPath));
 		return new PathExpression(steps);
+	}
+
+	public static Expression extractTransformation(EvaluationExpression expression, PathExpression rootExpression,
+			List<PathExpression> sourcePaths) {
+		List<List<String>> sources = new ArrayList<List<String>>();
+		final EvaluationExpression transform = SopremoPathToSpicyPath.get().extractTransformation(expression, sources);
+		for (List<String> sourcePath : sources) {
+			sourcePath.addAll(0, rootExpression.getPathSteps());
+			sourcePaths.add(new PathExpression(sourcePath));
+		}
+		return new SopremoFunctionExpression(transform);
 	}
 
 	private static class SopremoPathToSpicyPath extends ReturnlessTreeHandler<EvaluationExpression, List<String>> {
@@ -338,11 +348,48 @@ public class SpicyUtil {
 						TreeHandler<Object, Object, List<String>> treeHandler) {
 					param.add(String.valueOf(value.getIndex()));
 					param.add(String.valueOf(ARRAY_ELEMENT));
+					SopremoPathToSpicyPath.this.pathFinished = true;
 				}
 			});
 		}
 
-		@SuppressWarnings("unchecked")
+		private Map<EvaluationExpression, List<String>> subPaths;
+
+		private boolean pathFinished = false;
+
+		@Override
+		protected Object unknownValueType(EvaluationExpression value, List<String> param) {
+			if (this.subPaths == null)
+				return super.unknownValueType(value, param);
+
+			for (EvaluationExpression child : value) {
+				super.handle(child, param);
+				if (this.pathFinished)
+					this.subPaths.put(child, new ArrayList<String>(param));
+				this.pathFinished = false;
+				param.clear();
+			}
+			return null;
+		}
+
+		public EvaluationExpression extractTransformation(EvaluationExpression value, List<List<String>> subPaths) {
+			List<String> steps = new ArrayList<String>();
+			this.subPaths = new HashMap<EvaluationExpression, List<String>>();
+			value = value.clone();
+			handle(value, steps);
+			// no special constructs
+			if (this.pathFinished)
+				this.subPaths.put(value, steps);
+			final Iterator<Entry<EvaluationExpression, List<String>>> iterator = this.subPaths.entrySet().iterator();
+			for (int index = 0; iterator.hasNext(); index++) {
+				final Entry<EvaluationExpression, List<String>> path = iterator.next();
+				subPaths.add(path.getValue());
+				value = value.replace(path.getKey(), new InputSelection(index));
+			}
+			this.subPaths = null;
+			return value;
+		}
+
 		public List<String> getSteps(EvaluationExpression value) {
 			List<String> steps = new ArrayList<String>();
 			handle(value, steps);
@@ -445,11 +492,6 @@ public class SpicyUtil {
 		 */
 		public SpicySchemaToSopremo() {
 			put(SequenceNode.class, new NodeHandler<SequenceNode, EvaluationExpression, PathExpression>() {
-				/*
-				 * (non-Javadoc)
-				 * @see eu.stratosphere.sopremo.tree.NodeHandler#handle(java.lang.Object, java.lang.Object,
-				 * eu.stratosphere.sopremo.tree.TreeHandler)
-				 */
 				@Override
 				public EvaluationExpression handle(SequenceNode value, PathExpression path,
 						TreeHandler<Object, EvaluationExpression, PathExpression> treeHandler) {
@@ -462,22 +504,9 @@ public class SpicyUtil {
 				}
 			});
 			put(SetNode.class, new NodeHandler<SetNode, EvaluationExpression, PathExpression>() {
-				/*
-				 * (non-Javadoc)
-				 * @see eu.stratosphere.sopremo.tree.NodeHandler#handle(java.lang.Object, java.lang.Object,
-				 * eu.stratosphere.sopremo.tree.TreeHandler)
-				 */
 				@Override
 				public EvaluationExpression handle(SetNode value, PathExpression path,
 						TreeHandler<Object, EvaluationExpression, PathExpression> treeHandler) {
-					// ArrayCreation ac = new ArrayCreation();
-					// List<INode> elements = value.getChildren();
-					// for (int index = 0; index < elements.size(); index++) {
-					// treeHandler.handle(elements.get(index));
-					// ac.add(SpicySchemaToSopremo.this.lastExpr);
-					// }
-					// SpicySchemaToSopremo.this.lastExpr = ac;
-
 					path.getPathSteps().add(value.getLabel());
 					final String fieldName = nameForPath(SpicySchemaToSopremo.this.gpe.generateRelativePath(
 						path, SpicySchemaToSopremo.this.dataSource));
@@ -486,11 +515,6 @@ public class SpicyUtil {
 				}
 			});
 			put(AttributeNode.class, new NodeHandler<AttributeNode, EvaluationExpression, PathExpression>() {
-				/*
-				 * (non-Javadoc)
-				 * @see eu.stratosphere.sopremo.tree.NodeHandler#handle(java.lang.Object, java.lang.Object,
-				 * eu.stratosphere.sopremo.tree.TreeHandler)
-				 */
 				@Override
 				public EvaluationExpression handle(AttributeNode value, PathExpression path,
 						TreeHandler<Object, EvaluationExpression, PathExpression> treeHandler) {

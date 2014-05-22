@@ -25,7 +25,7 @@ public class TreeHandler<V, R, P> {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <N extends V> void put(Class<N> key, NodeHandler<N, ? extends R, P> handler) {
+	public <N extends V> void put(Class<N> key, NodeHandler<? super N, ? extends R, P> handler) {
 		this.handlers.put((Class<V>) key, (NodeHandler<V, R, P>) handler);
 	}
 

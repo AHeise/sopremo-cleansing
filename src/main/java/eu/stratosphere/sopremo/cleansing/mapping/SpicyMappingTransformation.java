@@ -22,6 +22,7 @@ import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.KeyConstraint;
 import it.unibas.spicy.model.datasource.nodes.*;
+import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.NullValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
@@ -618,26 +619,30 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			new PathExpression(Lists.newArrayList("Target"));
 		final DataSource source = new DataSource("XML", SpicyUtil.toSpicySchema(getSourceSchema(), "Source"));
 		for (PathSegmentExpression pk : getSourcePKs())
-			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk, targetRoot), true));
+			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(pk, targetRoot), true));
 		for (PathSegmentExpression pk : getTargetPKs())
-			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicy(pk, targetRoot), true));
+			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(pk, targetRoot), true));
 
 		List<ValueCorrespondence> corrs = new ArrayList<ValueCorrespondence>();
 		for (SymbolicAssignment valueCorrespondence : getSourceToValueCorrespondences()) {
-			corrs.add(new ValueCorrespondence(SpicyUtil.toSpicy(valueCorrespondence.getExpression(), sourceRoot),
-				SpicyUtil.toSpicy(valueCorrespondence.getTargetTagExpression(), targetRoot)));
+			final List<PathExpression> sourcePaths = new ArrayList<PathExpression>();
+			Expression transformationFunction =
+				SpicyUtil.extractTransformation(valueCorrespondence.getExpression(), sourceRoot, sourcePaths);
+			corrs.add(new ValueCorrespondence(sourcePaths,
+				SpicyUtil.toSpicyPath(valueCorrespondence.getTargetTagExpression(), targetRoot),
+				transformationFunction));
 		}
 		// create mapping task
 		MappingTask mappingTask = new MappingTask(source, target, corrs);
 
 		for (final SymbolicAssignment cond : getSourceFKs())
 			mappingTask.getSourceProxy().addJoinCondition(
-				new JoinCondition(SpicyUtil.toSpicy(cond.getExpression(), sourceRoot),
-					SpicyUtil.toSpicy(cond.getTargetTagExpression(), sourceRoot)));
+				new JoinCondition(SpicyUtil.toSpicyPath(cond.getExpression(), sourceRoot),
+					SpicyUtil.toSpicyPath(cond.getTargetTagExpression(), sourceRoot)));
 		for (final SymbolicAssignment cond : getTargetFKs())
 			mappingTask.getTargetProxy().addJoinCondition(
-				new JoinCondition(SpicyUtil.toSpicy(cond.getExpression(), targetRoot),
-					SpicyUtil.toSpicy(cond.getTargetTagExpression(), targetRoot)));
+				new JoinCondition(SpicyUtil.toSpicyPath(cond.getExpression(), targetRoot),
+					SpicyUtil.toSpicyPath(cond.getTargetTagExpression(), targetRoot)));
 
 		return mappingTask;
 	}

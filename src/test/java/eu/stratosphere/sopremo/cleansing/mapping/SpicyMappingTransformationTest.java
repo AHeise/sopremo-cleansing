@@ -248,7 +248,6 @@ public class SpicyMappingTransformationTest extends
 			addObject("id", "CompanyABC", "name", "CompanyABC").
 			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
-		// sopremoPlan.trace();
 		sopremoPlan.run();
 	}
 
@@ -279,7 +278,6 @@ public class SpicyMappingTransformationTest extends
 			addObject("id", "CompanyABC", "name", "CompanyABC").
 			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
-		// sopremoPlan.trace();
 		sopremoPlan.run();
 	}
 	
@@ -308,7 +306,6 @@ public class SpicyMappingTransformationTest extends
 			addObject("id", "CompanyABC", "name", "CompanyABC").
 			addObject("id", "CompanyUVW", "name", "CompanyUVW");
 
-		sopremoPlan.trace();
 		sopremoPlan.run();
 	}	
 

@@ -10,15 +10,26 @@ import org.nfunk.jep.JEP;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 
 public class SopremoFunctionExpression extends Expression {
+	private EvaluationExpression expr;
 
 	public SopremoFunctionExpression(final String expression) throws ExpressionSyntaxException {
 		super(expression);
 		throw new UnsupportedOperationException("calling constructor with expression string is forbidden on " +
 			SopremoFunctionExpression.class);
 	}
+	
+	/**
+	 * Returns the expr.
+	 * 
+	 * @return the expr
+	 */
+	public EvaluationExpression getExpr() {
+		return this.expr;
+	}
 
 	public SopremoFunctionExpression(final EvaluationExpression expr) {
 		super("sum(1,1)");
+		this.expr = expr;
 
 		Field topNodeField = null;
 

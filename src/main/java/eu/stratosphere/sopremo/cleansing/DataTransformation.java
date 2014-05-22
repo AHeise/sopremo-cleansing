@@ -10,24 +10,12 @@ import java.util.Set;
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
 import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
-import eu.stratosphere.sopremo.expressions.AndExpression;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.JsonStreamExpression;
-import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
+import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Property;
@@ -125,7 +113,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		this.targetPKs.clear();
 		this.targetFKs.clear();
 		this.sourcePKs.clear();
-		
+
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
 			NestedOperatorExpression noe =
@@ -137,14 +125,14 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			JsonStream outVar = nestedOperator.getInput(0);
 			int targetIndex = outVar.getSource().getIndex();
 			this.targetHandler.process(nestedOperator.getResultProjection(), targetIndex);
-			DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getKeyExpression(),
+			DataTransformation.this.sourceHandler.addToSchema(nestedOperator.getGroupingKey(),
 				DataTransformation.this.sourceSchemaFromMapping);
 			if (this.targetSchema.get(targetIndex) instanceof ObjectCreation) {
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
 				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
 				this.targetPKs.add(idAttr);
-				this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr, nestedOperator.getKeyExpression()));
+				this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr, nestedOperator.getGroupingKey()));
 			}
 		}
 
@@ -152,7 +140,8 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 
 		// add target as late as possible to avoid overwriting it in targetHandler.process
 		for (SymbolicAssignment corr : this.targetFKs)
-			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(), DataTransformation.this.targetSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(),
+				DataTransformation.this.targetSchema);
 		System.out.println(this);
 	}
 
@@ -165,8 +154,10 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		for (int index = 0; index < this.sourceSchemaFromMapping.size(); index++)
 			this.sourceSchema.set(index, this.sourceSchemaFromMapping.get(index).clone());
 		for (SymbolicAssignment corr : this.sourceFKs) {
-			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(), DataTransformation.this.sourceSchema);
-			DataTransformation.this.sourceHandler.addToSchema(corr.getTargetTagExpression(), DataTransformation.this.sourceSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(),
+				DataTransformation.this.sourceSchema);
+			DataTransformation.this.sourceHandler.addToSchema(corr.getTargetTagExpression(),
+				DataTransformation.this.sourceSchema);
 		}
 	}
 
@@ -217,11 +208,13 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			if (streamExpr != null) {
 				InputSelection output = new InputSelection(streamExpr.getStream().getSource().getIndex());
 				final EvaluationExpression exprWithInputSel = value.clone().replace(streamExpr, output);
-				DataTransformation.this.sourceHandler.addToSchema(exprWithInputSel, DataTransformation.this.targetSchema);
+				DataTransformation.this.sourceHandler.addToSchema(exprWithInputSel,
+					DataTransformation.this.targetSchema);
 				DataTransformation.this.targetFKs.add(new SymbolicAssignment(targetPath.clone(),
 					exprWithInputSel));
 			} else {
-				DataTransformation.this.sourceHandler.addToSchema(value, DataTransformation.this.sourceSchemaFromMapping);
+				DataTransformation.this.sourceHandler.addToSchema(value,
+					DataTransformation.this.sourceSchemaFromMapping);
 				DataTransformation.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
 					targetPath.clone(), value));
 			}
@@ -244,8 +237,11 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				@Override
 				public EvaluationExpression handle(ObjectAccess value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
-					ObjectCreation oc = (ObjectCreation)
+					final EvaluationExpression path =
 						treeHandler.handle(value.getInputExpression(), new ObjectCreation());
+					if (!(path instanceof ObjectCreation))
+						return path;
+					ObjectCreation oc = (ObjectCreation) path;
 					EvaluationExpression actualSourceSchema = oc.getExpression(value.getField());
 					if (!conforms(actualSourceSchema, expected))
 						oc.addMapping(value.getField(), actualSourceSchema = expected);
@@ -256,8 +252,11 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				@Override
 				public EvaluationExpression handle(ArrayAccess value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
-					ArrayCreation ac = (ArrayCreation)
+					final EvaluationExpression path =
 						treeHandler.handle(value.getInputExpression(), new ArrayCreation());
+					if (!(path instanceof ArrayCreation))
+						return path;
+					ArrayCreation ac = (ArrayCreation) path;
 					final List<EvaluationExpression> elements = ac.getElements();
 					CollectionUtil.ensureSize(elements, value.getStartIndex() + 1, EvaluationExpression.VALUE);
 					EvaluationExpression actualSourceSchema = elements.get(value.getStartIndex());
@@ -268,17 +267,20 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 					return actualSourceSchema;
 				}
 			});
-			put(FunctionCall.class, new NodeHandler<FunctionCall, EvaluationExpression, EvaluationExpression>() {
-				@Override
-				public EvaluationExpression handle(FunctionCall value, EvaluationExpression expected,
-						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
-					if (expected != EvaluationExpression.VALUE)
-						throw new IllegalArgumentException("Functions can only be used in the beginning");
-					for (EvaluationExpression param : value.getParameters())
-						treeHandler.handle(param, EvaluationExpression.VALUE);
-					return EvaluationExpression.VALUE;
-				}
-			});
+			final NodeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression> subExprHandler =
+				new NodeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression>() {
+					@Override
+					public EvaluationExpression handle(EvaluationExpression value, EvaluationExpression expected,
+							TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+						final ChildIterator iterator = value.iterator();
+						while (iterator.hasNext())
+							treeHandler.handle(iterator.next(), EvaluationExpression.VALUE);
+						return EvaluationExpression.VALUE;
+					}
+				};
+			put(FunctionCall.class, subExprHandler);
+			put(CoerceExpression.class, subExprHandler);
+			put(TernaryExpression.class, subExprHandler);
 			put(ConstantExpression.class,
 				new NodeHandler<ConstantExpression, EvaluationExpression, EvaluationExpression>() {
 					@Override
