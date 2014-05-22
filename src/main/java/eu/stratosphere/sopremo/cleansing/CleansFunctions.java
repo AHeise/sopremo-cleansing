@@ -53,6 +53,7 @@ import eu.stratosphere.sopremo.type.TextNode;
 import eu.stratosphere.sopremo.type.TypeCoercer;
 //0.2compability
 //import eu.stratosphere.sopremo.SopremoEnvironment;
+import eu.stratosphere.sopremo.type.TypeNode;
 
 public class CleansFunctions implements BuiltinProvider,
 		ConstantRegistryCallback, FunctionRegistryCallback {
@@ -138,9 +139,10 @@ public class CleansFunctions implements BuiltinProvider,
 			 */
 			@Override
 			protected EvaluationExpression process(EvaluationExpression[] params) {
-				final Class<? extends IJsonNode> type =
-					TypeConstraint.AvailableTypes.get(params[0].evaluate(MissingNode.getInstance()).toString());
-				return new TypeConstraint(type);
+				TypeNode type = (TypeNode) params[0].evaluate(MissingNode.getInstance());
+				TypeConstraint typeConstraint = new TypeConstraint(type);
+				typeConstraint.setValueCorrection(TRY_COERCING_TO_TYPE);
+				return typeConstraint;
 			}
 		}, registry);
 	}
@@ -348,7 +350,7 @@ public class CleansFunctions implements BuiltinProvider,
 		public IJsonNode fix(final IJsonNode value, final ValidationRule violatedRule) {
 			if (violatedRule instanceof TypeConstraint) {
 				final Class<? extends IJsonNode> type = ((TypeConstraint) violatedRule)
-					.getType();
+					.getType().getNodeType();
 				final NodeCache cache = ((TypeConstraint) violatedRule)
 					.getNodeCache();
 				try {

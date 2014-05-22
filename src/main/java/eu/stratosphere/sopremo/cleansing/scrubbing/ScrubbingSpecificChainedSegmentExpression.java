@@ -24,9 +24,11 @@ public class ScrubbingSpecificChainedSegmentExpression extends
 		for (EvaluationExpression expression : this.getExpressions()) {
 			if (expression instanceof ValidationRule) {
 				ValidationRule rule = (ValidationRule) expression;
-				if (!rule.validate(result)) {
-					return rule.fix(result);
-				}
+				result = rule.evaluate(result);
+				//we not longer skip evaluation if rule is violated
+//				if (!rule.validate(result)) {
+//					return rule.fix(result);
+//				}
 			} else if (expression instanceof FunctionCall) {
 				result = expression.evaluate(result);
 			}

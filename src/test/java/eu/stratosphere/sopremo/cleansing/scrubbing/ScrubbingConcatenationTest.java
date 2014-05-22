@@ -27,53 +27,51 @@ import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
 
-public class ScrubbingComplexTest extends MeteorIT {
-	private File usCongressMembers, person;
+public class ScrubbingConcatenationTest extends MeteorIT {
+	private File usCongressMembersString, usCongressMembersInteger, person;
 
 	@Before
 	public void createInput() throws IOException {
-		this.usCongressMembers = this.testServer.createFile(
-				"usCongressMembers.json",
-				createObjectNode(
-						"id",
-						"1990-1994",
-						"name",
-						createObjectNode("firstName", "Adams", "lastName",
-								createObjectNode("value", "Adams")), "biography", 1, "party", "PBC"),
-				createObjectNode(
-										"id",
-										"1990-1994",
-										"name",
-										createObjectNode("firstName", "Adams", "lastName",
-												createObjectNode("value", "Adams", "notin" , 1)), "biography", 1, "party", "PBC"));
+		this.usCongressMembersString = this.testServer.createFile(
+				"usCongressMembersString.json", createObjectNode("id", "1"));
+		this.usCongressMembersInteger = this.testServer.createFile(
+				"usCongressMembersInteger.json", createObjectNode("id", 1));
 		this.person = this.testServer.getOutputFile("person.json");
+		
+		
 	}
 
 	@Test
-	public void testComplexScrubbing() throws IOException {
+	public void testStringConcat() throws IOException {
 		SopremoUtil.trace();
 		String query = "using cleansing;" + "$usCongressMembers = read from '"
-				+ this.usCongressMembers.toURI() + "';\n"
+				+ this.usCongressMembersString.toURI() + "';\n"
 				+ "$persons_scrubbed = scrub $usCongressMembers with rules{"
-				+ "id: required,"
-				+ "name: {"
-				+ "	firstName: required,"
-				+ "	lastName: {value : required, notin : required}"
-				+ "	}"
-				+ "};"
-				+ "write $persons_scrubbed to '"+ this.person.toURI() + "';\n";
+				+ "id: [required, type(text)]?concat_strings('_P'):concat_strings('_P')" + "};"
+				+ "write $persons_scrubbed to '" + this.person.toURI() + "';\n";
 
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
-		this.testServer.checkContentsOf(
-				"person.json",
-				createObjectNode(
-						"id",
-						"1990-1994",
-						"name",
-						createObjectNode("firstName", "Adams", "lastName",
-								createObjectNode("value", "Adams", "notin" , 1)), "biography", 1, "party", "PBC"));
+		this.testServer.checkContentsOf("person.json",
+				createObjectNode("id", "1_P"));
+	}
+	
+	@Test
+	public void testIntegerStringConcat() throws IOException {
+		SopremoUtil.trace();
+		String query = "using cleansing;" + "$usCongressMembers = read from '"
+				+ this.usCongressMembersInteger.toURI() + "';\n"
+				+ "$persons_scrubbed = scrub $usCongressMembers with rules{"
+				+ "id: [required, type(text)]?concat_strings('_P'):concat_strings('_P')" + "};"
+				+ "write $persons_scrubbed to '" + this.person.toURI() + "';\n";
+
+		final SopremoPlan plan = parseScript(query);
+
+		Assert.assertNotNull(this.client.submit(plan, null, true));
+
+		this.testServer.checkContentsOf("person.json",
+				createObjectNode("id", "1_P"));
 	}
 }

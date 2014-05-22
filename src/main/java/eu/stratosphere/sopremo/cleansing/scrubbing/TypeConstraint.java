@@ -5,42 +5,18 @@ import java.util.Map;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
 import eu.stratosphere.sopremo.operator.Name;
-import eu.stratosphere.sopremo.type.BigIntegerNode;
-import eu.stratosphere.sopremo.type.BooleanNode;
-import eu.stratosphere.sopremo.type.DecimalNode;
-import eu.stratosphere.sopremo.type.DoubleNode;
-import eu.stratosphere.sopremo.type.IArrayNode;
 import eu.stratosphere.sopremo.type.IJsonNode;
-import eu.stratosphere.sopremo.type.INumericNode;
-import eu.stratosphere.sopremo.type.IObjectNode;
-import eu.stratosphere.sopremo.type.IntNode;
-import eu.stratosphere.sopremo.type.LongNode;
-import eu.stratosphere.sopremo.type.TextNode;
+import eu.stratosphere.sopremo.type.TypeNode;
 
 @Name(adjective = "type")
 public class TypeConstraint extends ValidationRule {
-	public static Map<String, Class<? extends IJsonNode>> AvailableTypes =
-		new HashMap<String, Class<? extends IJsonNode>>();
+	public static Map<String, TypeNode> AvailableTypes =
+		new HashMap<String, TypeNode>();
 
-	static {
-		AvailableTypes.put("int", IntNode.class);
-		AvailableTypes.put("long", LongNode.class);
-		AvailableTypes.put("bigint", BigIntegerNode.class);
+	private final TypeNode type;
 
-		AvailableTypes.put("double", DoubleNode.class);
-		AvailableTypes.put("decimal", DecimalNode.class);
-
-		AvailableTypes.put("numeric", INumericNode.class);
-		AvailableTypes.put("text", TextNode.class);
-		AvailableTypes.put("bool", BooleanNode.class);
-		AvailableTypes.put("array", IArrayNode.class);
-		AvailableTypes.put("object", IObjectNode.class);
-	}
-
-	private final Class<? extends IJsonNode> type;
-
-	public TypeConstraint(final Class<? extends IJsonNode> type) {
-		this.type = type;
+	public TypeConstraint(final TypeNode params) {
+		this.type = params;
 	}
 
 	/**
@@ -54,10 +30,10 @@ public class TypeConstraint extends ValidationRule {
 
 	@Override
 	public boolean validate(final IJsonNode value) {
-		return this.type.isInstance(value);
+		return this.type.getNodeType().equals(value.getType());
 	}
 
-	public Class<? extends IJsonNode> getType() {
+	public TypeNode getType() {
 		return this.type;
 	}
 
