@@ -9,6 +9,7 @@ import eu.stratosphere.sopremo.testing.SopremoTestPlan;
 public class SpicyMappingTransformationFromTGDFileTest extends TestBase {
 
 	@Test
+	@Ignore
 	public void shouldPerformExampleMappingGenerated() {
 		SpicyMappingTransformation mapping = new SpicyMappingTransformation();
 		mapping.setTaskPath(getResource("mapping/usCongress.tgd").toURI().toString());

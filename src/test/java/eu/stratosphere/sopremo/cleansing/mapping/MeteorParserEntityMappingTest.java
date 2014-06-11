@@ -14,6 +14,7 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -35,6 +36,7 @@ import eu.stratosphere.sopremo.expressions.EvaluationExpression;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
+import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.testing.SopremoTestUtil;
@@ -59,11 +61,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $usCongressMembers.id_o"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -87,16 +89,19 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
 		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("0", "id_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -109,11 +114,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -124,7 +129,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
@@ -145,14 +149,17 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -164,11 +171,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $usCongressMembers.id_o"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -194,14 +201,10 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("0", "id_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -214,11 +217,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $usCongressMembers.id_o"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -249,14 +252,10 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("0", "id_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -268,12 +267,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    biography_p: $usCongressBiographies.biographyId_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -284,7 +283,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		assertSchemaEquals(sourceSchema, em.getSourceSchema());
@@ -302,16 +300,19 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "biography_p"),
 			JsonUtil.createPath("1", "biographyId_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -322,11 +323,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		String query = "$usCongressMembers = read from 'file://usCongressMembers.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressMembers.id_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressMembers.id_o"
 			+ "  }"
 			+ "];\n"
@@ -352,15 +353,18 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
-			JsonUtil.createPath("0", "id_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
 			JsonUtil.createPath("0", "id_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
 	}
@@ -372,11 +376,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ // switched output order and identified by
 			"    name_l: $usCongressBiographies.worksFor_o"
 			+ "  },"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  }"
@@ -388,7 +392,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
@@ -409,14 +412,17 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -431,11 +437,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ // if switched, spicy creates foreign keys on source in
 				// reversed order
 			"into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -446,7 +452,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
@@ -467,14 +472,17 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -510,12 +518,12 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o) "
 			+ "		and ($usCongressMembers.state == $states.letterCode)\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id,\n"
 			+ "    state_p: $states.name"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -527,7 +535,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		List<ObjectCreation> sourceSchema =
 			Lists.newArrayList(new ObjectCreation(), new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("state", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
@@ -554,16 +561,19 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "state_p"),
 			JsonUtil.createPath("2", "name")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -576,14 +586,14 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$person, $legalEntity, $personNames = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "where ($usCongressMembers.biography_o == $usCongressBiographies.biographyId_o)\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $legalEntity.id"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  },"
-			+ "  entity $personNames identified by $usCongressMembers.name_o with {"
+			+ "  entity $personNames with {"
 			+ // Only include id field
 			"  }"
 			+ "];\n"
@@ -595,7 +605,6 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 
 		List<ObjectCreation> sourceSchema = Lists.newArrayList(new ObjectCreation(), new ObjectCreation());
 		sourceSchema.get(0).addMapping("name_o", EvaluationExpression.VALUE);
-		sourceSchema.get(0).addMapping("id_o", EvaluationExpression.VALUE);
 		sourceSchema.get(0).addMapping("biography_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("worksFor_o", EvaluationExpression.VALUE);
 		sourceSchema.get(1).addMapping("biographyId_o", EvaluationExpression.VALUE);
@@ -618,18 +627,20 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetFKs.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("1", "id")));
 		Assert.assertEquals(targetFKs, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		targetKeys.add(JsonUtil.createPath("2", "id"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			JsonUtil.createPath("0", "name_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("2", "id"),
-			JsonUtil.createPath("0", "name_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
 	}
 
@@ -639,11 +650,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
-			+ "  entity $person identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: concat($usCongressMembers.name_o, '---', $usCongressBiographies.worksFor_o),\n"
 			+ "    worksFor_p: $usCongressMembers.id_o"
 			+ "  },"
-			+ "  entity $legalEntity identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"
@@ -667,17 +678,20 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 		targetSchema.get(1).addMapping("id", EvaluationExpression.VALUE);
 		assertSchemaEquals(targetSchema, em.getTargetSchema());
 		Assert.assertEquals(Collections.EMPTY_SET, em.getTargetFKs());
+		
+		Set<PathSegmentExpression> targetKeys = new HashSet<PathSegmentExpression>();
+		targetKeys.add(JsonUtil.createPath("0", "id"));
+		targetKeys.add(JsonUtil.createPath("0", "name_p"));
+		targetKeys.add(JsonUtil.createPath("1", "id"));
+		targetKeys.add(JsonUtil.createPath("1", "name_l"));
+		Assert.assertEquals(targetKeys, new HashSet<PathSegmentExpression>(em.getTargetKeys()));
 
 		Set<SymbolicAssignment> valueCorrespondences = new HashSet<SymbolicAssignment>();
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "id"),
-			JsonUtil.createPath("0", "id_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "name_p"),
 			FunctionUtil.createFunctionCall(CoreFunctions.CONCAT, JsonUtil.createPath("0", "name_o"),
 				new ConstantExpression("---"), JsonUtil.createPath("1", "worksFor_o"))));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("0", "worksFor_p"),
 			JsonUtil.createPath("0", "id_o")));
-		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "id"),
-			JsonUtil.createPath("1", "worksFor_o")));
 		valueCorrespondences.add(new SymbolicAssignment(JsonUtil.createPath("1", "name_l"),
 			JsonUtil.createPath("1", "worksFor_o")));
 		Assert.assertEquals(valueCorrespondences, em.getSourceToValueCorrespondences());
@@ -689,11 +703,11 @@ public class MeteorParserEntityMappingTest extends MeteorParseTest {
 			+ "$usCongressBiographies = read from 'file://usCongressBiographies.json';\n"
 			+ "$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n"
 			+ "into [\n"
-			+ "  entity $usCongressMembers identified by $usCongressMembers.id_o with {"
+			+ "  entity $person identified by $person.name_p with {"
 			+ "    name_p: $usCongressMembers.name_o,\n"
 			+ "    worksFor_p: $usCongressMembers.id_o"
 			+ "  },"
-			+ "  entity $usCongressBiographies identified by $usCongressBiographies.worksFor_o with {"
+			+ "  entity $legalEntity identified by $legalEntity.name_l with {"
 			+ "    name_l: $usCongressBiographies.worksFor_o"
 			+ "  }"
 			+ "];\n"

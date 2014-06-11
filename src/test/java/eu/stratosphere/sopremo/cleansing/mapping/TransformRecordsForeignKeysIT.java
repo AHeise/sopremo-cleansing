@@ -22,6 +22,7 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
@@ -116,6 +117,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 	}
 	
 	@Test
+	@Ignore
 	public void testEmbeddedReferences() throws IOException {
 
 		String query = "using cleansing;" +
@@ -155,6 +157,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 	}
 
 	@Test
+	@Ignore
 	public void testEmbeddedForeignKeyReferences() throws IOException {
 
 		String query = "using cleansing;" +
@@ -188,6 +191,7 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 	}
 
 	@Test
+	@Ignore
 	public void testEmbeddedForeignArrayKeyReferences() throws IOException {
 
 		String query = "using cleansing;" +
