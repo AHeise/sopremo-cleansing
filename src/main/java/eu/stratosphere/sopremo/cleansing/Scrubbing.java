@@ -39,90 +39,7 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 		this.targetHandler.process(ruleExpression, EvaluationExpression.VALUE);
 	}
 
-//	private void parseRuleExpression(ObjectCreation ruleExpression,
-//			PathSegmentExpression value) {
-//		final List<Mapping<?>> mappings = ruleExpression.getMappings();
-//		for (Mapping<?> mapping : mappings) {
-//			final EvaluationExpression expression = mapping.getExpression();
-//			final PathSegmentExpression path = ExpressionUtil.makePath(value,
-//					mapping.getTargetExpression());
-//			if (expression instanceof ObjectCreation) {
-//				this.parseRuleExpression((ObjectCreation) expression, path);
-//			} else if (expression instanceof FunctionCall) {
-//				//this.ruleBasedScrubbing.addRule(
-//						//this.handleFunctionCalls(expression), path);
-//			} else {
-//				for (EvaluationExpression expr : this
-//						.setFixesOnRules(expression)) {
-//					this.ruleBasedScrubbing.addRule(expr, path);
-//				}
-//			}
-//		}
-//	}
-//
-//	private ArrayCreation setFixesOnRules(EvaluationExpression expression) {
-//		ArrayCreation rulesWithFixes = new ArrayCreation();
-//		if (expression instanceof TernaryExpression) {
-//			if (((TernaryExpression) expression).getIfExpression() instanceof ArrayCreation) {
-//				ValueCorrection generalFix = (ValueCorrection) ((TernaryExpression) expression)
-//						.getThenExpression();
-//				for (EvaluationExpression partial : ((TernaryExpression) expression)
-//						.getIfExpression()) {
-//					if (partial instanceof TernaryExpression) {
-//						ValidationRule rule = (ValidationRule) ((TernaryExpression) partial)
-//								.getIfExpression();
-//						rule = checkForStatefulConstantAndCopy(rule);
-//						ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression) partial)
-//								.getThenExpression();
-//						rule.setValueCorrection(explicitFix);
-//						rulesWithFixes.add(rule);
-//					} else if (partial instanceof ValidationRule) {
-//						partial = checkForStatefulConstantAndCopy((ValidationRule) partial);
-//						((ValidationRule) partial)
-//								.setValueCorrection(generalFix);
-//						rulesWithFixes.add(partial);
-//					} else if (partial instanceof FunctionCall) {
-//						//rulesWithFixes.add(this.handleFunctionCalls(partial));
-//					} else {
-//						throw new IllegalArgumentException(
-//								"No rules for validation provided.");
-//					}
-//				}
-//
-//			} else {
-//				ValidationRule rule = (ValidationRule) ((TernaryExpression) expression)
-//						.getIfExpression();
-//				ValueCorrection fix = (ValueCorrection) ((TernaryExpression) expression)
-//						.getThenExpression();
-//				rule = checkForStatefulConstantAndCopy(rule);
-//				rule.setValueCorrection(fix);
-//				rulesWithFixes.add(rule);
-//			}
-//		} else if (expression instanceof ArrayCreation) {
-//			for (EvaluationExpression partial : expression) {
-//				if (partial instanceof TernaryExpression) {
-//					ValidationRule rule = (ValidationRule) ((TernaryExpression) partial)
-//							.getIfExpression();
-//					ValueCorrection explicitFix = (ValueCorrection) ((TernaryExpression) partial)
-//							.getThenExpression();
-//					rule = checkForStatefulConstantAndCopy(rule);
-//					rule.setValueCorrection(explicitFix);
-//					rulesWithFixes.add(rule);
-//				} else if (partial instanceof ValidationRule) {
-//					rulesWithFixes.add(partial);
-//				} else if (partial instanceof FunctionCall) {
-//					//rulesWithFixes.add(this.handleFunctionCalls(partial));
-//				} else {
-//					throw new IllegalArgumentException(
-//							"No rules for validation provided.");
-//				}
-//			}
-//		} else {
-//			expression = checkForStatefulConstantAndCopy((ValidationRule) expression);
-//			rulesWithFixes.add(expression);
-//		}
-//		return rulesWithFixes;
-//	}
+
 
 	private EvaluationExpression putValueAsParameterInFunction(
 			FunctionCall function) {
@@ -131,10 +48,7 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 		return fct;
 	}
 
-//	private ValidationRule checkForStatefulConstantAndCopy(ValidationRule rule) {
-//		return (ValidationRule) ((rule instanceof StatefulConstant) ? rule
-//				.clone() : rule);
-//	}
+
 
 	public void addRule(EvaluationExpression ruleExpression,
 			PathSegmentExpression target) {
@@ -167,9 +81,7 @@ public class Scrubbing extends CompositeOperator<Scrubbing> {
 	private transient TargetHandler targetHandler = new TargetHandler();
 
 	private class TargetHandler extends ReturnlessTreeHandler<EvaluationExpression, PathSegmentExpression> {
-		/**
-		 * Initializes SpicyUtil.SopremoPathToSpicyPath.
-		 */
+		
 		public TargetHandler() {
 			put(ObjectCreation.class, new NodeHandler<ObjectCreation, EvaluationExpression, PathSegmentExpression>() {
 				@Override
