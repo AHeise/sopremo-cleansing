@@ -80,83 +80,6 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 		module.getOutput(0).setInput(0, filterInvalid);
 	}
 
-//	private EvaluationExpression createResultProjection() {
-//		// no nested rule
-//		if (this.rules.size() == 1
-//				&& this.rules.containsKey(EvaluationExpression.VALUE))
-//			return new ScrubbingSpecificChainedSegmentExpression(
-//					this.rules.values());
-//
-//		Queue<PathSegmentExpression> uncoveredPaths = new LinkedList<PathSegmentExpression>(
-//				this.rules.keySet());
-//
-//		final ObjectCreation objectCreation = new ObjectCreation();
-//		objectCreation.addMapping(new ObjectCreation.CopyFields(
-//				EvaluationExpression.VALUE));
-//		while (!uncoveredPaths.isEmpty()) {
-//			final PathSegmentExpression path = uncoveredPaths.remove();
-//			this.addToObjectCreation(
-//					objectCreation,
-//					path,
-//					path,
-//					new ScrubbingSpecificChainedSegmentExpression(this.rules
-//							.get(path)).withTail(path));
-//		}
-//		return objectCreation;*/
-//		return null;
-//	}
-//
-//	/**
-//	 * @param objectCreation
-//	 * @param path
-//	 * @param chainedSegmentExpression
-//	 */
-//	private void addToObjectCreation(ObjectCreation objectCreation,
-//			PathSegmentExpression remainingPath,
-//			PathSegmentExpression completePath,
-//			PathSegmentExpression chainedSegmentExpression) {
-//
-//		final String field = ((ObjectAccess) remainingPath).getField();
-//
-//		for (int index = 0, size = objectCreation.getMappingSize(); index < size; index++) {
-//			final Mapping<?> mapping = objectCreation.getMapping(index);
-//			final PathSegmentExpression targetExpression = mapping
-//					.getTargetExpression();
-//			// if (targetExpression.equalsThisSeqment(targetExpression)) {
-//			
-//			// TODO add case for ObjectAccess to allow complex objects
-//			// Testcase: ScrubbingComplexTest.java
-//			if (remainingPath.getInputExpression() == EvaluationExpression.VALUE){
-//				objectCreation.addMapping(new ObjectCreation.FieldAssignment(
-//						field, chainedSegmentExpression));
-//			}
-//			else{
-//				this.addToObjectCreation(objectCreation,
-//						(PathSegmentExpression) remainingPath
-//								.getInputExpression(), completePath,
-//						chainedSegmentExpression);
-//			}
-//		}
-//
-//		if (remainingPath.getInputExpression() == EvaluationExpression.VALUE)
-//			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
-//					chainedSegmentExpression));
-//		else {
-//			final ObjectCreation subObject = new ObjectCreation();
-//			PathSegmentExpression processedPath = EvaluationExpression.VALUE;
-//			for (PathSegmentExpression segment = completePath; remainingPath != segment; segment = (PathSegmentExpression) segment
-//					.getInputExpression())
-//				processedPath = segment.cloneSegment().withTail(processedPath);
-//			subObject.addMapping(new ObjectCreation.CopyFields(processedPath));
-//			objectCreation.addMapping(new ObjectCreation.FieldAssignment(field,
-//					subObject));
-//			this.addToObjectCreation(subObject,
-//					(PathSegmentExpression) remainingPath.getInputExpression(),
-//					completePath, chainedSegmentExpression);
-//		}
-//
-//	}
-	
 	private transient SchemaHandler targetSchemaHandler = new SchemaHandler();
 
 	private class SchemaHandler extends TreeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression> {
@@ -169,7 +92,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 				public EvaluationExpression handle(ObjectAccess value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
 					ObjectCreation oc = new ObjectCreation();
-					oc.addMapping(new ObjectCreation.CopyFields(value.getInputExpression()));
+					//oc.addMapping(new ObjectCreation.CopyFields(value.getInputExpression()));
 					
 					oc = (ObjectCreation)
 						treeHandler.handle(value.getInputExpression(), oc);
