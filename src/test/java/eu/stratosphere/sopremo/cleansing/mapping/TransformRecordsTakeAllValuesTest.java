@@ -25,16 +25,17 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  */
 
 public class TransformRecordsTakeAllValuesTest extends MeteorIT {
-	private File originalPersons, companies;
+	private File originalPersons, companies, universities;
 
 	@Before
 	public void createFiles() throws IOException {
 		this.originalPersons = this.testServer.createFile("originalPersons.json",
-			createObjectNode("id", 1, "name", "Arvid", "worksFor", "HPI"),
-			createObjectNode("id", 2, "name", "Tommy", "worksFor", "Arvid Inc."),
-			createObjectNode("id", 4, "name", "Foobar", "worksFor", "Arvid Inc."),
-			createObjectNode("id", 3, "name", "Fabian", "worksFor", "SAP"));
+			createObjectNode("id", 1, "name", "Arvid", "worksFor", "HPI", "university", "HU"),
+			createObjectNode("id", 2, "name", "Tommy", "worksFor", "Arvid Inc.", "university", "FU"),
+			createObjectNode("id", 4, "name", "Foobar", "worksFor", "Arvid Inc.", "university", "HU"),
+			createObjectNode("id", 3, "name", "Fabian", "worksFor", "SAP", "university", "TU"));
 		this.companies = this.testServer.getOutputFile("companies.json");
+		this.universities = this.testServer.getOutputFile("universities.json");
 	}
 
 	@Test
@@ -164,5 +165,48 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")), "highestId", 1),
 			createObjectNode("id", "SAP", "name", "SAP", "employees",
 				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")), "highestId", 3));
+	}
+	
+	@Test
+	public void testTakeAllValuesFromOtherRelation() throws IOException {
+		String query = "using cleansing;\n" +
+			"\n" +
+			"$originalPersons = read from '" + this.originalPersons.toURI() + "';\n" +
+			"\n" +
+			"$companies, $universities  = transform records $originalPersons\n" +
+			"	into [\n" +
+			"	    entity $companies identified by $companies.name with {\n" +
+			"	       name: $originalPersons.worksFor,\n" +
+			"		   employees: [$originalPersons.name],\n" +
+			"		   empUniversities : [$universities.id]"+
+			"	    },"+
+			"		entity $universities identified by $universities.id with {\n" +
+			"	       id: $originalPersons.university,\n" +
+			"	    },"+
+			"	];\n" +
+			"\n" +
+			"write $companies to '" + this.companies.toURI() + "';\n"+
+			"write $universities to '" + this.universities.toURI() + "';\n";
+
+		final SopremoPlan plan = parseScript(query);
+
+		SopremoUtil.trace();
+		this.client.submit(plan, null, true);
+
+		ObjectCreation canonicalizer = new ObjectCreation();
+		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
+		canonicalizer.addMapping("employees",
+			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
+		this.testServer.checkContentsOf("companies.json", canonicalizer,
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
+				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")), "empUniversities", createArrayNode("FU", "HU")),
+			createObjectNode("id", "HPI", "name", "HPI", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")), "empUniversities", createArrayNode("HU")),
+			createObjectNode("id", "SAP", "name", "SAP", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")), "empUniversities", createArrayNode("TU")));
+		this.testServer.checkContentsOf("universities.json", 
+				createObjectNode("id", "TU"),
+				createObjectNode("id", "HU"),
+				createObjectNode("id", "FU"));
 	}
 }
