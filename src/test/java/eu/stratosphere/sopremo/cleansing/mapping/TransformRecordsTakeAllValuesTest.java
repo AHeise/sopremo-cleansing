@@ -1,6 +1,6 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import static eu.stratosphere.sopremo.type.JsonUtil.createObjectNode;
+import static eu.stratosphere.sopremo.type.JsonUtil.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,7 +9,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
+import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
@@ -41,7 +47,7 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 			"	into [\n" +
 			"	    entity $companies identified by $companies.name with {\n" +
 			"	       name: $originalPersons.worksFor,\n" +
-			"		   employe: $originalPersons.name\n" +
+			"		   employee: $originalPersons.name\n" +
 			"	    }\n" +
 			"	];\n" +
 			"\n" +
@@ -49,15 +55,16 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
+		SopremoUtil.trace();
 		this.client.submit(plan, null, true);
 
 		this.testServer.checkContentsOf("companies.json",
-			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employe", "Tommy"),
-			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employe", "Foobar"),
-			createObjectNode("id", "HPI", "name", "HPI", "employe", "Arvid"),
-			createObjectNode("id", "SAP", "name", "SAP", "employe", "Fabian"));
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employee", "Tommy"),
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employee", "Foobar"),
+			createObjectNode("id", "HPI", "name", "HPI", "employee", "Arvid"),
+			createObjectNode("id", "SAP", "name", "SAP", "employee", "Fabian"));
 	}
-	
+
 	@Test
 	public void testTakeAllValues() throws IOException {
 		String query = "using cleansing;\n" +
@@ -68,7 +75,7 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 			"	into [\n" +
 			"	    entity $companies identified by $companies.name with {\n" +
 			"	       name: $originalPersons.worksFor,\n" +
-			"		   employe: [$originalPersons.name]\n" +
+			"		   employees: [$originalPersons.name]\n" +
 			"	    }\n" +
 			"	];\n" +
 			"\n" +
@@ -76,11 +83,51 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
+		SopremoUtil.trace();
 		this.client.submit(plan, null, true);
 
-		this.testServer.checkContentsOf("companies.json",
-			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employe",  JsonUtil.createArrayNode("Tommy", "Foobar")),
-			createObjectNode("id", "HPI", "name", "HPI", "employe", JsonUtil.createArrayNode("Arvid")),
-			createObjectNode("id", "SAP", "name", "SAP", "employe", JsonUtil.createArrayNode("Fabian")));
+		ObjectCreation canonicalizer = new ObjectCreation();
+		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
+		canonicalizer.addMapping("employees",
+			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
+		this.testServer.checkContentsOf("companies.json", canonicalizer,
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
+				JsonUtil.createArrayNode("Foobar", "Tommy")),
+			createObjectNode("id", "HPI", "name", "HPI", "employees", JsonUtil.createArrayNode("Arvid")),
+			createObjectNode("id", "SAP", "name", "SAP", "employees", JsonUtil.createArrayNode("Fabian")));
+	}
+
+	@Test
+	public void testTakeAllObjects() throws IOException {
+		String query = "using cleansing;\n" +
+			"\n" +
+			"$originalPersons = read from '" + this.originalPersons.toURI() + "';\n" +
+			"\n" +
+			"$companies  = transform records $originalPersons\n" +
+			"	into [\n" +
+			"	    entity $companies identified by $companies.name with {\n" +
+			"	       name: $originalPersons.worksFor,\n" +
+			"		   employees: [{name: $originalPersons.name}]\n" +
+			"	    }\n" +
+			"	];\n" +
+			"\n" +
+			"write $companies to '" + this.companies.toURI() + "';\n";
+
+		final SopremoPlan plan = parseScript(query);
+
+		SopremoUtil.trace();
+		this.client.submit(plan, null, true);
+
+		ObjectCreation canonicalizer = new ObjectCreation();
+		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
+		canonicalizer.addMapping("employees",
+			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
+		this.testServer.checkContentsOf("companies.json", canonicalizer,
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
+				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy"))),
+			createObjectNode("id", "HPI", "name", "HPI", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Arvid"))),
+			createObjectNode("id", "SAP", "name", "SAP", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Fabian"))));
 	}
 }

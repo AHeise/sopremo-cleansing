@@ -221,7 +221,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		return cached;
 	}
 
-	private void generateDifferenceForNegation(ComplexQueryWithNegations query, String viewName, String positiveViewName,
+	private void generateDifferenceForNegation(ComplexQueryWithNegations query, String viewName,
+			String positiveViewName,
 			StreamManager streamManager) {
 		List<JsonStream> inputs = Lists.newArrayList(streamManager.getStream(positiveViewName));
 		List<BooleanExpression> joinConditions = new ArrayList<BooleanExpression>();
@@ -269,8 +270,10 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		InputSelection secondIn = new InputSelection(inputIndex);
 		if (negation.isTargetDifference()) {
 			for (int i = 0; i < negation.getTargetEqualities().getLeftCorrespondences().size(); i++) {
-				VariableCorrespondence leftCorrespondence = negation.getTargetEqualities().getLeftCorrespondences().get(i);
-				VariableCorrespondence rightCorrespondence = negation.getTargetEqualities().getRightCorrespondences().get(i);
+				VariableCorrespondence leftCorrespondence =
+					negation.getTargetEqualities().getLeftCorrespondences().get(i);
+				VariableCorrespondence rightCorrespondence =
+					negation.getTargetEqualities().getRightCorrespondences().get(i);
 				String leftPathName = SpicyUtil.nameForPath(leftCorrespondence.getFirstSourcePath());
 				String rightPathName = SpicyUtil.nameForPath(rightCorrespondence.getFirstSourcePath());
 				expressions.add(new ElementInSetExpression(new ObjectAccess(leftPathName).withInputExpression(firstIn),
@@ -301,9 +304,11 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			if (attributeNode instanceof MetadataNode) {
 				expression = SpicyUtil.createRelativePathForMetadataNode(attributePath, attributeNode, streamManager);
 			} else if (attributeNode.isVirtual()) {
-				expression = SpicyUtil.createRelativePathForVirtualAttribute(attributePath, attributeNode, streamManager);
+				expression =
+					SpicyUtil.createRelativePathForVirtualAttribute(attributePath, attributeNode, streamManager);
 			} else if (isSingleAttributeWithVirtualFathers((AttributeNode) attributeNode)) {
-				expression = SpicyUtil.createRelativePathForSingleAttribute(attributePath, attributeNode, streamManager);
+				expression =
+					SpicyUtil.createRelativePathForSingleAttribute(attributePath, attributeNode, streamManager);
 			} else {
 				expression = SpicyUtil.createRelativePath(attributePath, streamManager);
 			}
@@ -511,9 +516,9 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 	}
 
 	private TGDGeneratorsMap getGeneratorsMap(FORule tgd, MappingTask mappingTask) {
-//		TGDGeneratorsMap map = this.generatorsMaps.get(tgd);
-//		if (map != null)
-//			return map;
+		// TGDGeneratorsMap map = this.generatorsMaps.get(tgd);
+		// if (map != null)
+		// return map;
 		TGDGeneratorsMap original =
 			new it.unibas.spicy.model.generators.operators.GenerateValueGenerators().generateValueGenerators(tgd,
 				mappingTask);
@@ -581,40 +586,45 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		TGDGeneratorsMap tgdGeneratorsMap = getGeneratorsMap(rule, mappingTask);
 		SetNode setNode = targetVariable.getBindingNode(mappingTask.getTargetProxy().getIntermediateSchema());
 		INode tupleNode = setNode.getChild(0);
-		oc.addMapping(XQUtility.SET_ID, createIdFromGenerators(setNode, mappingTask, tgdGeneratorsMap, targetVariable, inputManager));
+		oc.addMapping(XQUtility.SET_ID,
+			createIdFromGenerators(setNode, mappingTask, tgdGeneratorsMap, targetVariable, inputManager));
 		List<INode> setNodeChildren = findSetChildren(tupleNode);
 		// generate copy values from tgd view
 		ObjectCreation content = new ObjectCreation();
-		// if (targetVariable.getBindingPathExpression().getStartingVariable() == null) {
-		// List<VariablePathExpression> targetPaths =
-		// targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
-		// for (int i = 0; i < targetPaths.size(); i++) {
-		// VariablePathExpression targetPath = targetPaths.get(i);
-		// if (targetPath.getStartingVariable().equals(targetVariable)) {
-		// String targetPathName = SpicyUtil.nameForPath(targetPath);
-		// content.addMapping(targetPathName,
-		// new ObjectAccess(SpicyUtil.nameForPath(targetPath)).withInputExpression(new InputSelection(0)));
-		// }
-		// }
-		// }
-		// else
-		for (SetAlias ruleVariable : rule.getTargetView().getVariables()) {
-			for (SetAlias sourceVariable = ruleVariable; sourceVariable != null; sourceVariable =
-				sourceVariable.getBindingPathExpression().getStartingVariable())
-				if (sourceVariable.getAbsoluteBindingPathExpression().equals(targetVariable.getAbsoluteBindingPathExpression())) {
-					List<VariablePathExpression> targetPaths =
-						sourceVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
-					for (VariablePathExpression targetPath : targetPaths) {
-						if (targetPath.getStartingVariable().equals(sourceVariable)) {
-							VariablePathExpression sourcePath = targetPath;
-							String targetPathName =
-								SpicyUtil.nameForPath(new VariablePathExpression(targetVariable, targetPath.getPathSteps()));
-							content.addMapping(targetPathName,
-								new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(0)));
+//		if (targetVariable.getBindingPathExpression().getStartingVariable() == null) {
+//			List<VariablePathExpression> targetPaths =
+//				targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+//			for (int i = 0; i < targetPaths.size(); i++) {
+//				VariablePathExpression targetPath = targetPaths.get(i);
+//				if (targetPath.getStartingVariable().equals(targetVariable)) {
+//					String targetPathName = SpicyUtil.nameForPath(targetPath);
+//					content.addMapping(targetPathName,
+//						new ObjectAccess(SpicyUtil.nameForPath(targetPath)).withInputExpression(new InputSelection(0)));
+//				}
+//			}
+//		}
+//		else
+			for (SetAlias ruleVariable : rule.getTargetView().getVariables()) {
+				for (SetAlias sourceVariable = ruleVariable; sourceVariable != null; sourceVariable =
+					sourceVariable.getBindingPathExpression().getStartingVariable())
+					if (sourceVariable.getAbsoluteBindingPathExpression().equals(
+						targetVariable.getAbsoluteBindingPathExpression())) {
+						List<VariablePathExpression> targetPaths =
+							sourceVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+						for (VariablePathExpression targetPath : targetPaths) {
+							if (targetPath.getStartingVariable().equals(sourceVariable)) {
+								VariablePathExpression sourcePath = targetPath;
+								String targetPathName =
+									SpicyUtil.nameForPath(new VariablePathExpression(targetVariable,
+										targetPath.getPathSteps()));
+								content.addMapping(
+									targetPathName,
+									new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(
+										0)));
+							}
 						}
 					}
-				}
-		}
+			}
 		oc.addMapping("content", content);
 		// add the set id of all children sets
 		for (int i = 0; i < setNodeChildren.size(); i++) {
@@ -720,12 +730,14 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		BitSet sourcePkSet = new BitSet(), targetPkSet = new BitSet();
 		for (EvaluationExpression key : getSourceKeys()) {
 			int sourceIndex = key.findFirst(InputSelection.class).getIndex();
-			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, sourceRoot), !sourcePkSet.get(sourceIndex)));
+			source.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, sourceRoot),
+				!sourcePkSet.get(sourceIndex)));
 			sourcePkSet.set(sourceIndex, true);
 		}
 		for (EvaluationExpression key : getTargetKeys()) {
 			int targetIndex = key.findFirst(InputSelection.class).getIndex();
-			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, targetRoot), !targetPkSet.get(targetIndex)));
+			target.addKeyConstraint(new KeyConstraint(SpicyUtil.toSpicyPath(key, targetRoot),
+				!targetPkSet.get(targetIndex)));
 			targetPkSet.set(targetIndex, true);
 		}
 
