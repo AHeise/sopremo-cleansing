@@ -32,7 +32,7 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 		this.originalPersons = this.testServer.createFile("originalPersons.json",
 			createObjectNode("id", 1, "name", "Arvid", "worksFor", "HPI"),
 			createObjectNode("id", 2, "name", "Tommy", "worksFor", "Arvid Inc."),
-			createObjectNode("id", 2, "name", "Foobar", "worksFor", "Arvid Inc."),
+			createObjectNode("id", 4, "name", "Foobar", "worksFor", "Arvid Inc."),
 			createObjectNode("id", 3, "name", "Fabian", "worksFor", "SAP"));
 		this.companies = this.testServer.getOutputFile("companies.json");
 	}
@@ -129,5 +129,40 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 				JsonUtil.createArrayNode(createObjectNode("name", "Arvid"))),
 			createObjectNode("id", "SAP", "name", "SAP", "employees",
 				JsonUtil.createArrayNode(createObjectNode("name", "Fabian"))));
+	}
+	
+	@Test
+	public void testTakeAllObjectsInFunctions() throws IOException {
+		String query = "using cleansing;\n" +
+			"\n" +
+			"$originalPersons = read from '" + this.originalPersons.toURI() + "';\n" +
+			"\n" +
+			"$companies  = transform records $originalPersons\n" +
+			"	into [\n" +
+			"	    entity $companies identified by $companies.name with {\n" +
+			"	       name: $originalPersons.worksFor,\n" +
+			"		   employees: [{name: $originalPersons.name}],\n" +
+			"		   highestId: max([$originalPersons.id])"+
+			"	    }\n" +
+			"	];\n" +
+			"\n" +
+			"write $companies to '" + this.companies.toURI() + "';\n";
+
+		final SopremoPlan plan = parseScript(query);
+
+		SopremoUtil.trace();
+		this.client.submit(plan, null, true);
+
+		ObjectCreation canonicalizer = new ObjectCreation();
+		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
+		canonicalizer.addMapping("employees",
+			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
+		this.testServer.checkContentsOf("companies.json", canonicalizer,
+			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
+				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")), "highestId", 4),
+			createObjectNode("id", "HPI", "name", "HPI", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")), "highestId", 1),
+			createObjectNode("id", "SAP", "name", "SAP", "employees",
+				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")), "highestId", 3));
 	}
 }
