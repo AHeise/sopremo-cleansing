@@ -20,6 +20,7 @@ along with ++Spicy.  If not, see <http://www.gnu.org/licenses/>.
  */
 package eu.stratosphere.sopremo.cleansing.mapping;
 
+import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.KeyConstraint;
 import it.unibas.spicy.model.datasource.nodes.AttributeNode;
@@ -37,11 +38,7 @@ import it.unibas.spicy.model.mapping.rewriting.egds.Determination;
 import it.unibas.spicy.model.mapping.rewriting.egds.TGDImplicants;
 import it.unibas.spicy.model.mapping.rewriting.egds.operators.CheckEGDSatisfiability;
 import it.unibas.spicy.model.mapping.rewriting.egds.operators.FindMinimalImplicants;
-import it.unibas.spicy.model.paths.PathExpression;
-import it.unibas.spicy.model.paths.SetAlias;
-import it.unibas.spicy.model.paths.VariableFunctionalDependency;
-import it.unibas.spicy.model.paths.VariableJoinCondition;
-import it.unibas.spicy.model.paths.VariablePathExpression;
+import it.unibas.spicy.model.paths.*;
 import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
 import it.unibas.spicy.utility.SpicyEngineUtility;
 
@@ -63,23 +60,38 @@ public class GenerateSkolemGenerators {
 
 	private FindMinimalImplicants implicantsFinder = new FindMinimalImplicants();
 
-	public void findGeneratorsForSkolems(FORule tgd, MappingTask mappingTask, Map<VariablePathExpression, IValueGenerator> generators,
+	public void findGeneratorsForSkolems(FORule tgd, MappingTask mappingTask,
+			Map<VariablePathExpression, IValueGenerator> generators,
 			List<GeneratorWithPath> functionGeneratorsForSkolemFunctions) {
 		if (logger.isDebugEnabled())
-			logger.debug("****************  Generating skolem function generators for tgd " + tgd + " - Function generators: " +
+			logger.debug("****************  Generating skolem function generators for tgd " + tgd +
+				" - Function generators: " +
 				SpicyEngineUtility.printCollection(functionGeneratorsForSkolemFunctions));
 		generateStandardSkolemGenerators(tgd, generators, functionGeneratorsForSkolemFunctions);
+		final List<VariableCorrespondence> correspondences = tgd.getCoveredCorrespondences();
 		if (mappingTask.getConfig().rewriteEGDs()) {
-			addSkolemGeneratorsForKeys(tgd, generators, functionGeneratorsForSkolemFunctions, mappingTask.getTargetProxy());
+			addSkolemGeneratorsForKeys(tgd, generators, functionGeneratorsForSkolemFunctions,
+				mappingTask.getTargetProxy());
 		}
 		if (logger.isDebugEnabled())
 			logger.debug("****************  Standard generators " + SpicyEngineUtility.printMap(generators));
 		if (mappingTask.getConfig().rewriteSkolemsForEGDs()) {
-			CheckEGDSatisfiability checker = new CheckEGDSatisfiability();
-			checker.checkEGDSatisfiability(mappingTask);
+			// CheckEGDSatisfiability checker = new CheckEGDSatisfiability();
+			// checker.checkEGDSatisfiability(mappingTask);
 			findGeneratorsForSkolemsForEGDs(tgd, mappingTask, generators, functionGeneratorsForSkolemFunctions);
 			if (logger.isDebugEnabled())
 				logger.debug("****************  EGD generators " + SpicyEngineUtility.printMap(generators));
+		}
+		final GeneratePathExpression gpe = new GeneratePathExpression();
+		for (ValueCorrespondence correspondence : mappingTask.getValueCorrespondences()) {
+			if (correspondence.getSourcePaths() == null) {
+				final VariablePathExpression relativePath =
+					gpe.generateRelativePath(correspondence.getTargetPath(), mappingTask.getTargetProxy());
+				for (SetAlias targetSetVariable : tgd.getTargetView().getGenerators())
+					if (targetSetVariable.equalsOrIsClone(relativePath.getStartingVariable()))
+						generators.put(new VariablePathExpression(relativePath, targetSetVariable),
+							new FunctionGenerator(correspondence.getTransformationFunction()));
+			}
 		}
 	}
 
@@ -92,17 +104,20 @@ public class GenerateSkolemGenerators {
 	}
 
 	private void addStandardSkolemGenerators(FORule tgd, VariableJoinCondition joinCondition,
-			Map<VariablePathExpression, IValueGenerator> generators, List<GeneratorWithPath> functionGeneratorsForSkolems) {
+			Map<VariablePathExpression, IValueGenerator> generators,
+			List<GeneratorWithPath> functionGeneratorsForSkolems) {
 		for (int i = 0; i < joinCondition.getToPaths().size(); i++) {
 			VariablePathExpression toPath = joinCondition.getToPaths().get(i);
 			VariablePathExpression fromPath = joinCondition.getFromPaths().get(i);
 			IValueGenerator toGenerator = generators.get(toPath);
 			IValueGenerator fromGenerator = generators.get(fromPath);
 			if (toGenerator == null && fromGenerator != null && fromGenerator instanceof FunctionGenerator) {
-				throw new IllegalMappingTaskException("Key does not have generator, while foreign key has: " + fromGenerator);
+				throw new IllegalMappingTaskException("Key does not have generator, while foreign key has: " +
+					fromGenerator);
 			}
 			if (fromGenerator == null && toGenerator != null && toGenerator instanceof FunctionGenerator) {
-				throw new IllegalMappingTaskException("Foreign key does not have generator, while key has: " + toGenerator);
+				throw new IllegalMappingTaskException("Foreign key does not have generator, while key has: " +
+					toGenerator);
 			}
 			if (toGenerator != null && fromGenerator == null) {
 				if (toGenerator instanceof SkolemFunctionGenerator) {
@@ -118,7 +133,8 @@ public class GenerateSkolemGenerators {
 				generators.put(toPath, fromGenerator);
 			} else if (toGenerator == null && fromGenerator == null) {
 				SkolemFunctionGenerator toSkolemGenerator =
-					new SkolemFunctionGenerator(toPath.getAbsolutePath().toString(), true, tgd, functionGeneratorsForSkolems);
+					new SkolemFunctionGenerator(toPath.getAbsolutePath().toString(), true, tgd,
+						functionGeneratorsForSkolems);
 				toSkolemGenerator.setType(SkolemFunctionGenerator.STANDARD);
 				toSkolemGenerator.addJoinCondition(joinCondition);
 				if (joinCondition.getFromPaths().size() > 1) {
@@ -145,7 +161,8 @@ public class GenerateSkolemGenerators {
 						if (keyGenerator == null) {
 							List<GeneratorWithPath> generatorsForKey = findGeneratorsForKey(keyPath, generators);
 							SkolemFunctionGenerator keySkolemGenerator =
-								new SkolemFunctionGenerator(correctedPath.getAbsolutePath().toString(), true, tgd, generatorsForKey);
+								new SkolemFunctionGenerator(correctedPath.getAbsolutePath().toString(), true, tgd,
+									generatorsForKey);
 							keySkolemGenerator.setType(SkolemFunctionGenerator.KEY);
 							keySkolemGenerator.addFunctionalDependencies(primaryKey);
 							keySkolemGenerator.setPosition(i);
@@ -155,7 +172,8 @@ public class GenerateSkolemGenerators {
 						if (keyNode instanceof AttributeNode) {
 							GeneratePathExpression pathGenerator = new GeneratePathExpression();
 							List<String> steps =
-								new ArrayList<String>(pathGenerator.generatePathFromRoot(keyNode.getChild(0)).getPathSteps());
+								new ArrayList<String>(
+									pathGenerator.generatePathFromRoot(keyNode.getChild(0)).getPathSteps());
 							steps.subList(0, steps.size() - 1).clear();
 							steps.addAll(0, correctedPath.getPathSteps());
 							VariablePathExpression nodePath = new VariablePathExpression(targetVar, steps);
@@ -179,7 +197,8 @@ public class GenerateSkolemGenerators {
 		return null;
 	}
 
-	private List<GeneratorWithPath> findGeneratorsForKey(VariablePathExpression keyPath, List<GeneratorWithPath> functionGenerators) {
+	private List<GeneratorWithPath> findGeneratorsForKey(VariablePathExpression keyPath,
+			List<GeneratorWithPath> functionGenerators) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		for (GeneratorWithPath generatorWithPath : functionGenerators) {
 			VariablePathExpression targetPath = generatorWithPath.getTargetPath();
@@ -190,7 +209,8 @@ public class GenerateSkolemGenerators {
 		return result;
 	}
 
-	private List<GeneratorWithPath> findGeneratorsForKey(VariablePathExpression keyPath, Map<VariablePathExpression, IValueGenerator> functionGenerators) {
+	private List<GeneratorWithPath> findGeneratorsForKey(VariablePathExpression keyPath,
+			Map<VariablePathExpression, IValueGenerator> functionGenerators) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		for (Entry<VariablePathExpression, IValueGenerator> generatorWithPath : functionGenerators.entrySet()) {
 			if (generatorWithPath.getValue() instanceof FunctionGenerator) {
@@ -213,13 +233,15 @@ public class GenerateSkolemGenerators {
 	}
 
 	// //////////////////////////// EGDs /////////////////////////////////////////////
-	private void findGeneratorsForSkolemsForEGDs(FORule tgd, MappingTask mappingTask, Map<VariablePathExpression, IValueGenerator> generators,
+	private void findGeneratorsForSkolemsForEGDs(FORule tgd, MappingTask mappingTask,
+			Map<VariablePathExpression, IValueGenerator> generators,
 			List<GeneratorWithPath> functionGenerators) {
 		TGDImplicants variableImplicants = implicantsFinder.findMinimalImplicants(tgd, mappingTask);
 		if (logger.isDebugEnabled())
 			logger.debug("****************  Generating EGD-based skolem function generators for tgd " + tgd);
 		if (logger.isDebugEnabled())
-			logger.debug("****************  Generating EGD-based skolem function generators for tgd " + tgd.toLogicalString(mappingTask));
+			logger.debug("****************  Generating EGD-based skolem function generators for tgd " +
+				tgd.toLogicalString(mappingTask));
 		if (logger.isDebugEnabled())
 			logger.debug("****************  Implicants map: " + variableImplicants);
 		for (FormulaVariable existentialVariable : tgd.getExistentialFormulaVariables(mappingTask)) {
@@ -241,7 +263,8 @@ public class GenerateSkolemGenerators {
 			if (logger.isDebugEnabled())
 				logger.debug("****************  Implicants for variable: " + implicants);
 			if (!implicants.getGeneratingDependencies().isEmpty()) {
-				List<GeneratorWithPath> generatorsForImplicants = findGeneratorsForImplicants(implicants, functionGenerators);
+				List<GeneratorWithPath> generatorsForImplicants =
+					findGeneratorsForImplicants(implicants, functionGenerators);
 				SkolemFunctionGenerator skolemFunction =
 					new SkolemFunctionGenerator(existentialVariable.getId(), true, tgd, generatorsForImplicants);
 				skolemFunction.setType(SkolemFunctionGenerator.EGD_BASED);
@@ -266,13 +289,15 @@ public class GenerateSkolemGenerators {
 		}
 	}
 
-	private List<GeneratorWithPath> findGeneratorsForImplicants(Determination implicants, List<GeneratorWithPath> functionGenerators) {
+	private List<GeneratorWithPath> findGeneratorsForImplicants(Determination implicants,
+			List<GeneratorWithPath> functionGenerators) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		for (FormulaVariable formulaVariable : implicants.getImplicants()) {
 			GeneratorWithPath generatorForVariable =
 				findGeneratorForTargetPath(functionGenerators, formulaVariable.getTargetOccurrencePaths().get(0));
 			if (generatorForVariable == null) {
-				throw new IllegalArgumentException("Unable to find generator for variable " + formulaVariable.toLongString() +
+				throw new IllegalArgumentException("Unable to find generator for variable " +
+					formulaVariable.toLongString() +
 					" in generators :" + functionGenerators);
 			}
 			result.add(generatorForVariable);
@@ -280,9 +305,11 @@ public class GenerateSkolemGenerators {
 		return result;
 	}
 
-	private GeneratorWithPath findGeneratorForTargetPath(List<GeneratorWithPath> functionGenerators, VariablePathExpression targetPath) {
+	private GeneratorWithPath findGeneratorForTargetPath(List<GeneratorWithPath> functionGenerators,
+			VariablePathExpression targetPath) {
 		if (logger.isDebugEnabled())
-			logger.debug("Finding generator for path " + targetPath + " in: " + SpicyEngineUtility.printCollection(functionGenerators));
+			logger.debug("Finding generator for path " + targetPath + " in: " +
+				SpicyEngineUtility.printCollection(functionGenerators));
 		for (GeneratorWithPath generatorWithPath : functionGenerators) {
 			if (generatorWithPath.getTargetPath().equalsUpToClonesAndHasSameVariableId(targetPath)) {
 				return generatorWithPath;

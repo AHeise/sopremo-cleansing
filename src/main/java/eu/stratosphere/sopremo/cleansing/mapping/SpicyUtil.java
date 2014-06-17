@@ -99,11 +99,11 @@ public class SpicyUtil {
 	public static EvaluationExpression valueForIntermediateNode(IValueGenerator generator, MappingTask mappingTask,
 			InputManager inputManager) {
 
-		return valueForLeaf(generator, null, null, mappingTask, inputManager);
+		return valueForLeaf(generator, null, null, mappingTask);
 	}
 
 	public static EvaluationExpression valueForLeaf(IValueGenerator generator, VariablePathExpression targetPath,
-			FORule tgd, MappingTask mappingTask, InputManager inputManager) {
+			FORule tgd, MappingTask mappingTask) {
 		if (generator instanceof NullValueGenerator)
 			return ConstantExpression.NULL;
 		if (generator instanceof FunctionGenerator) {
@@ -111,6 +111,8 @@ public class SpicyUtil {
 				XQUtility.findCorrespondenceFromTargetPathWithSameId(targetPath, tgd.getCoveredCorrespondences());
 			EvaluationExpression expr =
 				((SopremoFunctionExpression) ((FunctionGenerator) generator).getFunction()).getExpr().clone();
+			if (correspondence == null || correspondence.isConstant())
+				return expr;
 			List<VariablePathExpression> sourcePaths = correspondence.getSourcePaths();
 			for (int index = 0; index < sourcePaths.size(); index++)
 				expr = expr.replace(new InputSelection(index),
@@ -164,7 +166,10 @@ public class SpicyUtil {
 				}
 				// return generateHyperGraphSkolemFunction(generator, mappingTask);
 			} else if (generator.getType() == SkolemFunctionGenerator.KEY) {
-				generateSkolemFunctionForIntermediateNode(generator, mappingTask, expressions);
+				for (GeneratorWithPath subGeneratorWithPath : generator.getSubGenerators()) {
+					expressions.add(valueForLeaf(subGeneratorWithPath.getGenerator(),
+						subGeneratorWithPath.getTargetPath(), generator.getTgd(), mappingTask));
+				}
 				// return generateSkolemFunctionForKey(generator, mappingTask);
 			} else if (generator.getType() == SkolemFunctionGenerator.EGD_BASED) {
 				for (GeneratorWithPath subGeneratorWithPath : generator.getSubGenerators()) {
@@ -390,7 +395,7 @@ public class SpicyUtil {
 		return new PathExpression(steps);
 	}
 
-	public static Expression extractTransformation(EvaluationExpression expression, PathExpression rootExpression,
+	public static SopremoFunctionExpression extractTransformation(EvaluationExpression expression, PathExpression rootExpression,
 			List<PathExpression> sourcePaths) {
 		List<List<String>> sources = new ArrayList<List<String>>();
 		final EvaluationExpression transform = SopremoPathToSpicyPath.get().extractTransformation(expression, sources);
@@ -473,8 +478,10 @@ public class SpicyUtil {
 			final Iterator<Entry<EvaluationExpression, List<String>>> iterator = this.subPaths.entrySet().iterator();
 			for (int index = 0; iterator.hasNext(); index++) {
 				final Entry<EvaluationExpression, List<String>> path = iterator.next();
-				subPaths.add(path.getValue());
-				value = value.replace(path.getKey(), new InputSelection(index));
+				if (!path.getValue().isEmpty()) {
+					subPaths.add(path.getValue());
+					value = value.replace(path.getKey(), new InputSelection(index));
+				}
 			}
 			this.subPaths = null;
 			return value;

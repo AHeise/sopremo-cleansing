@@ -14,16 +14,18 @@
  **********************************************************************************************************************/
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.algebra.query.operators.xquery.GenerateXQuery;
-import it.unibas.spicy.model.algebra.query.operators.xquery.XQBlocks;
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQNames;
 import it.unibas.spicy.model.algebra.query.operators.xquery.XQUtility;
+import it.unibas.spicy.model.correspondence.ConstantValue;
 import it.unibas.spicy.model.correspondence.ValueCorrespondence;
 import it.unibas.spicy.model.datasource.DataSource;
 import it.unibas.spicy.model.datasource.INode;
 import it.unibas.spicy.model.datasource.JoinCondition;
 import it.unibas.spicy.model.datasource.KeyConstraint;
-import it.unibas.spicy.model.datasource.nodes.*;
+import it.unibas.spicy.model.datasource.nodes.AttributeNode;
+import it.unibas.spicy.model.datasource.nodes.MetadataNode;
+import it.unibas.spicy.model.datasource.nodes.SetNode;
+import it.unibas.spicy.model.datasource.nodes.TupleNode;
 import it.unibas.spicy.model.expressions.Expression;
 import it.unibas.spicy.model.generators.IValueGenerator;
 import it.unibas.spicy.model.generators.NullValueGenerator;
@@ -43,7 +45,6 @@ import eu.stratosphere.sopremo.base.Grouping;
 import eu.stratosphere.sopremo.base.Join;
 import eu.stratosphere.sopremo.base.Projection;
 import eu.stratosphere.sopremo.base.Union;
-import eu.stratosphere.sopremo.base.join.AntiJoin;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyUtil.InputManager;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyUtil.StreamManager;
 import eu.stratosphere.sopremo.expressions.*;
@@ -62,6 +63,7 @@ import eu.stratosphere.sopremo.type.JsonUtil;
  */
 @Internal
 public class SpicyMappingTransformation extends DataTransformationBase<SpicyMappingTransformation> {
+
 	private transient Map<FORule, TGDGeneratorsMap> generatorsMaps = new HashMap<FORule, TGDGeneratorsMap>();
 
 	/*
@@ -231,9 +233,14 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			inputs.add(findInputForNegativeQuery(negatedComplexQuery, streamManager));
 			joinConditions.addAll(generateAttributesForDifference(negatedComplexQuery, i + 1));
 		}
-		streamManager.put(viewName, new Join().withInputs(inputs).withName(viewName).
-			withJoinCondition(new AndExpression(joinConditions)).
-			withResultProjection(new InputSelection(0)));
+
+		// bug in Spicy caused by constant expressions
+		if (joinConditions.isEmpty())
+			streamManager.put(viewName, new Source(new ArrayCreation()));
+		else
+			streamManager.put(viewName, new Join().withInputs(inputs).withName(viewName).
+				withJoinCondition(new AndExpression(joinConditions)).
+				withResultProjection(new InputSelection(0)));
 	}
 
 	private JsonStream findInputForNegativeQuery(NegatedComplexQuery negation, StreamManager streamManager) {
@@ -274,10 +281,13 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 					negation.getTargetEqualities().getLeftCorrespondences().get(i);
 				VariableCorrespondence rightCorrespondence =
 					negation.getTargetEqualities().getRightCorrespondences().get(i);
-				String leftPathName = SpicyUtil.nameForPath(leftCorrespondence.getFirstSourcePath());
-				String rightPathName = SpicyUtil.nameForPath(rightCorrespondence.getFirstSourcePath());
-				expressions.add(new ElementInSetExpression(new ObjectAccess(leftPathName).withInputExpression(firstIn),
-					Quantor.EXISTS_NOT_IN, new ObjectAccess(rightPathName).withInputExpression(secondIn)));
+				if (!leftCorrespondence.isConstant()) {
+					String leftPathName = SpicyUtil.nameForPath(leftCorrespondence.getFirstSourcePath());
+					String rightPathName = SpicyUtil.nameForPath(rightCorrespondence.getFirstSourcePath());
+					expressions.add(new ElementInSetExpression(
+						new ObjectAccess(leftPathName).withInputExpression(firstIn),
+						Quantor.EXISTS_NOT_IN, new ObjectAccess(rightPathName).withInputExpression(secondIn)));
+				}
 			}
 		} else {
 			for (int i = 0; i < negation.getSourceEqualities().getLeftPaths().size(); i++) {
@@ -509,7 +519,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 
 				String elementName = SpicyUtil.nameForPath(attribute);
 				oc.addMapping(elementName,
-					SpicyUtil.valueForLeaf(leafGenerator, attribute, tgd, mappingTask, inputManager));
+					SpicyUtil.valueForLeaf(leafGenerator, attribute, tgd, mappingTask));
 			}
 		}
 		return oc;
@@ -519,9 +529,9 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		// TGDGeneratorsMap map = this.generatorsMaps.get(tgd);
 		// if (map != null)
 		// return map;
-		TGDGeneratorsMap original =
-			new it.unibas.spicy.model.generators.operators.GenerateValueGenerators().generateValueGenerators(tgd,
-				mappingTask);
+		// TGDGeneratorsMap original =
+		// new it.unibas.spicy.model.generators.operators.GenerateValueGenerators().generateValueGenerators(tgd,
+		// mappingTask);
 		TGDGeneratorsMap custom = new GenerateValueGenerators().generateValueGenerators(tgd, mappingTask);
 		this.generatorsMaps.put(tgd, custom);
 		return custom;
@@ -591,40 +601,39 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		List<INode> setNodeChildren = findSetChildren(tupleNode);
 		// generate copy values from tgd view
 		ObjectCreation content = new ObjectCreation();
-//		if (targetVariable.getBindingPathExpression().getStartingVariable() == null) {
-//			List<VariablePathExpression> targetPaths =
-//				targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
-//			for (int i = 0; i < targetPaths.size(); i++) {
-//				VariablePathExpression targetPath = targetPaths.get(i);
-//				if (targetPath.getStartingVariable().equals(targetVariable)) {
-//					String targetPathName = SpicyUtil.nameForPath(targetPath);
-//					content.addMapping(targetPathName,
-//						new ObjectAccess(SpicyUtil.nameForPath(targetPath)).withInputExpression(new InputSelection(0)));
-//				}
-//			}
-//		}
-//		else
-			for (SetAlias ruleVariable : rule.getTargetView().getVariables()) {
-				for (SetAlias sourceVariable = ruleVariable; sourceVariable != null; sourceVariable =
-					sourceVariable.getBindingPathExpression().getStartingVariable())
-					if (sourceVariable.getAbsoluteBindingPathExpression().equals(
-						targetVariable.getAbsoluteBindingPathExpression())) {
-						List<VariablePathExpression> targetPaths =
-							sourceVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
-						for (VariablePathExpression targetPath : targetPaths) {
-							if (targetPath.getStartingVariable().equals(sourceVariable)) {
-								VariablePathExpression sourcePath = targetPath;
-								String targetPathName =
-									SpicyUtil.nameForPath(new VariablePathExpression(targetVariable,
-										targetPath.getPathSteps()));
-								content.addMapping(
-									targetPathName,
-									new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(
-										0)));
-							}
+		// if (targetVariable.getBindingPathExpression().getStartingVariable() == null) {
+		// List<VariablePathExpression> targetPaths =
+		// targetVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+		// for (int i = 0; i < targetPaths.size(); i++) {
+		// VariablePathExpression targetPath = targetPaths.get(i);
+		// if (targetPath.getStartingVariable().equals(targetVariable)) {
+		// String targetPathName = SpicyUtil.nameForPath(targetPath);
+		// content.addMapping(targetPathName,
+		// new ObjectAccess(SpicyUtil.nameForPath(targetPath)).withInputExpression(new InputSelection(0)));
+		// }
+		// }
+		// }
+		// else
+		for (SetAlias ruleVariable : rule.getTargetView().getVariables()) {
+			for (SetAlias sourceVariable = ruleVariable; sourceVariable != null; sourceVariable =
+				sourceVariable.getBindingPathExpression().getStartingVariable())
+				if (sourceVariable.getAbsoluteBindingPathExpression().equals(
+					targetVariable.getAbsoluteBindingPathExpression())) {
+					List<VariablePathExpression> targetPaths =
+						sourceVariable.getAttributes(mappingTask.getTargetProxy().getIntermediateSchema());
+					for (VariablePathExpression targetPath : targetPaths) {
+						if (targetPath.getStartingVariable().equals(sourceVariable)) {
+							VariablePathExpression sourcePath = targetPath;
+							String targetPathName = SpicyUtil.nameForPath(new VariablePathExpression(targetVariable,
+								targetPath.getPathSteps()));
+							content.addMapping(
+								targetPathName,
+								new ObjectAccess(SpicyUtil.nameForPath(sourcePath)).withInputExpression(new InputSelection(
+									0)));
 						}
 					}
-			}
+				}
+		}
 		oc.addMapping("content", content);
 		// add the set id of all children sets
 		for (int i = 0; i < setNodeChildren.size(); i++) {
@@ -744,11 +753,17 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		List<ValueCorrespondence> corrs = new ArrayList<ValueCorrespondence>();
 		for (SymbolicAssignment valueCorrespondence : getSourceToValueCorrespondences()) {
 			final List<PathExpression> sourcePaths = new ArrayList<PathExpression>();
-			Expression transformationFunction =
+			SopremoFunctionExpression transformationFunction =
 				SpicyUtil.extractTransformation(valueCorrespondence.getExpression(), sourceRoot, sourcePaths);
-			corrs.add(new ValueCorrespondence(sourcePaths,
-				SpicyUtil.toSpicyPath(valueCorrespondence.getTargetTagExpression(), targetRoot),
-				transformationFunction));
+			// constant expression
+			if (sourcePaths.isEmpty())
+				corrs.add(new ValueCorrespondence(null, new SopremoFunctionConstantValue(transformationFunction),
+					SpicyUtil.toSpicyPath(valueCorrespondence.getTargetTagExpression(), targetRoot),
+					transformationFunction, 1));
+			else
+				corrs.add(new ValueCorrespondence(sourcePaths,
+					SpicyUtil.toSpicyPath(valueCorrespondence.getTargetTagExpression(), targetRoot),
+					transformationFunction));
 		}
 		// create mapping task
 		MappingTask mappingTask = new MappingTask(source, target, corrs);

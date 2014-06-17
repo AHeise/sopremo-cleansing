@@ -37,8 +37,6 @@ import java.util.List;
 import java.util.Map;
 
 public class GenerateValueGenerators {
-	private GenerateSkolemGenerators skolemGeneratorFinder = new GenerateSkolemGenerators();
-
 	public TGDGeneratorsMap generateValueGenerators(FORule tgd, MappingTask mappingTask) {
 		Map<VariablePathExpression, IValueGenerator> attributeGenerators = findAttributeGenerators(tgd, mappingTask);
 		TGDGeneratorsMap generatorsMap = new TGDGeneratorsMap();

@@ -280,10 +280,10 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 						return path;
 					ArrayCreation ac = (ArrayCreation) path;
 					final List<EvaluationExpression> elements = ac.getElements();
-					CollectionUtil.ensureSize(elements, value.getStartIndex() + 1, EvaluationExpression.VALUE);
-					EvaluationExpression actualSourceSchema = elements.get(value.getStartIndex());
+					CollectionUtil.ensureSize(elements, 1, EvaluationExpression.VALUE);
+					EvaluationExpression actualSourceSchema = elements.get(0);
 					if (!conforms(actualSourceSchema, expected)) {
-						elements.set(value.getStartIndex(), actualSourceSchema = expected);
+						elements.set(0, actualSourceSchema = expected);
 						ac.setElements(elements);
 					}
 					return actualSourceSchema;

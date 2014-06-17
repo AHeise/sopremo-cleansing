@@ -17,7 +17,7 @@ public class SopremoFunctionExpression extends Expression {
 		throw new UnsupportedOperationException("calling constructor with expression string is forbidden on " +
 			SopremoFunctionExpression.class);
 	}
-	
+
 	/**
 	 * Returns the expr.
 	 * 
@@ -26,13 +26,35 @@ public class SopremoFunctionExpression extends Expression {
 	public EvaluationExpression getExpr() {
 		return this.expr;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
 	 * @see it.unibas.spicy.model.expressions.Expression#toString()
 	 */
 	@Override
 	public String toString() {
 		return expr.toString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see it.unibas.spicy.model.expressions.Expression#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		// hack for weird Spicy / JEP checks
+		if (obj instanceof Expression)
+			return true;
+		return super.equals(obj);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return super.hashCode();
 	}
 
 	public SopremoFunctionExpression(final EvaluationExpression expr) {
