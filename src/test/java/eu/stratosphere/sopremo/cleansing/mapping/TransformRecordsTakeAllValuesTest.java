@@ -131,9 +131,9 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 			createObjectNode("id", "SAP", "name", "SAP", "employees",
 				JsonUtil.createArrayNode(createObjectNode("name", "Fabian"))));
 	}
-	
+
 	@Test
-	public void testTakeAllObjectsInFunctions() throws IOException {
+	public void testMultipleArraysInSameObject() throws IOException {
 		String query = "using cleansing;\n" +
 			"\n" +
 			"$originalPersons = read from '" + this.originalPersons.toURI() + "';\n" +
@@ -143,7 +143,7 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 			"	    entity $companies identified by $companies.name with {\n" +
 			"	       name: $originalPersons.worksFor,\n" +
 			"		   employees: [{name: $originalPersons.name}],\n" +
-			"		   highestId: max([$originalPersons.id])"+
+			"		   allIds: [$originalPersons.id]" +
 			"	    }\n" +
 			"	];\n" +
 			"\n" +
@@ -156,17 +156,20 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 
 		ObjectCreation canonicalizer = new ObjectCreation();
 		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
-		canonicalizer.addMapping("employees",
-			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
+		// canonicalizer.addMapping("employees",
+		// FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
 		this.testServer.checkContentsOf("companies.json", canonicalizer,
 			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
-				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")), "highestId", 4),
+				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")),
+				"allIds", createArrayNode(2, 4)),
 			createObjectNode("id", "HPI", "name", "HPI", "employees",
-				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")), "highestId", 1),
+				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")),
+				"allIds", createArrayNode(1)),
 			createObjectNode("id", "SAP", "name", "SAP", "employees",
-				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")), "highestId", 3));
+				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")),
+				"allIds", createArrayNode(3)));
 	}
-	
+
 	@Test
 	public void testTakeAllValuesFromOtherRelation() throws IOException {
 		String query = "using cleansing;\n" +
@@ -178,14 +181,14 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 			"	    entity $companies identified by $companies.name with {\n" +
 			"	       name: $originalPersons.worksFor,\n" +
 			"		   employees: [$originalPersons.name],\n" +
-			"		   empUniversities : [$universities.id]"+
-			"	    },"+
+			"		   empUniversities : [$universities.id]" +
+			"	    }," +
 			"		entity $universities identified by $universities.id with {\n" +
 			"	       id: $originalPersons.university,\n" +
-			"	    },"+
+			"	    }," +
 			"	];\n" +
 			"\n" +
-			"write $companies to '" + this.companies.toURI() + "';\n"+
+			"write $companies to '" + this.companies.toURI() + "';\n" +
 			"write $universities to '" + this.universities.toURI() + "';\n";
 
 		final SopremoPlan plan = parseScript(query);
@@ -197,16 +200,19 @@ public class TransformRecordsTakeAllValuesTest extends MeteorIT {
 		canonicalizer.addMapping(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
 		canonicalizer.addMapping("employees",
 			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("employees")));
-		this.testServer.checkContentsOf("companies.json", canonicalizer,
+		this.testServer.checkContentsOf(
+			"companies.json",
+			canonicalizer,
 			createObjectNode("id", "Arvid Inc.", "name", "Arvid Inc.", "employees",
-				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")), "empUniversities", createArrayNode("FU", "HU")),
+				createArrayNode(createObjectNode("name", "Foobar"), createObjectNode("name", "Tommy")),
+				"empUniversities", createArrayNode("FU", "HU")),
 			createObjectNode("id", "HPI", "name", "HPI", "employees",
 				JsonUtil.createArrayNode(createObjectNode("name", "Arvid")), "empUniversities", createArrayNode("HU")),
 			createObjectNode("id", "SAP", "name", "SAP", "employees",
 				JsonUtil.createArrayNode(createObjectNode("name", "Fabian")), "empUniversities", createArrayNode("TU")));
-		this.testServer.checkContentsOf("universities.json", 
-				createObjectNode("id", "TU"),
-				createObjectNode("id", "HU"),
-				createObjectNode("id", "FU"));
+		this.testServer.checkContentsOf("universities.json",
+			createObjectNode("id", "TU"),
+			createObjectNode("id", "HU"),
+			createObjectNode("id", "FU"));
 	}
 }
