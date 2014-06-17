@@ -9,7 +9,7 @@ import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.type.IJsonNode;
 
-public class ScrubbingIT extends MeteorIT {
+public class ScrubbingIT1 extends MeteorIT {
 
 	@Test
 	public void testSuccessfulExecution() throws IOException {
