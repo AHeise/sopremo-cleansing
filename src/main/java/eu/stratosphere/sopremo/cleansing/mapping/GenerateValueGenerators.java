@@ -38,11 +38,14 @@ import java.util.Map;
 
 public class GenerateValueGenerators {
 	public TGDGeneratorsMap generateValueGenerators(FORule tgd, MappingTask mappingTask) {
+//		new it.unibas.spicy.model.generators.operators.GenerateValueGenerators().generateValueGenerators(tgd,
+//			mappingTask);
 		Map<VariablePathExpression, IValueGenerator> attributeGenerators = findAttributeGenerators(tgd, mappingTask);
 		TGDGeneratorsMap generatorsMap = new TGDGeneratorsMap();
 		for (SetAlias targetVariable : tgd.getTargetView().getVariables()) {
 			PropagateGeneratorsNodeVisitor visitor =
-				new PropagateGeneratorsNodeVisitor(tgd, targetVariable, attributeGenerators, mappingTask.getTargetProxy());
+				new PropagateGeneratorsNodeVisitor(tgd, targetVariable, attributeGenerators,
+					mappingTask.getTargetProxy());
 			mappingTask.getTargetProxy().getIntermediateSchema().accept(visitor);
 			Map<PathExpression, IValueGenerator> variableGenerators = visitor.getResult();
 			generatorsMap.addGeneratorsForVariable(targetVariable, variableGenerators);
@@ -52,19 +55,23 @@ public class GenerateValueGenerators {
 	}
 
 	private Map<VariablePathExpression, IValueGenerator> findAttributeGenerators(FORule tgd, MappingTask mappingTask) {
-		Map<VariablePathExpression, IValueGenerator> attributeGenerators = new HashMap<VariablePathExpression, IValueGenerator>();
+		Map<VariablePathExpression, IValueGenerator> attributeGenerators =
+			new HashMap<VariablePathExpression, IValueGenerator>();
 		for (VariableCorrespondence correspondence : tgd.getCoveredCorrespondences()) {
 			VariablePathExpression targetPath = correspondence.getTargetPath();
 			FunctionGenerator generator = new FunctionGenerator(correspondence.getTransformationFunction());
 			attributeGenerators.put(targetPath, generator);
 		}
-		List<GeneratorWithPath> functionGeneratorsForSkolemFunctions = findGeneratorsForVariablesInJoin(tgd, attributeGenerators);
-		new GenerateSkolemGenerators().findGeneratorsForSkolems(tgd, mappingTask, attributeGenerators, functionGeneratorsForSkolemFunctions);
+		List<GeneratorWithPath> functionGeneratorsForSkolemFunctions =
+			findGeneratorsForVariablesInJoin(tgd, attributeGenerators);
+		new GenerateSkolemGenerators().findGeneratorsForSkolems(tgd, mappingTask, attributeGenerators,
+			functionGeneratorsForSkolemFunctions);
 		return attributeGenerators;
 	}
 
 	// NOTE: this method is useless if TGDs are normalized
-	private List<GeneratorWithPath> findGeneratorsForVariablesInJoin(FORule tgd, Map<VariablePathExpression, IValueGenerator> generators) {
+	private List<GeneratorWithPath> findGeneratorsForVariablesInJoin(FORule tgd,
+			Map<VariablePathExpression, IValueGenerator> generators) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 		List<SetAlias> joinVariables = findJoinVariables(tgd);
 		for (SetAlias variable : joinVariables) {
@@ -99,7 +106,8 @@ public class GenerateValueGenerators {
 		return false;
 	}
 
-	private List<GeneratorWithPath> findGeneratorsForVariable(FORule tgd, Map<VariablePathExpression, IValueGenerator> generators, SetAlias variable) {
+	private List<GeneratorWithPath> findGeneratorsForVariable(FORule tgd,
+			Map<VariablePathExpression, IValueGenerator> generators, SetAlias variable) {
 		List<GeneratorWithPath> result = new ArrayList<GeneratorWithPath>();
 
 		for (SetAlias targetVar = variable; targetVar != null; targetVar =
@@ -142,7 +150,8 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 
 	private List<GeneratorWithPath> leafGenerators;
 
-	public PropagateGeneratorsNodeVisitor(FORule tgd, SetAlias generatingVariable, Map<VariablePathExpression, IValueGenerator> attributeGenerators,
+	public PropagateGeneratorsNodeVisitor(FORule tgd, SetAlias generatingVariable,
+			Map<VariablePathExpression, IValueGenerator> attributeGenerators,
 			IDataSourceProxy target) {
 		this.tgd = tgd;
 		this.generatingVariable = generatingVariable;
@@ -157,9 +166,12 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 		this.leafGenerators = findLeafGenerators(node);
 		visitChildren(node);
 		this.leafGenerators = originalGenerators;
-		if (!isNodeToGenerate(node))
-			this.result.put(nodePath, NullValueGenerator.getInstance());
-		else if (node.isRoot()) {
+		/*
+		 * if (!isNodeToGenerate(node))
+		 * this.result.put(nodePath, NullValueGenerator.getInstance());
+		 * else
+		 */
+		if (node.isRoot()) {
 			this.result.put(nodePath, new SkolemFunctionGenerator(nodePath.toString(), false));
 		} else
 			this.result.put(nodePath, new SkolemFunctionGenerator(nodePath.toString(), false, tgd, leafGenerators));
@@ -205,7 +217,8 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 	private GeneratorWithPath getLeafGenerator(INode attributeNode) {
 		PathExpression nodeAbsolutePath = this.pathGenerator.generatePathFromRoot(attributeNode);
 		VariablePathExpression nodePath =
-			this.pathGenerator.generateContextualPathForNode(this.generatingVariable, nodeAbsolutePath, this.target.getIntermediateSchema());
+			this.pathGenerator.generateContextualPathForNode(this.generatingVariable, nodeAbsolutePath,
+				this.target.getIntermediateSchema());
 		if (nodePath == null)
 			return null;
 
@@ -258,7 +271,8 @@ class PropagateGeneratorsNodeVisitor implements INodeVisitor {
 		}
 		GeneratorWithPath leafGenerator = getLeafGenerator(node);
 		PathExpression childPath = this.pathGenerator.generatePathFromRoot(node);
-		IValueGenerator childGenerator = new SkolemFunctionGenerator(childPath.toString(), false, this.tgd, this.leafGenerators);
+		IValueGenerator childGenerator =
+			new SkolemFunctionGenerator(childPath.toString(), false, this.tgd, this.leafGenerators);
 		this.result.put(childPath, childGenerator);
 		INode leafNode = node.getChild(0);
 		PathExpression leafPath = this.pathGenerator.generatePathFromRoot(leafNode);
