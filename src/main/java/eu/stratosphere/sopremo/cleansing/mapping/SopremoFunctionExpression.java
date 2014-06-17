@@ -30,14 +30,24 @@ public class SopremoFunctionExpression extends Expression {
 	 * (non-Javadoc)
 	 * @see it.unibas.spicy.model.expressions.Expression#toString()
 	 */
-	@Override
-	public String toString() {
-		return expr.clone().replace(Predicates.instanceOf(InputSelection.class),
+	public String toDebugString() {
+		return this.expr.clone().replace(Predicates.instanceOf(InputSelection.class),
 			new Function<EvaluationExpression, EvaluationExpression>() {
+				@Override
 				public EvaluationExpression apply(EvaluationExpression input) {
-					return new ConstantExpression(inputPaths.get(((InputSelection) input).getIndex()).toString());
+					return new ConstantExpression(SopremoFunctionExpression.this.inputPaths.get(
+						((InputSelection) input).getIndex()).toString());
 				}
 			}).toString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see it.unibas.spicy.model.expressions.Expression#toString()
+	 */
+	@Override
+	public String toString() {
+		return "0";
 	}
 
 	/*
