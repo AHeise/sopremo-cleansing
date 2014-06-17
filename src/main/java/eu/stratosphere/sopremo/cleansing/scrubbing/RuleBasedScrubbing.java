@@ -92,7 +92,7 @@ public class RuleBasedScrubbing extends CompositeOperator<RuleBasedScrubbing> {
 				public EvaluationExpression handle(ObjectAccess value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
 					ObjectCreation oc = new ObjectCreation();
-					//oc.addMapping(new ObjectCreation.CopyFields(value.getInputExpression()));
+					oc.addMapping(new ObjectCreation.CopyFields(value.getInputExpression()));
 					
 					oc = (ObjectCreation)
 						treeHandler.handle(value.getInputExpression(), oc);
