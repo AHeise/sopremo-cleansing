@@ -320,7 +320,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				expression =
 					SpicyUtil.createRelativePathForSingleAttribute(attributePath, attributeNode, streamManager);
 			} else {
-				expression = SpicyUtil.createRelativePath(attributePath, streamManager);
+				expression = SpicyUtil.spicyToSopremoPath(attributePath, streamManager);
 			}
 			oc.addMapping(SpicyUtil.nameForPath(attributePath), expression);
 		}
@@ -381,8 +381,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				if (rightSourcePath == null) {
 					rightSourcePath = rightPath;
 				}
-				expressions.add(new ComparativeExpression(SpicyUtil.createRelativePath(leftSourcePath, streamManager),
-					BinaryOperator.EQUAL, SpicyUtil.createRelativePath(rightSourcePath, streamManager)));
+				expressions.add(new ComparativeExpression(SpicyUtil.spicyToSopremoPath(leftSourcePath, streamManager),
+					BinaryOperator.EQUAL, SpicyUtil.spicyToSopremoPath(rightSourcePath, streamManager)));
 			}
 		}
 		return expressions;
@@ -426,8 +426,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				if (toSourcePath == null) {
 					toSourcePath = toPath;
 				}
-				expressions.add(new ComparativeExpression(SpicyUtil.createRelativePath(fromSourcePath, streamManager),
-					BinaryOperator.EQUAL, SpicyUtil.createRelativePath(toSourcePath, streamManager)));
+				expressions.add(new ComparativeExpression(SpicyUtil.spicyToSopremoPath(fromSourcePath, streamManager),
+					BinaryOperator.EQUAL, SpicyUtil.spicyToSopremoPath(toSourcePath, streamManager)));
 			}
 		}
 		// }

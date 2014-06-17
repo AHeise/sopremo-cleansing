@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * This test shall test mapping from one source to two entities.
@@ -45,6 +46,7 @@ public class TransformRecordsEmbeddedObjects extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
+		SopremoUtil.trace();
 		this.client.submit(plan, null, true);
 
 		this.testServer.checkContentsOf("persons.json",

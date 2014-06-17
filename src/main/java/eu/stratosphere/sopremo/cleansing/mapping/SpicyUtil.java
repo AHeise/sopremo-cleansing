@@ -77,6 +77,7 @@ import eu.stratosphere.sopremo.tree.NodeHandler;
 import eu.stratosphere.sopremo.tree.ReturnLessNodeHandler;
 import eu.stratosphere.sopremo.tree.ReturnlessTreeHandler;
 import eu.stratosphere.sopremo.tree.TreeHandler;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
  * @author arvid
@@ -297,8 +298,9 @@ public class SpicyUtil {
 	// return relativePath.toString();
 	// }
 	//
-	public static EvaluationExpression createRelativePath(VariablePathExpression path, InputManager var2Source) {
-		return new ObjectAccess(path.getLastStep()).withInputExpression(var2Source.getInput(path.getStartingVariable()));
+	public static EvaluationExpression spicyToSopremoPath(VariablePathExpression path, InputManager var2Source) {
+		final List<String> pathSteps = path.getPathSteps();
+		return JsonUtil.createPath(pathSteps.subList(1, pathSteps.size())).withTail(var2Source.getInput(path.getStartingVariable()));
 	}
 
 	public static class StreamManager {
@@ -403,7 +405,7 @@ public class SpicyUtil {
 			sourcePath.addAll(0, rootExpression.getPathSteps());
 			sourcePaths.add(new PathExpression(sourcePath));
 		}
-		return new SopremoFunctionExpression(transform);
+		return new SopremoFunctionExpression(transform, sourcePaths);
 	}
 
 	private static class SopremoPathToSpicyPath extends ReturnlessTreeHandler<EvaluationExpression, List<String>> {

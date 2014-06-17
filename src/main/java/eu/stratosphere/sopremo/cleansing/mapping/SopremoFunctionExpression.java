@@ -1,22 +1,21 @@
 package eu.stratosphere.sopremo.cleansing.mapping;
 
-import it.unibas.spicy.model.exceptions.ExpressionSyntaxException;
 import it.unibas.spicy.model.expressions.Expression;
+import it.unibas.spicy.model.paths.PathExpression;
 
-import java.lang.reflect.Field;
+import java.util.List;
 
-import org.nfunk.jep.JEP;
+import com.google.common.base.Function;
+import com.google.common.base.Predicates;
 
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
 
 public class SopremoFunctionExpression extends Expression {
 	private EvaluationExpression expr;
 
-	public SopremoFunctionExpression(final String expression) throws ExpressionSyntaxException {
-		super(expression);
-		throw new UnsupportedOperationException("calling constructor with expression string is forbidden on " +
-			SopremoFunctionExpression.class);
-	}
+	private List<PathExpression> inputPaths;
 
 	/**
 	 * Returns the expr.
@@ -33,7 +32,12 @@ public class SopremoFunctionExpression extends Expression {
 	 */
 	@Override
 	public String toString() {
-		return expr.toString();
+		return expr.clone().replace(Predicates.instanceOf(InputSelection.class),
+			new Function<EvaluationExpression, EvaluationExpression>() {
+				public EvaluationExpression apply(EvaluationExpression input) {
+					return new ConstantExpression(inputPaths.get(((InputSelection) input).getIndex()).toString());
+				}
+			}).toString();
 	}
 
 	/*
@@ -57,32 +61,10 @@ public class SopremoFunctionExpression extends Expression {
 		return super.hashCode();
 	}
 
-	public SopremoFunctionExpression(final EvaluationExpression expr) {
-		super("sum(1,1)");
+	public SopremoFunctionExpression(final EvaluationExpression expr, List<PathExpression> sourcePaths) {
+		super("0");
 		this.expr = expr;
-
-		Field topNodeField = null;
-
-		try {
-			topNodeField = JEP.class.
-				getDeclaredField("topNode");
-		} catch (final NoSuchFieldException e) {
-			e.printStackTrace();
-		} catch (final SecurityException e) {
-			e.printStackTrace();
-		}
-
-		topNodeField.setAccessible(true);
-		final FunctionNode fnNode = new FunctionNode(0, expr);
-
-		try {
-			topNodeField.set(this.getJepExpression(), fnNode);
-		} catch (final IllegalArgumentException e) {
-			e.printStackTrace();
-		} catch (final IllegalAccessException e) {
-			e.printStackTrace();
-		}
-
+		this.inputPaths = sourcePaths;
 	}
 
 }
