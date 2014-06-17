@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 public class TransformRecordsNestedObjectsIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
@@ -40,8 +41,8 @@ public class TransformRecordsNestedObjectsIT extends MeteorIT {
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
 
-	@Ignore
 	@Test
+	@Ignore
 	public void testMultipleObjectCreationsInMapping() throws IOException {
 
 		String query = "using cleansing;" +
@@ -50,11 +51,12 @@ public class TransformRecordsNestedObjectsIT extends MeteorIT {
 			"$person, $legalEntity = transform records $usCongressMembers, $usCongressBiographies\n" +
 			"where ($usCongressMembers.biography == $usCongressBiographies.biographyId)\n" +
 			"into [\n" +
-			"  entity $usCongressMembers identified by $usCongressMembers.name with {" +
+			"  entity $person identified by $person.name with {" +
 			"    name: $usCongressMembers.name,\n" +
-			"    worksFor: {foo: {bar: $legalEntity.id}, bar: $legalEntity.id}" +
-			"  }," +
-			"  entity $usCongressBiographies identified by $usCongressBiographies.worksFor with {" +
+			"    worksFor: {foo: {bar: $legalEntity.id}, bar: $legalEntity.id}\n" +
+			"  },\n" +
+			"  entity $legalEntity with {\n" +
+			"    lname: $usCongressBiographies.worksFor\n" +
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
@@ -62,14 +64,14 @@ public class TransformRecordsNestedObjectsIT extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
+		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
-		this.testServer.checkContentsOf(
-			"person.json",
+		this.testServer.checkContentsOf("person.json",
 			createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor",
 				createObjectNode("foo", createObjectNode("bar", "CompanyXYZ"), "bar", "CompanyXYZ")));
 
 		this.testServer.checkContentsOf("legalEntity.json",
-			createObjectNode("id", "CompanyXYZ"));
+			createObjectNode("id", "CompanyXYZ", "lname", "CompanyXYZ"));
 	}
 }

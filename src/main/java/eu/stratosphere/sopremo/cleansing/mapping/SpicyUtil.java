@@ -174,11 +174,8 @@ public class SpicyUtil {
 				// return generateSkolemFunctionForKey(generator, mappingTask);
 			} else if (generator.getType() == SkolemFunctionGenerator.EGD_BASED) {
 				for (GeneratorWithPath subGeneratorWithPath : generator.getSubGenerators()) {
-					VariablePathExpression sourcePath =
-						XQUtility.findSourcePath(generator.getTgd().getCoveredCorrespondences(),
-							subGeneratorWithPath.getTargetPath());
-					if (sourcePath != null)
-						expressions.add(new ObjectAccess(nameForPath(sourcePath)));
+					expressions.add(valueForLeaf(subGeneratorWithPath.getGenerator(),
+						subGeneratorWithPath.getTargetPath(), generator.getTgd(), mappingTask));
 				}
 			} else
 				throw new IllegalArgumentException("Incorrect type for leaf generator: " + generator + " - Type: " +

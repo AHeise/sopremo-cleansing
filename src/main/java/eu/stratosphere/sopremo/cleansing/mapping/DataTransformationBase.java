@@ -270,7 +270,7 @@ public abstract class DataTransformationBase<T extends CompositeOperator<T>> ext
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		DataTransformation other = (DataTransformation) obj;
+		DataTransformationBase<?> other = (DataTransformationBase<?>) obj;
 		return this.sourceKeys.equals(other.sourceKeys) &&
 			this.targetKeys.equals(other.targetKeys) &&
 			this.sourceFKs.equals(other.sourceFKs) &&
