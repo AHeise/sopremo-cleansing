@@ -40,10 +40,9 @@ public class TransformRecordsNestedObjectsIT extends MeteorIT {
 		this.person = this.testServer.getOutputFile("person.json");
 		this.legalEntity = this.testServer.getOutputFile("legalEntity.json");
 	}
-
+	
 	@Test
-	@Ignore
-	public void testMultipleObjectCreationsInMapping() throws IOException {
+	public void testDoubleForeignKey() throws IOException {
 
 		String query = "using cleansing;" +
 			"$usCongressMembers = read from '" + this.usCongressMembers.toURI() + "';\n" +
@@ -64,14 +63,13 @@ public class TransformRecordsNestedObjectsIT extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
-		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		this.testServer.checkContentsOf("person.json",
 			createObjectNode("id", "Andrew Adams", "name", "Andrew Adams", "worksFor",
-				createObjectNode("foo", createObjectNode("bar", "CompanyXYZ"), "bar", "CompanyXYZ")));
+				createObjectNode("foo", createObjectNode("bar", "Andrew Adams"), "bar", "Andrew Adams")));
 
 		this.testServer.checkContentsOf("legalEntity.json",
-			createObjectNode("id", "CompanyXYZ", "lname", "CompanyXYZ"));
+			createObjectNode("id", "Andrew Adams", "lname", "CompanyXYZ"));
 	}
 }
