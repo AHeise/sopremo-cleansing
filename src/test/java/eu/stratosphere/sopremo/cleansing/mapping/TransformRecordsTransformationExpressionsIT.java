@@ -6,12 +6,10 @@ import java.io.File;
 import java.io.IOException;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 /**
  * This test shall introduce new design concepts for the EntityMapping operator.

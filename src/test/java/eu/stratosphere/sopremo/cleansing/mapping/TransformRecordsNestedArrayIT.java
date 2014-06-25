@@ -30,7 +30,6 @@ import eu.stratosphere.sopremo.expressions.ObjectAccess;
 import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 public class TransformRecordsNestedArrayIT extends MeteorIT {

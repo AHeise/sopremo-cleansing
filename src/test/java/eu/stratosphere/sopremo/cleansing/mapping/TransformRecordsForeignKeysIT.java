@@ -28,7 +28,6 @@ import org.junit.Test;
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
 import eu.stratosphere.sopremo.pact.SopremoUtil;
-import eu.stratosphere.sopremo.type.JsonUtil;
 
 public class TransformRecordsForeignKeysIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;

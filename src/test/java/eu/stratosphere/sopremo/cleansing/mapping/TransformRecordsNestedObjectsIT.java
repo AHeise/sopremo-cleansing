@@ -21,12 +21,10 @@ import java.io.IOException;
 
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
-import eu.stratosphere.sopremo.pact.SopremoUtil;
 
 public class TransformRecordsNestedObjectsIT extends MeteorIT {
 	private File usCongressMembers, usCongressBiographies, person, legalEntity;
