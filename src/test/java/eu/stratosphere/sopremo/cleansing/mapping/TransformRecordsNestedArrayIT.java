@@ -63,7 +63,6 @@ public class TransformRecordsNestedArrayIT extends MeteorIT {
 
 		final SopremoPlan plan = parseScript(query);
 
-		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		ObjectCreation canonicalizer = new ObjectCreation();

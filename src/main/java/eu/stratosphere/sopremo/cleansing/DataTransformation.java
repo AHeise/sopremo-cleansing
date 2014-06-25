@@ -7,31 +7,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
 import eu.stratosphere.sopremo.cleansing.mapping.IdentifyOperator;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyMappingTransformation;
-import eu.stratosphere.sopremo.expressions.AndExpression;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.BooleanExpression;
-import eu.stratosphere.sopremo.expressions.CoerceExpression;
-import eu.stratosphere.sopremo.expressions.ComparativeExpression;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
-import eu.stratosphere.sopremo.expressions.FunctionCall;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.JsonStreamExpression;
-import eu.stratosphere.sopremo.expressions.NestedOperatorExpression;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
-import eu.stratosphere.sopremo.expressions.PathSegmentExpression;
-import eu.stratosphere.sopremo.expressions.TernaryExpression;
 import eu.stratosphere.sopremo.expressions.tree.ChildIterator;
 import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
@@ -133,10 +119,12 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 
 		List<EvaluationExpression> elements = mappingExpression.getElements();
 		for (EvaluationExpression targetAssignment : elements) {
-			NestedOperatorExpression noe = cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " +
-				IdentifyOperator.class);
-			final IdentifyOperator nestedOperator = cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " +
-				IdentifyOperator.class);
+			NestedOperatorExpression noe =
+				cast(targetAssignment, NestedOperatorExpression.class, "Please specify suboperators with " +
+					IdentifyOperator.class);
+			final IdentifyOperator nestedOperator =
+				cast(noe.getOperator(), IdentifyOperator.class, "Please specify suboperators with " +
+					IdentifyOperator.class);
 			JsonStream outVar = nestedOperator.getInput(0);
 			if (outVar.getSource().getOperator() != this)
 				throw new IllegalArgumentException("Input variable to nested operator must be an output variable");
@@ -235,6 +223,11 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				DataTransformation.this.targetFKs.add(new SymbolicAssignment(targetPath.clone(),
 					exprWithInputSel));
 			} else {
+				// HACK to avoid array accesses to extend the source schema unnecessarily; does only work when
+				// JsonUtil.createPath is used for correspondences
+				if (value instanceof ArrayAccess)
+					value = new ObjectAccess("[" + ((ArrayAccess) value).getStartIndex() + "]").
+						withInputExpression(((PathSegmentExpression) value).getInputExpression());
 				DataTransformation.this.sourceHandler.addToSchema(value,
 					DataTransformation.this.sourceSchemaFromMapping);
 				DataTransformation.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
@@ -337,6 +330,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 
 		public void addToSchema(EvaluationExpression sourcePath, List<EvaluationExpression> sourceSchemas) {
 			this.sourceSchemas = sourceSchemas;
+
 			handle(sourcePath, EvaluationExpression.VALUE);
 		}
 	}

@@ -66,7 +66,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
 
 		final SopremoPlan plan = parseScript(query);
-		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		this.testServer.checkContentsOf("person.json",
@@ -102,7 +101,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
 
 		final SopremoPlan plan = parseScript(query);
-		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
 		this.testServer.checkContentsOf(
@@ -181,7 +179,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
 			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
@@ -215,7 +212,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n" +
 			"write $legalEntity to '" + this.legalEntity.toURI() + "';";
-		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
@@ -243,7 +239,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n";
-		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
@@ -267,7 +262,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n";
-		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));
@@ -290,7 +284,6 @@ public class TransformRecordsForeignKeysIT extends MeteorIT {
 			"  }" +
 			"];\n" +
 			"write $person to '" + this.person.toURI() + "';\n";
-		SopremoUtil.trace();
 		final SopremoPlan plan = parseScript(query);
 
 		Assert.assertNotNull(this.client.submit(plan, null, true));

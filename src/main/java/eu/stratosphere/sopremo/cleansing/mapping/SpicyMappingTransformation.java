@@ -32,6 +32,7 @@ import it.unibas.spicy.model.generators.NullValueGenerator;
 import it.unibas.spicy.model.generators.TGDGeneratorsMap;
 import it.unibas.spicy.model.mapping.*;
 import it.unibas.spicy.model.paths.*;
+import it.unibas.spicy.model.paths.operators.ContextualizePaths;
 import it.unibas.spicy.model.paths.operators.GeneratePathExpression;
 import it.unibas.spicy.persistence.DAOException;
 import it.unibas.spicy.persistence.DAOMappingTaskTgds;
@@ -78,6 +79,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			this.generatorsMaps.clear();
 			MappingTask mappingTask = getMappingTask();
 			List<FORule> tgds = mappingTask.getMappingData().getRewrittenRules();
+			fixCyclicJoins(mappingTask, tgds);
 
 			StreamManager variableToSourceMapper = new StreamManager();
 			for (FORule tgd : tgds)
@@ -112,6 +114,42 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 			throw e;
 		}
 		this.generatorsMaps.clear();
+	}
+
+	public void fixCyclicJoins(MappingTask mappingTask, List<FORule> tgds) {
+		for (FORule rule : tgds)
+			if (!rule.getTargetView().getJoinConditions().isEmpty()) {
+				final List<VariableJoinCondition> conditions = rule.getTargetView().getAllJoinConditions();
+				List<SetAlias> variables = new ArrayList<SetAlias>();
+				for (VariableJoinCondition variableJoinCondition : conditions) {
+					variables.add(variableJoinCondition.getFromVariable());
+					variables.add(variableJoinCondition.getToVariable());
+				}
+
+				final List<JoinCondition> joinConditions = mappingTask.getTargetProxy().getJoinConditions();
+				for (JoinCondition joinCondition : joinConditions) {
+					final VariableJoinCondition varJoin =
+						new ContextualizePaths().contextualizeJoinCondition(joinCondition, mappingTask.getTargetProxy());
+					int fromVarIndex, toVarIndex;
+					if ((fromVarIndex = variables.indexOf(varJoin.getFromVariable())) != -1 &&
+						(toVarIndex = variables.indexOf(varJoin.getToVariable())) != -1 &&
+						!conditions.contains(varJoin)) {
+						final List<VariablePathExpression> fromPaths =
+							new ArrayList<VariablePathExpression>(varJoin.getFromPaths());
+						for (int index = 0; index < fromPaths.size(); index++)
+							fromPaths.set(index,
+								new VariablePathExpression(fromPaths.get(index), variables.get(fromVarIndex)));
+						final List<VariablePathExpression> toPaths =
+							new ArrayList<VariablePathExpression>(varJoin.getToPaths());
+						for (int index = 0; index < toPaths.size(); index++)
+							toPaths.set(index,
+								new VariablePathExpression(toPaths.get(index), variables.get(toVarIndex)));
+						rule.getTargetView().addCyclicJoinCondition(
+							new VariableJoinCondition(fromPaths, toPaths, varJoin.isMonodirectional(),
+								varJoin.isMandatory()));
+					}
+				}
+			}
 	}
 
 	private void finalNest(MappingTask mappingTask, StreamManager variableToSourceMapper) {
