@@ -128,7 +128,9 @@ public class SpicyUtil {
 				skolemString(skolemGenerator, mappingTask, expressions);
 				if (expressions.size() == 1)
 					return Iterables.getFirst(expressions, null);
-				return new ArrayCreation(expressions);
+				for (int index = 1; index < expressions.size(); index += 2)
+					expressions.add(new ConstantExpression("|"));
+				return FunctionUtil.createFunctionCall(CoreFunctions.CONCAT, new ArrayCreation(expressions));
 			}
 			return new ConstantExpression(skolemGenerator.getName());
 			// SkolemFunctionGenerator skolemGenerator = (SkolemFunctionGenerator) generator;
