@@ -42,10 +42,7 @@ import java.util.*;
 import com.google.common.collect.Lists;
 
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.base.Grouping;
-import eu.stratosphere.sopremo.base.Join;
-import eu.stratosphere.sopremo.base.Projection;
-import eu.stratosphere.sopremo.base.Union;
+import eu.stratosphere.sopremo.base.*;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyUtil.InputManager;
 import eu.stratosphere.sopremo.cleansing.mapping.SpicyUtil.StreamManager;
 import eu.stratosphere.sopremo.expressions.*;
@@ -53,10 +50,7 @@ import eu.stratosphere.sopremo.expressions.ComparativeExpression.BinaryOperator;
 import eu.stratosphere.sopremo.expressions.ElementInSetExpression.Quantor;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.SymbolicAssignment;
 import eu.stratosphere.sopremo.io.Source;
-import eu.stratosphere.sopremo.operator.Internal;
-import eu.stratosphere.sopremo.operator.JsonStream;
-import eu.stratosphere.sopremo.operator.Operator;
-import eu.stratosphere.sopremo.operator.SopremoModule;
+import eu.stratosphere.sopremo.operator.*;
 import eu.stratosphere.sopremo.type.JsonUtil;
 
 /**
@@ -299,7 +293,12 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 		InputManager inputManager = new InputManager(query.getVariables());
 		AndExpression whereClauseForView = generateWhereClauseForView(query, inputManager);
 		if (whereClauseForView.getExpressions().isEmpty()) {
-			Projection projection = new Projection().withInputs(inputs);
+			ElementaryOperator<?> projection;
+			EvaluationExpression subRelationPath = inputManager.getSubRelationPath(query.getVariables());
+			if (subRelationPath != null)
+				projection = new ArraySplit().withArrayPath(subRelationPath).withInputs(inputs);
+			else
+				projection = new Projection().withInputs(inputs);
 			projection.setResultProjection(generateSimpleCopyValuesFromSource(query, mappingTask, inputManager));
 			return projection;
 		}
@@ -358,7 +357,7 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				expression =
 					SpicyUtil.createRelativePathForSingleAttribute(attributePath, attributeNode, streamManager);
 			} else {
-				expression = SpicyUtil.spicyToSopremoPath(attributePath, streamManager);
+				expression = SpicyUtil.toSopremoPath(attributePath, streamManager);
 			}
 			oc.addMapping(SpicyUtil.nameForPath(attributePath), expression);
 		}
@@ -419,8 +418,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				if (rightSourcePath == null) {
 					rightSourcePath = rightPath;
 				}
-				expressions.add(new ComparativeExpression(SpicyUtil.spicyToSopremoPath(leftSourcePath, streamManager),
-					BinaryOperator.EQUAL, SpicyUtil.spicyToSopremoPath(rightSourcePath, streamManager)));
+				expressions.add(new ComparativeExpression(SpicyUtil.toSopremoPath(leftSourcePath, streamManager),
+					BinaryOperator.EQUAL, SpicyUtil.toSopremoPath(rightSourcePath, streamManager)));
 			}
 		}
 		return expressions;
@@ -464,8 +463,8 @@ public class SpicyMappingTransformation extends DataTransformationBase<SpicyMapp
 				if (toSourcePath == null) {
 					toSourcePath = toPath;
 				}
-				expressions.add(new ComparativeExpression(SpicyUtil.spicyToSopremoPath(fromSourcePath, streamManager),
-					BinaryOperator.EQUAL, SpicyUtil.spicyToSopremoPath(toSourcePath, streamManager)));
+				expressions.add(new ComparativeExpression(SpicyUtil.toSopremoPath(fromSourcePath, streamManager),
+					BinaryOperator.EQUAL, SpicyUtil.toSopremoPath(toSourcePath, streamManager)));
 			}
 		}
 		// }

@@ -7,7 +7,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.google.common.base.Function;
 import com.google.common.base.Predicates;
 
 import eu.stratosphere.sopremo.cleansing.mapping.DataTransformationBase;
@@ -23,10 +22,7 @@ import eu.stratosphere.sopremo.operator.JsonStream;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.operator.SopremoModule;
-import eu.stratosphere.sopremo.tree.NodeHandler;
-import eu.stratosphere.sopremo.tree.ReturnLessNodeHandler;
-import eu.stratosphere.sopremo.tree.ReturnlessTreeHandler;
-import eu.stratosphere.sopremo.tree.TreeHandler;
+import eu.stratosphere.sopremo.tree.*;
 import eu.stratosphere.util.CollectionUtil;
 
 @Name(noun = "transform records")
@@ -138,7 +134,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			if (this.targetSchema.get(targetIndex) instanceof ObjectCreation) {
 				final PathSegmentExpression idAttr =
 					new ObjectAccess("id").withInputExpression(new InputSelection(targetIndex));
-				this.sourceHandler.addToSchema(idAttr, this.targetSchema);
+				this.schemaHandler.addToSchema(idAttr, this.targetSchema);
 				this.targetKeys.add(0, idAttr);
 				// if (nestedOperator.getGroupingKey() != EvaluationExpression.VALUE)
 				// this.sourceToValueCorrespondences.add(new SymbolicAssignment(idAttr,
@@ -150,7 +146,7 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 
 		// add target as late as possible to avoid overwriting it in targetHandler.process
 		for (SymbolicAssignment corr : this.targetFKs)
-			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(),
+			DataTransformation.this.schemaHandler.addToSchema(corr.getExpression(),
 				DataTransformation.this.targetSchema);
 		System.out.println(this);
 	}
@@ -164,9 +160,9 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		for (int index = 0; index < this.sourceSchemaFromMapping.size(); index++)
 			this.sourceSchema.set(index, this.sourceSchemaFromMapping.get(index).clone());
 		for (SymbolicAssignment corr : this.sourceFKs) {
-			DataTransformation.this.sourceHandler.addToSchema(corr.getExpression(),
+			DataTransformation.this.schemaHandler.addToSchema(corr.getExpression(),
 				DataTransformation.this.sourceSchema);
-			DataTransformation.this.sourceHandler.addToSchema(corr.getTargetTagExpression(),
+			DataTransformation.this.schemaHandler.addToSchema(corr.getTargetTagExpression(),
 				DataTransformation.this.sourceSchema);
 		}
 	}
@@ -218,17 +214,13 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			if (streamExpr != null) {
 				InputSelection output = new InputSelection(streamExpr.getStream().getSource().getIndex());
 				final EvaluationExpression exprWithInputSel = value.clone().replace(streamExpr, output);
-				DataTransformation.this.sourceHandler.addToSchema(exprWithInputSel,
+				DataTransformation.this.schemaHandler.addToSchema(exprWithInputSel,
 					DataTransformation.this.targetSchema);
 				DataTransformation.this.targetFKs.add(new SymbolicAssignment(targetPath.clone(),
 					exprWithInputSel));
 			} else {
-				// HACK to avoid array accesses to extend the source schema unnecessarily; does only work when
-				// JsonUtil.createPath is used for correspondences
-				if (value instanceof ArrayAccess)
-					value = new ObjectAccess("[" + ((ArrayAccess) value).getStartIndex() + "]").
-						withInputExpression(((PathSegmentExpression) value).getInputExpression());
-				DataTransformation.this.sourceHandler.addToSchema(value,
+				value = DataTransformation.this.sourceExpressionHandler.rewrite(value);
+				DataTransformation.this.schemaHandler.addToSchema(value,
 					DataTransformation.this.sourceSchemaFromMapping);
 				DataTransformation.this.sourceToValueCorrespondences.add(new SymbolicAssignment(
 					targetPath.clone(), value));
@@ -241,13 +233,54 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 		}
 	}
 
-	private transient SourceHandler sourceHandler = new SourceHandler();
+	private transient SourceExpressionHandler sourceExpressionHandler = new SourceExpressionHandler();
 
-	private class SourceHandler extends TreeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression> {
+	private class SourceExpressionHandler extends ParameterlessTreeHandler<EvaluationExpression, EvaluationExpression> {
 		/**
 		 * Initializes EntityMapping.SourceHandler.
 		 */
-		public SourceHandler() {
+		public SourceExpressionHandler() {
+			// HACK to avoid array accesses to extend the source schema unnecessarily; does only work when
+			// SpicyUtil.toSopremoPath is used for correspondences
+			put(ArrayAccess.class, new ParameterLessNodeHandler<ArrayAccess, EvaluationExpression>() {
+				@Override
+				protected EvaluationExpression handle(ArrayAccess value,
+						TreeHandler<Object, EvaluationExpression, Object> treeHandler) {
+					return new ObjectAccess("[" + value.getStartIndex() + "]").
+						withInputExpression(value.getInputExpression());
+				}
+			});
+			put(ArrayProjection.class, new ParameterLessNodeHandler<ArrayProjection, EvaluationExpression>() {
+				@Override
+				public EvaluationExpression handle(ArrayProjection value,
+						TreeHandler<Object, EvaluationExpression, Object> treeHandler) {
+					final EvaluationExpression inputExpression = value.getInputExpression();
+					return ((PathSegmentExpression) value.getProjection()).withTail(new ArrayAccess(0).withInputExpression(inputExpression));
+				}
+			});
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see eu.stratosphere.sopremo.tree.TreeHandler#unknownValueType(java.lang.Object, java.lang.Object)
+		 */
+		@Override
+		protected EvaluationExpression unknownValueType(EvaluationExpression value, Object param) {
+			return value;
+		}
+
+		public EvaluationExpression rewrite(EvaluationExpression value) {
+			return handle(value.clone());
+		}
+	}
+
+	private transient SchemaHandler schemaHandler = new SchemaHandler();
+
+	private class SchemaHandler extends TreeHandler<EvaluationExpression, EvaluationExpression, EvaluationExpression> {
+		/**
+		 * Initializes EntityMapping.SourceHandler.
+		 */
+		public SchemaHandler() {
 			put(ObjectAccess.class, new NodeHandler<ObjectAccess, EvaluationExpression, EvaluationExpression>() {
 				@Override
 				public EvaluationExpression handle(ObjectAccess value, EvaluationExpression expected,
@@ -268,17 +301,13 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				public EvaluationExpression handle(ArrayAccess value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
 					final EvaluationExpression path =
-						treeHandler.handle(value.getInputExpression(), new ArrayCreation());
+						treeHandler.handle(value.getInputExpression(), new ArrayCreation(EvaluationExpression.VALUE));
 					if (!(path instanceof ArrayCreation))
 						return path;
 					ArrayCreation ac = (ArrayCreation) path;
-					final List<EvaluationExpression> elements = ac.getElements();
-					CollectionUtil.ensureSize(elements, 1, EvaluationExpression.VALUE);
-					EvaluationExpression actualSourceSchema = elements.get(0);
-					if (!conforms(actualSourceSchema, expected)) {
-						elements.set(0, actualSourceSchema = expected);
-						ac.setElements(elements);
-					}
+					EvaluationExpression actualSourceSchema = ac.get(0);
+					if (!conforms(actualSourceSchema, expected))
+						ac.set(0, actualSourceSchema = expected);
 					return actualSourceSchema;
 				}
 			});
@@ -308,9 +337,37 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 				@Override
 				public EvaluationExpression handle(InputSelection value, EvaluationExpression expected,
 						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
-					EvaluationExpression actualSourceSchema = SourceHandler.this.sourceSchemas.get(value.getIndex());
+					EvaluationExpression actualSourceSchema = SchemaHandler.this.sourceSchemas.get(value.getIndex());
 					if (!conforms(actualSourceSchema, expected))
-						SourceHandler.this.sourceSchemas.set(value.getIndex(), actualSourceSchema = expected);
+						SchemaHandler.this.sourceSchemas.set(value.getIndex(), actualSourceSchema = expected);
+					return actualSourceSchema;
+				}
+			});
+			put(RootExpression.class,
+				new NodeHandler<RootExpression, EvaluationExpression, EvaluationExpression>() {
+					@Override
+					public EvaluationExpression handle(RootExpression value, EvaluationExpression expected,
+							TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+						EvaluationExpression actualSourceSchema = value.root.get(0);
+						if (!conforms(actualSourceSchema, expected))
+							value.root.set(0, actualSourceSchema = expected);
+						return actualSourceSchema;
+					}
+				});
+			put(ArrayProjection.class, new NodeHandler<ArrayProjection, EvaluationExpression, EvaluationExpression>() {
+				@Override
+				public EvaluationExpression handle(ArrayProjection value, EvaluationExpression expected,
+						TreeHandler<Object, EvaluationExpression, EvaluationExpression> treeHandler) {
+					final EvaluationExpression root =
+						treeHandler.handle(value.getInputExpression(), new ArrayCreation(EvaluationExpression.VALUE));
+					if (!(root instanceof ArrayCreation))
+						return root;
+					ArrayCreation ac = (ArrayCreation) root;
+					EvaluationExpression actualSourceSchema = treeHandler.handle(
+						value.getProjection().clone().replace(EvaluationExpression.VALUE, new RootExpression(ac)),
+						EvaluationExpression.VALUE);
+					if (!conforms(actualSourceSchema, expected))
+						ac.set(0, actualSourceSchema = expected);
 					return actualSourceSchema;
 				}
 			});
@@ -332,6 +389,15 @@ public class DataTransformation extends DataTransformationBase<DataTransformatio
 			this.sourceSchemas = sourceSchemas;
 
 			handle(sourcePath, EvaluationExpression.VALUE);
+		}
+	}
+
+	private static class RootExpression extends UnevaluableExpression {
+		private ArrayCreation root;
+
+		private RootExpression(ArrayCreation root) {
+			super("root");
+			this.root = root;
 		}
 	}
 

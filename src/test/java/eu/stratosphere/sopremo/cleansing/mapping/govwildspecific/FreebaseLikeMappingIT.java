@@ -25,7 +25,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import eu.stratosphere.meteor.MeteorIT;
+import eu.stratosphere.sopremo.CoreFunctions;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.ObjectAccess;
+import eu.stratosphere.sopremo.expressions.ObjectCreation;
+import eu.stratosphere.sopremo.function.FunctionUtil;
 import eu.stratosphere.sopremo.operator.SopremoPlan;
+import eu.stratosphere.sopremo.pact.SopremoUtil;
+import eu.stratosphere.sopremo.type.JsonUtil;
 
 public class FreebaseLikeMappingIT extends MeteorIT {
 	private File freebase, politician;
@@ -33,14 +40,14 @@ public class FreebaseLikeMappingIT extends MeteorIT {
 	@Before
 	public void createInput() throws IOException {
 		this.freebase = this.testServer.createFile("freebase.json",
-			createObjectNode("id", 1, "name", createArrayNode("Andrew", "Jr.", "Adams"), 
-					"positions", createArrayNode(
-							createObjectNode("title", "Senator", "sessions", createArrayNode(1,2,3)),
-							createObjectNode("title", "Representative", "sessions", createArrayNode(4))
-							)
+			createObjectNode("id", 1, "name", createArrayNode("Andrew", "Jr.", "Adams"),
+				"positions", createArrayNode(
+					createObjectNode("title", "Senator", "sessions", createArrayNode(1, 2, 3)),
+					createObjectNode("title", "Representative", "sessions", createArrayNode(4))
+				)
 			)
-		);
-		
+			);
+
 		this.politician = this.testServer.getOutputFile("politician.json");
 	}
 
@@ -64,7 +71,7 @@ public class FreebaseLikeMappingIT extends MeteorIT {
 		this.testServer.checkContentsOf("politician.json",
 			createObjectNode("id", 1, "firstName", "Andrew"));
 	}
-	
+
 	@Test
 	public void testTakeAllObjects() throws IOException {
 
@@ -72,11 +79,11 @@ public class FreebaseLikeMappingIT extends MeteorIT {
 			"$freebase = read from '" + this.freebase.toURI() + "';\n" +
 			"$person = transform records $freebase\n" +
 			"into [\n" +
-			"  entity $person identified by $person.id with{\n" +
-			"    id: $freebase.id,\n" +
+			"  entity $person identified by $person.originalId with{\n" +
+			"    originalId: $freebase.id,\n" +
 			"    firstName: $freebase.name[0],\n" +
-			"    worksFor: [{title: $freebase.positions.title,"
-			+ "				sessions: $freebase.positions.session}]\n" +
+			"    worksFor: [{title: $freebase.positions[*].title,"
+			+ "				sessions: $freebase.positions[*].sessions}]\n" +
 			"  }\n" +
 			"];\n" +
 			"write $person to '" + this.politician.toURI() + "';\n";
@@ -84,7 +91,14 @@ public class FreebaseLikeMappingIT extends MeteorIT {
 		final SopremoPlan plan = parseScript(query);
 		Assert.assertNotNull(this.client.submit(plan, null, true));
 
-		this.testServer.checkContentsOf("politician.json",
-			createObjectNode("id", 1, "firstName", "Andrew"));
+		ObjectCreation canonicalizer = new ObjectCreation(new ObjectCreation.CopyFields(EvaluationExpression.VALUE));
+		canonicalizer.addMapping("worksFor",
+			FunctionUtil.createFunctionCall(CoreFunctions.SORT, new ObjectAccess("worksFor")));
+		this.testServer.checkContentsOf("politician.json", canonicalizer,
+			createObjectNode("id", 1, "originalId", 1, "firstName", "Andrew",
+				"worksFor", createArrayNode(
+					createObjectNode("title", "Senator", "sessions", createArrayNode(1, 2, 3)),
+					createObjectNode("title", "Representative", "sessions", createArrayNode(4))
+				)));
 	}
 }

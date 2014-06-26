@@ -61,14 +61,9 @@ import org.nfunk.jep.Node;
 import com.google.common.collect.Iterables;
 
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.expressions.ArrayAccess;
-import eu.stratosphere.sopremo.expressions.ArrayCreation;
-import eu.stratosphere.sopremo.expressions.ConstantExpression;
-import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.base.ArraySplit;
+import eu.stratosphere.sopremo.expressions.*;
 import eu.stratosphere.sopremo.expressions.EvaluationExpression.ValueExpression;
-import eu.stratosphere.sopremo.expressions.InputSelection;
-import eu.stratosphere.sopremo.expressions.ObjectAccess;
-import eu.stratosphere.sopremo.expressions.ObjectCreation;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.FieldAssignment;
 import eu.stratosphere.sopremo.expressions.ObjectCreation.Mapping;
 import eu.stratosphere.sopremo.function.FunctionUtil;
@@ -295,9 +290,32 @@ public class SpicyUtil {
 	// return relativePath.toString();
 	// }
 	//
-	public static EvaluationExpression spicyToSopremoPath(VariablePathExpression path, InputManager var2Source) {
+	public static PathSegmentExpression toSopremoPath(VariablePathExpression path, InputManager var2Source) {
 		final List<String> pathSteps = path.getPathSteps();
-		return JsonUtil.createPath(pathSteps.subList(1, pathSteps.size())).withTail(var2Source.getInput(path.getStartingVariable()));
+		PathSegmentExpression expression = var2Source.getInput(path.getStartingVariable());
+		for (int index = 1; index < pathSteps.size(); index++) {
+			final String step = pathSteps.get(index);
+			if (step.startsWith("["))
+				expression = new ArrayAccess(Integer.parseInt(step.substring(1, step.length() - 1))).
+					withInputExpression(expression);
+			else
+				expression = new ObjectAccess(step).withInputExpression(expression);
+		}
+		return expression;
+	}
+
+	public static PathSegmentExpression toSopremoPath(PathExpression path) {
+		final List<String> pathSteps = path.getPathSteps();
+		PathSegmentExpression expression = EvaluationExpression.VALUE;
+		for (int index = 3; index < pathSteps.size(); index++) {
+			final String step = pathSteps.get(index);
+			if (step.startsWith("["))
+				expression = new ArrayAccess(Integer.parseInt(step.substring(1, step.length() - 1))).
+					withInputExpression(expression);
+			else
+				expression = new ObjectAccess(step).withInputExpression(expression);
+		}
+		return expression;
 	}
 
 	public static class StreamManager {
@@ -333,50 +351,57 @@ public class SpicyUtil {
 	}
 
 	public static class InputManager {
-		private Object2IntMap<String> aliasesIndex = new Object2IntOpenHashMap<String>();
+		private Map<String, PathSegmentExpression> aliasesIndex = new HashMap<String, PathSegmentExpression>();
+
+		private Map<String, PathSegmentExpression> fullPaths = new HashMap<String, PathSegmentExpression>();
 
 		public InputManager(List<SetAlias> alias) {
 			for (int index = 0; index < alias.size(); index++) {
-				final SetAlias var = alias.get(index);
-				final VariablePathExpression bindingPathExpression = var.getBindingPathExpression();
-				if (bindingPathExpression == null || bindingPathExpression.getStartingVariable() == null)
-					this.aliasesIndex.put(var.toShortString(), index);
-				else
-					this.aliasesIndex.put(bindingPathExpression.getStartingVariable().toShortString(), index);
+				SetAlias var = alias.get(index);
+				if (var.getBindingPathExpression() == null ||
+					var.getBindingPathExpression().getStartingVariable() == null) {
+					this.aliasesIndex.put(var.toShortString(), new InputSelection(index));
+					this.fullPaths.put(var.toShortString(), new InputSelection(index));
+				} else {
+					this.aliasesIndex.put(var.toShortString(),
+						new ArrayAccess(0).withInputExpression(new InputSelection(index)));
+					this.fullPaths.put(var.toShortString(),
+						toSopremoPath(var.getAbsoluteBindingPathExpression()));
+					while ((var = var.getBindingPathExpression().getStartingVariable()) != null) {
+						this.aliasesIndex.put(var.toShortString(),
+							new ArrayAccess(ArraySplit.ResultField.WholeValue.ordinal()).
+								withInputExpression(new InputSelection(index)));
+						this.fullPaths.put(var.toShortString(),
+							toSopremoPath(var.getAbsoluteBindingPathExpression()));
+					}
+				}
 			}
 		}
 
 		public InputManager(String... alias) {
 			for (int index = 0; index < alias.length; index++)
-				this.aliasesIndex.put(alias[index], index);
+				this.aliasesIndex.put(alias[index], new InputSelection(index));
 		}
 
-		{
-			this.aliasesIndex.defaultReturnValue(-1);
+		public PathSegmentExpression getInput(String id) {
+			return this.aliasesIndex.get(id);
 		}
 
-		public EvaluationExpression getInput(String id) {
-			return new InputSelection(getPos(id));
-		}
-
-		private int getPos(String id) {
-			int pos = this.aliasesIndex.getInt(id);
-			if (pos == -1)
-				throw new IllegalArgumentException("Unknown variable " + id);
-			return pos;
-		}
-
-		public EvaluationExpression getInput(SetAlias startingVariable) {
+		public PathSegmentExpression getInput(SetAlias startingVariable) {
 			return getInput(startingVariable.toShortString());
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
 		@Override
 		public String toString() {
 			return this.aliasesIndex.toString();
+		}
+
+		public EvaluationExpression getSubRelationPath(List<SetAlias> variables) {
+			for (SetAlias variable : variables)
+				if (getInput(variable).getInputExpression() != EvaluationExpression.VALUE)
+					return this.fullPaths.get(variable.toShortString());
+
+			return null;
 		}
 	}
 
@@ -394,7 +419,8 @@ public class SpicyUtil {
 		return new PathExpression(steps);
 	}
 
-	public static SopremoFunctionExpression extractTransformation(EvaluationExpression expression, PathExpression rootExpression,
+	public static SopremoFunctionExpression extractTransformation(EvaluationExpression expression,
+			PathExpression rootExpression,
 			List<PathExpression> sourcePaths) {
 		List<List<String>> sources = new ArrayList<List<String>>();
 		final EvaluationExpression transform = SopremoPathToSpicyPath.get().extractTransformation(expression, sources);
