@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import eu.stratosphere.sopremo.cache.NodeCache;
+import eu.stratosphere.sopremo.cleansing.CleansFunctions;
 import eu.stratosphere.sopremo.operator.Name;
 import eu.stratosphere.sopremo.type.IJsonNode;
 import eu.stratosphere.sopremo.type.TypeNode;
@@ -17,13 +18,14 @@ public class TypeConstraint extends ValidationRule {
 
 	public TypeConstraint(final TypeNode params) {
 		this.type = params;
+		setValueCorrection(CleansFunctions.TRY_COERCING_TO_TYPE);
 	}
 
 	/**
 	 * Initializes TypeValidationExpression.
 	 */
 	TypeConstraint() {
-		this.type = null;
+		this(null);
 	}
 
 	private transient NodeCache nodeCache = new NodeCache();
