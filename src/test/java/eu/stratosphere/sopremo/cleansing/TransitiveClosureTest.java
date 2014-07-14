@@ -38,6 +38,7 @@ public class TransitiveClosureTest {
 		testPlan.getExpectedOutput(0).
 			addArray("a", "b", "c");
 
+		testPlan.trace();
 		testPlan.run();
 	}
 
@@ -92,6 +93,7 @@ public class TransitiveClosureTest {
 			addArray("a", "b", "c", "d").
 			addArray("u", "v", "w", "x");
 
+		testPlan.trace();
 		testPlan.run();
 	}
 
