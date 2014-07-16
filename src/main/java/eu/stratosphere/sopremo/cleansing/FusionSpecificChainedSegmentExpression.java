@@ -24,7 +24,7 @@ public class FusionSpecificChainedSegmentExpression extends
 	protected IJsonNode evaluateSegment(final IJsonNode node) {
 		IJsonNode result = node;
 		for (EvaluationExpression expression : this.getExpressions()) {
-			if(result instanceof MissingNode)
+			if (result instanceof MissingNode)
 				break;
 			if (((IArrayNode<IJsonNode>) result).size() <= 1)
 				break;
