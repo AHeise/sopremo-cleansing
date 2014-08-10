@@ -86,7 +86,7 @@ public class GlobalMatching extends CompositeOperator<GlobalMatching> {
 	}
 
 	@Property
-	@Name(preposition = "by")
+	@Name(preposition = "with")
 	public void setSimilarityExpression(EvaluationExpression similarityExpression) {
 		if (similarityExpression == null)
 			throw new NullPointerException("similarityExpression must not be null");

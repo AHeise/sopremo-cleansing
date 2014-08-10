@@ -33,13 +33,13 @@ public class GlobalMatchingTest {
 	@Test
 	public void test1() {
 		GlobalMatching gm = new GlobalMatching()
-				.withSimilarityExpression(new ArithmeticExpression(
-						new ArrayAccess(0), ArithmeticOperator.SUBTRACTION,
-						new ArrayAccess(1)));
+			.withSimilarityExpression(new ArithmeticExpression(
+				new ArrayAccess(0), ArithmeticOperator.SUBTRACTION,
+				new ArrayAccess(1)));
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 3).addArray(2, 3);
-		testPlan.getExpectedOutput(0).addArray(2, 3).addArray(1,3);
+		testPlan.getExpectedOutput(0).addArray(2, 3);
 
 		testPlan.trace();
 		testPlan.run();
@@ -48,13 +48,13 @@ public class GlobalMatchingTest {
 	@Test
 	public void test2() {
 		GlobalMatching gm = new GlobalMatching()
-				.withSimilarityExpression(new ArithmeticExpression(
-						new ArrayAccess(0), ArithmeticOperator.SUBTRACTION,
-						new ArrayAccess(1)));
+			.withSimilarityExpression(new ArithmeticExpression(
+				new ArrayAccess(0), ArithmeticOperator.SUBTRACTION,
+				new ArrayAccess(1)));
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 5).addArray(1, 4).addArray(1, 3)
-				.addArray(1, 2).addArray(2, 3);
+			.addArray(1, 2).addArray(2, 3);
 		testPlan.getExpectedOutput(0).addArray(2, 2).addArray(1, 3);
 
 		testPlan.trace();
@@ -64,55 +64,55 @@ public class GlobalMatchingTest {
 	@Test
 	public void testWithThresholdA() {
 		GlobalMatching gm = new GlobalMatching()
-				.withSimilarityExpression(new ComparativeExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
-						ArithmeticOperator.SUBTRACTION, new FunctionCall(
-								NumericUDFs.ABS, new ArithmeticExpression(
-										new ArrayAccess(0),
-										ArithmeticOperator.SUBTRACTION,
-										new ArrayAccess(1)))), BinaryOperator.GREATER, new ConstantExpression(IntNode.valueOf(-5))));
+			.withSimilarityExpression(new ComparativeExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
+				ArithmeticOperator.SUBTRACTION, new FunctionCall(
+					NumericUDFs.ABS, new ArithmeticExpression(
+						new ArrayAccess(0),
+						ArithmeticOperator.SUBTRACTION,
+						new ArrayAccess(1)))), BinaryOperator.GREATER, new ConstantExpression(IntNode.valueOf(-5))));
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 2).addArray(2.1, 2).addArray(2.1, 4)
-				.addArray(4.1, 4).addArray(4.1, 6);
+			.addArray(4.1, 4).addArray(4.1, 6);
 		testPlan.getExpectedOutput(0).addArray(2.1, 2).addArray(4.1, 4);
 
 		testPlan.trace();
 		testPlan.run();
 	}
-	
+
 	@Test
 	public void testWithThresholdB() {
 		GlobalMatching gm = new GlobalMatching()
-				.withSimilarityExpression(new ComparativeExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
-						ArithmeticOperator.SUBTRACTION, new FunctionCall(
-								NumericUDFs.ABS, new ArithmeticExpression(
-										new ArrayAccess(0),
-										ArithmeticOperator.SUBTRACTION,
-										new ArrayAccess(1)))), BinaryOperator.GREATER_EQUAL, new ConstantExpression(IntNode.valueOf(-7))));
+			.withSimilarityExpression(new ComparativeExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
+				ArithmeticOperator.SUBTRACTION, new FunctionCall(
+					NumericUDFs.ABS, new ArithmeticExpression(
+						new ArrayAccess(0),
+						ArithmeticOperator.SUBTRACTION,
+						new ArrayAccess(1)))), BinaryOperator.GREATER_EQUAL, new ConstantExpression(IntNode.valueOf(-7))));
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 2).addArray(2.1, 2).addArray(2.1, 4)
-				.addArray(4.1, 4).addArray(4.1, 6);
-		testPlan.getExpectedOutput(0).addArray(2.1, 2).addArray(4.1, 4).addArray(1,6);
+			.addArray(4.1, 4).addArray(4.1, 6);
+		testPlan.getExpectedOutput(0).addArray(2.1, 2).addArray(4.1, 4).addArray(1, 6);
 
 		testPlan.trace();
 		testPlan.run();
 	}
-	
+
 	@Test
 	public void testWithoutThreshold() {
 		GlobalMatching gm = new GlobalMatching()
-				.withSimilarityExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
-						ArithmeticOperator.SUBTRACTION, new FunctionCall(
-								NumericUDFs.ABS, new ArithmeticExpression(
-										new ArrayAccess(0),
-										ArithmeticOperator.SUBTRACTION,
-										new ArrayAccess(1)))));
+			.withSimilarityExpression(new ArithmeticExpression(new ConstantExpression(IntNode.ZERO),
+				ArithmeticOperator.SUBTRACTION, new FunctionCall(
+					NumericUDFs.ABS, new ArithmeticExpression(
+						new ArrayAccess(0),
+						ArithmeticOperator.SUBTRACTION,
+						new ArrayAccess(1)))));
 		SopremoTestPlan testPlan = new SopremoTestPlan(gm);
 
 		testPlan.getInput(0).addArray(1, 2).addArray(2.1, 2).addArray(2.1, 4)
-				.addArray(4.1, 4).addArray(4.1, 6);
-		testPlan.getExpectedOutput(0).addArray(2.1, 2).addArray(4.1, 4).addArray(1,6);
+			.addArray(4.1, 4).addArray(4.1, 6);
+		testPlan.getExpectedOutput(0).addArray(2.1, 2).addArray(4.1, 4).addArray(1, 6);
 
 		testPlan.trace();
 		testPlan.run();
