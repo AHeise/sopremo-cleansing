@@ -25,18 +25,44 @@ import java.util.List;
 import javolution.text.TypeFormat;
 import javolution.util.FastList;
 import javolution.util.FastList.Node;
-import eu.stratosphere.api.common.operators.Order;
-import eu.stratosphere.configuration.Configuration;
+
+import org.apache.flink.api.common.operators.Order;
+import org.apache.flink.configuration.Configuration;
+
 import eu.stratosphere.sopremo.CoreFunctions;
-import eu.stratosphere.sopremo.base.*;
+import eu.stratosphere.sopremo.base.ContextualProjection;
+import eu.stratosphere.sopremo.base.Grouping;
+import eu.stratosphere.sopremo.base.Projection;
+import eu.stratosphere.sopremo.base.Sort;
+import eu.stratosphere.sopremo.base.UnionAll;
 import eu.stratosphere.sopremo.cleansing.duplicatedection.CandidateSelection.Pass;
-import eu.stratosphere.sopremo.expressions.*;
-import eu.stratosphere.sopremo.operator.*;
+import eu.stratosphere.sopremo.expressions.ArrayAccess;
+import eu.stratosphere.sopremo.expressions.ArrayCreation;
+import eu.stratosphere.sopremo.expressions.BatchAggregationExpression;
+import eu.stratosphere.sopremo.expressions.ChainedSegmentExpression;
+import eu.stratosphere.sopremo.expressions.ConstantExpression;
+import eu.stratosphere.sopremo.expressions.EvaluationExpression;
+import eu.stratosphere.sopremo.expressions.InputSelection;
+import eu.stratosphere.sopremo.expressions.OrderingExpression;
+import eu.stratosphere.sopremo.operator.DegreeOfParallelism;
+import eu.stratosphere.sopremo.operator.ElementaryOperator;
+import eu.stratosphere.sopremo.operator.InputCardinality;
+import eu.stratosphere.sopremo.operator.JsonStream;
+import eu.stratosphere.sopremo.operator.Name;
+import eu.stratosphere.sopremo.operator.Operator;
+import eu.stratosphere.sopremo.operator.OutputCardinality;
+import eu.stratosphere.sopremo.operator.Property;
 import eu.stratosphere.sopremo.pact.GenericSopremoCoGroup;
 import eu.stratosphere.sopremo.pact.GenericSopremoReduce;
 import eu.stratosphere.sopremo.pact.JsonCollector;
 import eu.stratosphere.sopremo.pact.SopremoCoGroup;
-import eu.stratosphere.sopremo.type.*;
+import eu.stratosphere.sopremo.type.ArrayNode;
+import eu.stratosphere.sopremo.type.CachingArrayNode;
+import eu.stratosphere.sopremo.type.IArrayNode;
+import eu.stratosphere.sopremo.type.IJsonNode;
+import eu.stratosphere.sopremo.type.IStreamNode;
+import eu.stratosphere.sopremo.type.IntNode;
+import eu.stratosphere.sopremo.type.NullNode;
 
 /**
  * @author Arvid Heise

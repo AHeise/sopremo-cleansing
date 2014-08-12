@@ -18,7 +18,8 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import eu.stratosphere.api.common.operators.Order;
+import org.apache.flink.api.common.operators.Order;
+
 import eu.stratosphere.sopremo.CoreFunctions;
 import eu.stratosphere.sopremo.aggregation.Aggregation;
 import eu.stratosphere.sopremo.base.ArraySplit;

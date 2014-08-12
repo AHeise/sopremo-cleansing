@@ -49,7 +49,7 @@ public class GlobalMatchingIT extends MeteorIT {
 		final SopremoPlan plan = parseScript("using cleansing;" +
 			"$pairs = read from '" + this.pairs.toURI() + "';" +
 			"$cluster = global match $pair in $pairs " +
-			"  by jaro($pair[0].name, $pair[1].name);" +
+			"  with jaro($pair[0].name, $pair[1].name);" +
 			"write $cluster to '" + this.output.toURI() + "';");
 		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
@@ -65,7 +65,7 @@ public class GlobalMatchingIT extends MeteorIT {
 		final SopremoPlan plan = parseScript("using cleansing;" +
 			"$pairs = read from '" + this.pairs.toURI() + "';" +
 			"$cluster = global match $pair in $pairs " +
-			"  by jaro($pair[0].name, $pair[1].name) > 0.7;" +
+			"  with jaro($pair[0].name, $pair[1].name) > 0.7;" +
 			"write $cluster to '" + this.output.toURI() + "';");
 		SopremoUtil.trace();
 		Assert.assertNotNull(this.client.submit(plan, null, true));
